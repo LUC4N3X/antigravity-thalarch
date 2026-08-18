@@ -1,13 +1,14 @@
 <div align="center">
 
-![Thalarch Banner](assets/branding/thalarch-banner.png)
+<img src="assets/branding/thalarch-logo.png" alt="Thalarch Logo" width="600" />
+
+<br/>
 
 **High-rigor multi-agent engineering protocol for Google Antigravity.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Antigravity: IDE & CLI](https://img.shields.io/badge/Antigravity-IDE%20|%20CLI-06B6D4.svg)](#installation--setup)
-[![Version: 1.0](https://img.shields.io/badge/Version-1.0-0EA5E9.svg)](#)
-[![Architecture: Multi-Agent](https://img.shields.io/badge/Architecture-Multi--Agent-14B8A6.svg)](#multi-agent-topology--system-architecture)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Antigravity: IDE & CLI](https://img.shields.io/badge/Antigravity-IDE%20|%20CLI-06B6D4.svg?style=flat-square)](#installation--setup)
+[![Version: 1.0](https://img.shields.io/badge/Version-1.0-0EA5E9.svg?style=flat-square)](#)
 
 </div>
 

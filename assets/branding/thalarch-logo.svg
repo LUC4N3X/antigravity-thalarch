@@ -1,93 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320">
-  <defs>
-    <!-- Bioluminescent Glows -->
-    <filter id="glow-heavy" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="15" result="blur" />
-      <feComponentTransfer in="blur" result="glow">
-        <feFuncA type="linear" slope="1.5" />
-      </feComponentTransfer>
-      <feMerge>
-        <feMergeNode in="glow" />
-        <feMergeNode in="SourceGraphic" />
-      </feMerge>
-    </filter>
-
-    <linearGradient id="metal-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F8FAFC" />
-      <stop offset="50%" stop-color="#CBD5E1" />
-      <stop offset="100%" stop-color="#64748B" />
-    </linearGradient>
-
-    <linearGradient id="cyan-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#00F5FF" />
-      <stop offset="50%" stop-color="#00C2FF" />
-      <stop offset="100%" stop-color="#10B981" />
-    </linearGradient>
-
-    <linearGradient id="text-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#F8FAFC" />
-      <stop offset="50%" stop-color="#00F5FF" />
-      <stop offset="100%" stop-color="#CBD5E1" />
-    </linearGradient>
-  </defs>
-
-  <!-- Background for READMEs (subtle dark transparent) -->
-  <rect width="1200" height="320" fill="#030712" fill-opacity="0.9" rx="16" />
+  <!-- Minimalist T-mark (scaled down) -->
+  <g transform="translate(180, 160) scale(1.2)">
+    <path d="M -70 -50 L 70 -50 L 70 -20 L -70 -20 Z" fill="#FFFFFF"/>
+    <path d="M -15 -20 L 15 -20 L 15 60 L 0 75 L -15 60 Z" fill="#E2E8F0"/>
+    <path d="M -25 -65 L 25 -65 L 0 -20 Z" fill="#0B0F17"/>
+    <path d="M -18 -55 L 18 -55 L 0 -25 Z" fill="#00F0FF"/>
+  </g>
   
-  <g stroke="#10B981" stroke-opacity="0.1" stroke-width="1" fill="none">
-    <line x1="0" y1="160" x2="1200" y2="160" />
-    <line x1="400" y1="0" x2="400" y2="320" />
-  </g>
-
-  <!-- Left: Emblem (scaled) -->
-  <g transform="translate(180, 160) scale(0.22)">
-    <!-- Base Shadow -->
-    <path d="M-120 -150 L120 -150 L180 -90 L180 180 L80 180 L80 0 L-80 0 L-80 180 L-180 180 L-180 -90 Z" fill="#000000" opacity="0.6" filter="url(#glow-heavy)"/>
-    <!-- Left Wing -->
-    <path d="M-150 -60 L-120 -90 L-80 -90 L-80 150 L-120 180 L-150 180 Z" fill="url(#metal-grad)" />
-    <!-- Right Wing -->
-    <path d="M150 -60 L120 -90 L80 -90 L80 150 L120 180 L150 180 Z" fill="url(#metal-grad)" />
-    <!-- T Core Plate -->
-    <path d="M-100 -120 L100 -120 L140 -80 L60 -80 L60 20 L40 40 L-40 40 L-60 20 L-60 -80 L-140 -80 Z" fill="#0A1E3F" stroke="url(#cyan-grad)" stroke-width="4"/>
-    <!-- Fissure Core -->
-    <path d="M-10 -90 L10 -90 L10 10 L-10 10 Z" fill="#00F5FF" filter="url(#glow-heavy)" />
-    <!-- Top Geometric Cap -->
-    <path d="M-80 -140 L80 -140 L110 -110 L-110 -110 Z" fill="url(#cyan-grad)" opacity="0.8" />
-    
-    <!-- 6 Nodes Rings relative to Emblem -->
-    <g stroke="#10B981" stroke-opacity="0.3" stroke-width="4" fill="none">
-      <circle cx="0" cy="0" r="300" stroke-dasharray="8,16" />
-      <circle cx="0" cy="0" r="450" />
-    </g>
-    <g fill="#00F5FF">
-      <circle cx="0" cy="-450" r="20" />
-      <circle cx="390" cy="-225" r="20" />
-      <circle cx="390" cy="225" r="20" />
-      <circle cx="0" cy="450" r="20" />
-      <circle cx="-390" cy="225" r="20" />
-      <circle cx="-390" cy="-225" r="20" />
-    </g>
-  </g>
-
-  <!-- Right: Typography -->
-  <!-- "THALARCH" -->
-  <text x="350" y="160" font-family="'Segoe UI', Roboto, Helvetica, sans-serif" font-weight="900" font-size="88" fill="url(#text-grad)" letter-spacing="12">THALARCH</text>
+  <!-- THALARCH Typography -->
+  <text x="340" y="170" fill="#FFFFFF" font-family="Inter, -apple-system, sans-serif" font-size="84" font-weight="700" letter-spacing="0.25em">THALARCH</text>
   
-  <!-- Subtitle -->
-  <text x="355" y="215" font-family="'Courier New', Courier, monospace" font-weight="bold" font-size="18" fill="#00C2FF" letter-spacing="4">HIGH-RIGOR MULTI-AGENT PROTOCOL</text>
-
-  <!-- Badges -->
-  <g font-family="'Courier New', Courier, monospace" font-weight="bold" font-size="12" fill="#10B981" transform="translate(355, 250)">
-    <!-- Badge 1 -->
-    <rect x="0" y="0" width="100" height="24" fill="#030712" stroke="#10B981" stroke-width="1" rx="4" />
-    <text x="50" y="16" text-anchor="middle">[ AGY-2.0 ]</text>
-    
-    <!-- Badge 2 -->
-    <rect x="110" y="0" width="150" height="24" fill="#030712" stroke="#10B981" stroke-width="1" rx="4" />
-    <text x="185" y="16" text-anchor="middle">[ EVIDENCE-DRIVEN ]</text>
-    
-    <!-- Badge 3 -->
-    <rect x="270" y="0" width="200" height="24" fill="#030712" stroke="#10B981" stroke-width="1" rx="4" />
-    <text x="370" y="16" text-anchor="middle">[ STRUCTURAL-SEPARATION ]</text>
-  </g>
+  <!-- Tagline -->
+  <text x="350" y="220" fill="#94A3B8" font-family="Inter, -apple-system, sans-serif" font-size="20" font-weight="500" letter-spacing="0.1em">MULTI-AGENT PROTOCOL FOR GOOGLE ANTIGRAVITY</text>
 </svg>

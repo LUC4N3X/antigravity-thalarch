@@ -1,108 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 440" width="1280" height="440">
   <defs>
-    <!-- Background Gradient -->
-    <radialGradient id="bg-grad-banner" cx="30%" cy="50%" r="70%" fx="30%" fy="50%">
-      <stop offset="0%" stop-color="#050811" />
-      <stop offset="60%" stop-color="#0B132B" />
-      <stop offset="100%" stop-color="#02040A" />
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#1E293B" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#0D1117" stop-opacity="1"/>
     </radialGradient>
-
-    <!-- Bioluminescent Glows -->
-    <filter id="glow-heavy" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="15" result="blur" />
-      <feComponentTransfer in="blur" result="glow">
-        <feFuncA type="linear" slope="1.5" />
-      </feComponentTransfer>
-      <feMerge>
-        <feMergeNode in="glow" />
-        <feMergeNode in="SourceGraphic" />
-      </feMerge>
-    </filter>
-
-    <linearGradient id="metal-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F8FAFC" />
-      <stop offset="50%" stop-color="#CBD5E1" />
-      <stop offset="100%" stop-color="#64748B" />
-    </linearGradient>
-
-    <linearGradient id="cyan-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#00F5FF" />
-      <stop offset="50%" stop-color="#00C2FF" />
-      <stop offset="100%" stop-color="#10B981" />
-    </linearGradient>
-
-    <!-- Volumetric Floor Grid -->
-    <pattern id="grid-floor" width="40" height="40" patternUnits="userSpaceOnUse">
-      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#10B981" stroke-width="0.5" stroke-opacity="0.2" />
-    </pattern>
   </defs>
-
-  <!-- Base Background -->
-  <rect width="1280" height="440" fill="url(#bg-grad-banner)" />
+  <rect width="1280" height="440" fill="url(#bgGrad)"/>
   
-  <!-- Volumetric deep-sea lighting / subtle abyssal grid floor -->
-  <g opacity="0.3">
-    <!-- Simulated 3D floor plane via skew/scale -->
-    <rect width="1280" height="400" y="300" fill="url(#grid-floor)" transform="scale(1, 0.3) skewX(-45)" />
-  </g>
-
-  <!-- Ambient Particle Stars / Nodes -->
-  <g fill="#00F5FF" opacity="0.6">
-    <circle cx="100" cy="80" r="1.5" />
-    <circle cx="250" cy="40" r="2" />
-    <circle cx="500" cy="120" r="1" />
-    <circle cx="900" cy="50" r="2" />
-    <circle cx="1150" cy="100" r="1.5" />
-    <circle cx="850" cy="380" r="1" />
-    <circle cx="1050" cy="350" r="2" />
-    <circle cx="1200" cy="280" r="1" />
-  </g>
-
-  <!-- Glowing Horizontal Energy Line -->
-  <line x1="0" y1="220" x2="1280" y2="220" stroke="#00F5FF" stroke-opacity="0.4" stroke-width="2" filter="url(#glow-heavy)" />
-  <line x1="0" y1="220" x2="1280" y2="220" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="0.5" />
-
-  <!-- Prominent Master Sigil (Left-Center) -->
-  <g transform="translate(350, 220) scale(0.6)">
-    <!-- 6 Nodes Rings relative to Emblem -->
-    <g stroke="#10B981" stroke-opacity="0.2" stroke-width="2" fill="none">
-      <circle cx="0" cy="0" r="300" stroke-dasharray="8,16" />
-      <circle cx="0" cy="0" r="450" />
-      <circle cx="0" cy="0" r="600" stroke-dasharray="4,8" stroke-opacity="0.1" />
+  <!-- Logo group centered -->
+  <g transform="translate(640, 190)">
+    <!-- T-mark -->
+    <g transform="translate(0, -60) scale(1.4)">
+      <path d="M -70 -50 L 70 -50 L 70 -20 L -70 -20 Z" fill="#FFFFFF"/>
+      <path d="M -15 -20 L 15 -20 L 15 60 L 0 75 L -15 60 Z" fill="#E2E8F0"/>
+      <path d="M -25 -65 L 25 -65 L 0 -20 Z" fill="#0D1117"/>
+      <path d="M -18 -55 L 18 -55 L 0 -25 Z" fill="#00F0FF"/>
     </g>
-
-    <!-- Base Shadow -->
-    <path d="M-120 -150 L120 -150 L180 -90 L180 180 L80 180 L80 0 L-80 0 L-80 180 L-180 180 L-180 -90 Z" fill="#000000" opacity="0.8" filter="url(#glow-heavy)"/>
-    <!-- Left Wing -->
-    <path d="M-150 -60 L-120 -90 L-80 -90 L-80 150 L-120 180 L-150 180 Z" fill="url(#metal-grad)" />
-    <!-- Right Wing -->
-    <path d="M150 -60 L120 -90 L80 -90 L80 150 L120 180 L150 180 Z" fill="url(#metal-grad)" />
-    <!-- T Core Plate -->
-    <path d="M-100 -120 L100 -120 L140 -80 L60 -80 L60 20 L40 40 L-40 40 L-60 20 L-60 -80 L-140 -80 Z" fill="#0A1E3F" stroke="url(#cyan-grad)" stroke-width="4"/>
-    <!-- Fissure Core -->
-    <path d="M-10 -90 L10 -90 L10 10 L-10 10 Z" fill="#00F5FF" filter="url(#glow-heavy)" />
-    <!-- Top Geometric Cap -->
-    <path d="M-80 -140 L80 -140 L110 -110 L-110 -110 Z" fill="url(#cyan-grad)" opacity="0.8" />
-  </g>
-
-  <!-- Typography and Technical Callouts -->
-  <g transform="translate(650, 190)">
-    <!-- Title -->
-    <text x="0" y="0" font-family="'Segoe UI', Roboto, Helvetica, sans-serif" font-weight="900" font-size="72" fill="#F8FAFC" letter-spacing="10">THALARCH</text>
     
-    <!-- Subtitle -->
-    <text x="5" y="45" font-family="'Courier New', Courier, monospace" font-weight="bold" font-size="18" fill="#00C2FF" letter-spacing="4">SOVEREIGN ORCHESTRATION &amp; ARCHITECTURAL RIGOR</text>
-
-    <!-- Callouts / Badges -->
-    <g font-family="'Courier New', Courier, monospace" font-weight="bold" font-size="12" fill="#10B981" transform="translate(5, 80)">
-      <rect x="0" y="0" width="160" height="26" fill="#02040A" stroke="#10B981" stroke-width="1.5" rx="2" />
-      <text x="80" y="17" text-anchor="middle">STATUS: VERIFIED</text>
-
-      <rect x="175" y="0" width="160" height="26" fill="#02040A" stroke="#00F5FF" stroke-width="1.5" rx="2" />
-      <text x="255" y="17" text-anchor="middle" fill="#00F5FF">PROTO: ANTIGRAVITY</text>
-
-      <rect x="350" y="0" width="180" height="26" fill="#02040A" stroke="#64748B" stroke-width="1.5" rx="2" />
-      <text x="440" y="17" text-anchor="middle" fill="#CBD5E1">SYS: ABYSSAL-CORE</text>
-    </g>
+    <!-- THALARCH Typography -->
+    <text x="0" y="80" fill="#FFFFFF" font-family="Inter, -apple-system, sans-serif" font-size="72" font-weight="700" letter-spacing="0.3em" text-anchor="middle">THALARCH</text>
+    
+    <!-- Tagline -->
+    <text x="0" y="140" fill="#00F0FF" font-family="Inter, -apple-system, sans-serif" font-size="18" font-weight="500" letter-spacing="0.2em" text-anchor="middle">MULTI-AGENT PROTOCOL FOR GOOGLE ANTIGRAVITY</text>
   </g>
 </svg>
