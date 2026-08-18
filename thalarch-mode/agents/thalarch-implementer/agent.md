@@ -63,8 +63,7 @@ action.
 - concerns;
 - anything not verified.
 
-
-## Thalarch 2.0 implementation contract
+## Thalarch 1.0.0 implementation contract
 
 The task brief is the authority. Do not load unrelated skills.
 
