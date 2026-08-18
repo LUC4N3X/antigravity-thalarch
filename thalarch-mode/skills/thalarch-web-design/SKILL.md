@@ -1,12 +1,11 @@
 ---
 name: thalarch-web-design
 description: >
-  Designs and implements distinctive, production-grade websites, landing pages,
-  dashboards, web apps, and frontend components. Use when the user asks to build,
-  redesign, beautify, or substantially restyle a web interface. Establishes a
-  product-specific aesthetic direction, design system, responsive composition,
-  imagery strategy, accessibility, performance, motion, and real browser proof
-  while avoiding generic template-like AI aesthetics.
+  Designs and implements distinctive, production-grade websites, landing pages, dashboards, web
+  apps, and frontend components. Use when the user asks to build, redesign, beautify, or
+  substantially restyle a web interface. Infers the brief before styling, establishes a
+  product-specific aesthetic direction/design system, uses image-to-code when visual references
+  are central, and requires responsive browser evidence instead of generic AI-template output.
 ---
 
 # Thalarch Web Design
@@ -14,218 +13,268 @@ description: >
 Build websites like a small design studio that also owns the production code.
 The result must have a point of view **and** work.
 
-## 1. Ground the site
+## 1. Design Read — read the room first
 
-Before coding, establish:
+Before coding or picking a visual system, infer:
 
-- what the product/subject actually is;
-- who the page is for;
-- the page's single most important job;
-- primary and secondary actions;
-- content hierarchy;
-- technical constraints;
-- accessibility/performance constraints;
-- existing brand/design system, if any.
+- page/product kind;
+- audience and trust expectations;
+- primary job/action of the page;
+- vibe words in the request;
+- supplied screenshots/sites/brand references and their role;
+- existing logo/colors/type/photography/components;
+- technical/framework constraints;
+- accessibility, regulatory, performance and content constraints.
 
-If the brief is open-ended, make one concrete, reversible design ruling instead
-of producing a generic "modern SaaS" page.
+Create a compact internal `Design Read` that says what this is, who it is for, and what visual
+language is justified.
 
-## 2. Commit to an aesthetic direction
+Ask at most one focused clarification only when two plausible design directions would materially
+change the result. Otherwise make a concrete, reversible design ruling and proceed.
 
-Choose a deliberate direction that fits the subject. Examples are only prompts
-for thought: editorial, restrained luxury, expressive typography, industrial,
-playful, archival, technical, organic, neo-brutalist, cinematic, utilitarian.
+Accessibility, regulated/public-sector requirements, existing brand rules and explicit user
+constraints override aesthetic novelty.
 
-The direction must answer:
+## 2. Set qualitative design dials
 
-- What should this feel like?
-- What makes it recognizably *this* product?
-- What is the one visual decision a visitor may remember?
-- What common design cliché are we intentionally not using?
+Before implementation calibrate three qualitative dimensions:
 
-Minimal design still requires character. Maximal design still requires hierarchy.
+- **variance** — strict/symmetric ↔ expressive/asymmetric;
+- **motion** — static/functional ↔ cinematic/kinetic;
+- **density** — gallery/airy ↔ information-dense/productive.
 
-## 3. Design system before sprawl
+Choose values from the actual brief; do not use fixed numeric presets as universal truth.
+
+Examples:
+
+- trust-first/regulated → lower variance and motion, controlled density;
+- premium consumer/brand → medium-high variance, selective motion, lower density;
+- creative portfolio/cultural site → higher variance and motion with disciplined hierarchy;
+- dense admin/product UI → lower decorative variance, higher information density, strong states.
+
+These dials guide choices; they never override usability.
+
+## 3. Anti-default discipline
+
+Do not fall into automatic LLM patterns unless the product genuinely calls for them:
+
+- purple/blue glow as the default “AI” aesthetic;
+- centered hero + three equal cards + logo strip + CTA;
+- glassmorphism everywhere;
+- giant rounded containers around every section;
+- card-inside-card nesting;
+- random badges/pills/tiny system labels;
+- generic copy and fake statistics;
+- one fashionable font used for every category;
+- animation on everything;
+- arbitrary framework/component-library replacement.
+
+Ask: **could this become another company's site by swapping only logo and text?** If yes, the
+visual thesis is too generic.
+
+## 4. Choose system vs aesthetic honestly
+
+Before inventing primitives, inspect the repository for an existing design system/component
+library. Preserve it unless the task explicitly replaces it.
+
+If the brief clearly maps to an official design system already used/required by the product,
+prefer the current official package and tokens for the proven project version rather than hand-
+recreating its components.
+
+If the direction is an aesthetic rather than an official system — editorial, brutalist,
+cinematic, glass, bento, dark-tech, etc. — implement it honestly with the project's existing stack.
+Do not pretend a trend is an official design system.
+
+One coherent system beats mixing several design libraries.
+
+## 5. Design system before sprawl
 
 For multi-section or multi-page work, load `thalarch-design-system`.
 
-Use shared tokens and reusable primitives for:
+Define/extract semantic roles for:
+
 - color;
 - typography;
 - spacing;
 - radius/borders/shadows;
 - layout widths/grid;
 - motion;
-- component states.
+- imagery;
+- component states;
+- accessibility constraints.
 
-Do not hardcode a different visual language into every section.
+Do not give each section an independent visual language.
 
-## 4. Typography
+## 6. Typography
 
 Typography is structure, not decoration.
 
-- Choose typefaces that fit the subject and are legally/technically available.
-- Use a deliberate display/body relationship when useful.
-- Control line length, line height, weight, and tracking.
-- Give headings real hierarchy instead of scaling the same font mechanically.
-- Avoid defaulting to the same ubiquitous tech fonts on every project.
-- Use fallback stacks and loading behavior that do not destroy layout.
+- Choose typefaces appropriate to subject/brand and legally/technically available.
+- Prefer project-provided/licensed fonts before casually adding new ones.
+- Control line length, line height, weight, tracking and responsive scale.
+- Use display/body contrast only when it supports the concept.
+- Avoid font mixing solely to create “visual interest”.
+- Audit large italic/display text for clipping and line-box issues.
+- Use fallback/loading behavior that avoids destructive layout shift.
 
-## 5. Color and material
+No font family is universally banned or universally premium; fit and existing brand win.
+
+## 7. Color and material
 
 - Build a palette with clear functional roles.
-- Strong hierarchy beats distributing five accent colors evenly.
-- Use gradients, blur, glass, texture, glow, noise, or shadows only when they
-  support the chosen material language.
+- Restrain accent count unless the brand requires more.
+- Keep warm/cool neutral logic coherent.
+- Use gradients, blur, glass, texture, glow, grain or shadows only when they support the chosen
+  material language.
 - Maintain readable contrast and visible focus states.
-- Treat dark mode as a designed mode, not simple color inversion.
+- Keep lighting/shadow direction coherent.
+- Treat dark mode as designed, not inverted.
 
-## 6. Spatial composition
+## 8. Spatial composition
 
-Avoid the default stack of centered hero → three cards → logo strip → CTA.
+Use layout intentionally:
 
-Use composition intentionally:
-- asymmetry where it helps hierarchy;
-- overlap only with readable z-order;
-- controlled grid-breaking moments;
-- generous whitespace or controlled density depending on the product;
+- asymmetry when it improves hierarchy;
 - strong alignment anchors;
-- section transitions that feel authored rather than repeated templates.
+- controlled grid-breaking moments;
+- whitespace appropriate to the content density;
+- responsive CSS Grid/flex based on actual layout needs;
+- `dvh`/modern viewport behavior where full-height mobile sections require it;
+- optical alignment when mathematical centering looks wrong.
 
-## 7. Content before decoration
+Avoid novelty that destroys scanning or interaction clarity.
 
-Use realistic content structure.
+## 9. Content and states
 
-- Do not hide weak information architecture behind effects.
-- Keep one clear primary action per context when possible.
-- Expose the next step.
-- Do not ship placeholder links, fake disabled controls, or lorem ipsum as final content.
-- Error, empty, loading, success, and long-content states are part of the design.
+Real content structure is part of design.
 
-## 8. Imagery strategy
+- one clear primary action per context when possible;
+- believable copy/data rather than lorem ipsum/fake generic filler;
+- real or intentionally disabled destinations — no dead `#` links as final output;
+- loading, empty, error, success and long-content states where the product can reach them;
+- active navigation/current-state cues where relevant;
+- direct, useful error copy.
 
-Decide whether the site needs imagery at all.
+Do not invent legal/compliance UI unless the product/jurisdiction actually requires it.
+
+## 10. Imagery and image-to-code strategy
+
+Decide first whether the site needs imagery or a visual reference workflow.
 
 Possible paths:
+
 - repository/user-provided assets;
 - real product screenshots;
-- generated raster imagery through `thalarch-imagegen`;
-- deterministic SVG illustration/diagram;
-- CSS/Canvas/WebGL visual treatment when it belongs to the concept.
+- generated raster artwork through `thalarch-imagegen`;
+- deterministic SVG/diagram/code visuals;
+- CSS/Canvas/WebGL when justified;
+- `thalarch-image-to-code` when matching a screenshot/mockup/generated reference is central.
 
-Generated assets must inherit the design-system contract and be independently
-reviewed with `thalarch-visual-qa` before integration.
+For open-ended high-art-direction websites, generated section concepts can help **when** they make
+the design more concrete. Do not make image generation mandatory for every visual task.
 
-Do not use generated imagery as filler just because image generation is available.
+When references are used, label their roles and extract a visual contract before coding. Use large,
+readable section/detail references rather than one unreadable mega-board.
 
-## 9. Motion
+Generated assets are independently reviewed before integration.
 
-Use motion to establish hierarchy, feedback, or continuity.
+## 11. Motion
+
+Use motion for hierarchy, feedback and continuity.
 
 Prefer:
-- one composed entry sequence;
-- meaningful hover/focus transitions;
+
+- a composed entry sequence;
+- meaningful hover/focus/pressed feedback;
 - restrained scroll choreography;
-- motion tied to user intent.
+- motion tied to user intent;
+- transform/opacity-style cheap animation when appropriate;
+- `prefers-reduced-motion` support.
 
-Avoid:
-- every element floating;
-- constant ambient motion with no purpose;
-- long transitions that block interaction;
-- motion that ignores `prefers-reduced-motion`.
+Do not add a motion library when native CSS or the repository's existing stack is sufficient.
 
-Use native CSS where adequate. Follow the repository's existing motion stack
-when one exists instead of adding a library casually.
+## 12. Responsive behavior
 
-## 10. Responsive behavior
+Design and verify at least:
 
-Design at least:
 - compact/mobile;
 - normal desktop;
-- one stress case such as wide desktop, long labels, or dense content.
+- one stress case such as wide desktop, long labels or dense content.
 
-Check:
-- navigation collapse;
-- reordering;
-- tap targets;
-- text wrap;
-- overflow;
-- image crop;
-- sticky/fixed elements;
-- viewport units and mobile browser chrome;
-- safe areas where relevant.
+Check navigation, reordering, tap targets, text wrap, overflow, image crop/focal point, sticky/fixed
+elements, mobile browser chrome and safe areas when relevant.
 
-Mobile is a recomposition, not desktop compressed to 390px.
+Mobile is recomposition, not desktop squeezed to 390px.
 
-## 11. Accessibility and trust
+Also inspect the first viewport on a modest laptop-sized screen; premium design should not depend on
+a giant monitor to keep the hero readable.
+
+## 13. Accessibility and trust
 
 Implement real semantics:
-- landmarks and headings;
-- labels;
+
+- landmarks/headings;
 - keyboard operation;
-- focus visibility;
+- visible focus;
+- labels;
 - contrast;
 - reduced motion;
 - meaningful alt text;
-- no interaction hidden behind hover only.
+- skip-to-content or equivalent when the site's structure warrants it;
+- no essential interaction hidden behind hover only.
 
-Error and destructive actions must be understandable before and after activation.
+Destructive/error states must be understandable before and after activation.
 
-## 12. Performance discipline
+## 14. Performance discipline
 
-Design quality includes delivery quality.
+Inspect image dimensions/format/weight, font loading, layout shift, unnecessary JS, animation cost,
+filters/shadows on hot paths and responsive image behavior.
 
-Inspect:
-- image dimensions/format/weight;
-- font loading;
-- layout shift;
-- unnecessary JS;
-- animation cost;
-- giant shadows/filters on hot paths;
-- responsive image behavior;
-- lazy loading where appropriate.
+Do not sacrifice the concept for a synthetic benchmark, but do not ship multi-megabyte decorative
+assets or perpetual expensive effects without justification.
 
-Do not sacrifice the whole concept for a synthetic benchmark, but do not ship a
-hero that downloads megabytes unnecessarily.
+For measured performance work, route to `thalarch-performance`.
 
-## 13. Implementation
+## 15. Implementation
 
-Respect the existing stack. Do not rewrite React to Vue, replace a component
-library, or introduce a new CSS framework just to express the design.
+Respect the existing framework, styling method, dependency versions and component patterns.
 
-Prefer:
-- existing primitives;
-- semantic tokens;
-- small reusable components;
-- real interactions;
-- minimal dependency growth.
+Before importing a package, verify it exists or that adding it is genuinely justified. Do not
+hallucinate imports from a fashionable stack.
 
-## 14. Browser proof
+Prefer semantic tokens, small reusable components, real interactions and minimal dependency growth.
 
-After implementation use `thalarch-browser-qa` and `thalarch-visual-qa`.
+## 16. Browser proof and iterative fidelity
 
-A finished website requires, when browser tooling is available:
-- real page load;
-- screenshot evidence;
-- compact + desktop viewport;
-- primary interaction path;
-- console check;
-- relevant network failures absent;
-- visual inspection against the design contract.
+After implementation use `thalarch-browser-qa` and relevant visual review.
 
-If browser tooling cannot run, appearance/interaction remain `UNVERIFIED`.
+When a target/reference exists, use `thalarch-image-to-code` checkpoints:
 
-## 15. Design quality gate
+1. render real page;
+2. capture target viewport;
+3. compare composition/type/spacing/material/crop;
+4. fix largest mismatch first;
+5. rerender;
+6. verify compact + desktop and primary interactions.
+
+A build passing is not visual proof. A generated mockup is not implementation proof.
+
+If browser tooling cannot run, appearance/interaction claims remain `UNVERIFIED`.
+
+## 17. Design quality gate
 
 Before completion ask:
 
-- Could this page belong to a completely different product with only the logo swapped?
+- Does the visual language follow the Design Read?
+- Could it belong to another product after a logo swap?
 - Is the primary action obvious?
-- Is there one coherent visual thesis?
-- Are typography and spacing doing real hierarchy work?
+- Is there one coherent visual thesis/system?
+- Are typography and spacing doing hierarchy work?
 - Is every decorative technique justified?
-- Does mobile feel designed?
-- Are images integrated into the composition rather than pasted on top?
-- Does the implemented browser result match the design intent?
+- Does mobile feel authored?
+- Are product states/accessibility handled?
+- Are images integrated rather than pasted in?
+- Does the real browser result match the design intent/reference?
 
-If the answer to the first question is yes, the design is not distinctive enough.
+If the first real-browser inspection changes the design direction substantially, update the design
+contract and rerun review rather than pretending the original plan still describes the result.
