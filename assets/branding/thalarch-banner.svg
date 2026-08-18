@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 420" width="1280" height="420">
+  <defs>
+    <radialGradient id="bg-glow" cx="50%" cy="50%" r="70%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="60%" stop-color="#0A0F1D" />
+      <stop offset="100%" stop-color="#060913" />
+    </radialGradient>
+    <linearGradient id="sigil-glow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00F0FF" />
+      <stop offset="50%" stop-color="#0EA5E9" />
+      <stop offset="100%" stop-color="#06B6D4" stop-opacity="0.2" />
+    </linearGradient>
+    <linearGradient id="line-glow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0EA5E9" stop-opacity="0" />
+      <stop offset="50%" stop-color="#00F0FF" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#0EA5E9" stop-opacity="0" />
+    </linearGradient>
+    <filter id="glow-fx" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#14B8A6" stroke-width="0.5" stroke-opacity="0.1" />
+    </pattern>
+  </defs>
+
+  <rect width="1280" height="420" fill="url(#bg-glow)" />
+  <rect width="1280" height="420" fill="url(#grid)" />
+
+  <path d="M 0 210 L 1280 210" stroke="url(#line-glow)" stroke-width="2" />
+  <path d="M 0 210 L 1280 210" stroke="#00F0FF" stroke-width="1" opacity="0.5" filter="url(#glow-fx)" />
+
+  <!-- T Sigil -->
+  <g transform="translate(150, 95) scale(0.9)" filter="url(#glow-fx)">
+    <path d="M 0 20 L 200 20 L 180 50 L 20 50 Z" fill="url(#sigil-glow)" />
+    <path d="M 80 50 L 120 50 L 100 260 L 80 260 Z" fill="url(#sigil-glow)" />
+    <path d="M 40 70 L 60 70 L 50 140 Z" fill="#0EA5E9" opacity="0.6" />
+    <path d="M 160 70 L 140 70 L 150 140 Z" fill="#0EA5E9" opacity="0.6" />
+    <path d="M -10 10 L 210 10 L 210 15 L -10 15 Z" fill="#E2E8F0" />
+    <path d="M -10 15 L 0 50 L 10 50 L 0 20 Z" fill="#E2E8F0" />
+    <path d="M 210 15 L 200 50 L 190 50 L 200 20 Z" fill="#E2E8F0" />
+  </g>
+
+  <!-- Typography -->
+  <text x="400" y="220" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="110" fill="#E2E8F0" letter-spacing="10">THALARCH</text>
+  <text x="410" y="275" font-family="system-ui, -apple-system, sans-serif" font-weight="500" font-size="28" fill="#0EA5E9" letter-spacing="5">HIGH-RIGOR MULTI-AGENT PROTOCOL</text>
+  
+  <!-- Badges -->
+  <g transform="translate(410, 310)">
+    <rect x="0" y="0" width="120" height="30" rx="4" fill="#0F172A" stroke="#38BDF8" stroke-width="1" />
+    <text x="60" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#38BDF8" font-weight="bold" text-anchor="middle">VERIFIED</text>
+
+    <rect x="130" y="0" width="120" height="30" rx="4" fill="#0F172A" stroke="#14B8A6" stroke-width="1" />
+    <text x="190" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#14B8A6" font-weight="bold" text-anchor="middle">EVIDENCE: PASS</text>
+  </g>
+</svg>
