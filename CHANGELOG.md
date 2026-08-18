@@ -5,6 +5,26 @@
 Thalarch intentionally keeps the public version fixed at **1.0.0**. Capability changes are tracked
 here and in Git history without semantic-version bumps.
 
+### 2026-08-18 — Adaptive reasoning and anti-hallucination core
+
+- added `thalarch-reasoning` with adaptive deliberation depths `D0`–`D4`, first-answer resistance,
+  hypothesis/alternative tournaments, disconfirmation, independent adjudication and compact
+  reasoning-state recovery without exposing private chain-of-thought;
+- added `thalarch-deliberator`, a clean-context read-only specialist for high-uncertainty or
+  high-risk decisions;
+- added `thalarch-epistemic-guard` as a first-class evidence gate for repository, API/version,
+  runtime, external-fact, visual and inferred claims;
+- added `thalarch-fact-checker`, an independent exact-claim verifier that returns
+  `PROVEN/SUPPORTED/INFERENCE/UNKNOWN/UNVERIFIED/DISPROVEN`;
+- orchestrator now treats epistemic reliability as the primary quality objective and selects
+  deliberation depth based on actual risk/uncertainty rather than always using maximum ceremony;
+- verifier now audits paths, symbols, versions, APIs, commands, test/build results, benchmark values
+  and publication state for unsupported claims before granting PASS;
+- added adversarial hallucination evals for invented files/symbols, nonexistent Gradle tasks,
+  user-supplied false versions, unrun tests, local-build→CI proof substitution, API-memory errors,
+  source-only visual claims, disputed reviewer facts and fabricated commit/PR identifiers;
+- validator now structurally requires the reasoning, epistemic, deliberator and fact-checker wiring.
+
 ### 2026-08-18 — Autonomous skill intelligence
 
 - added `thalarch-skill-intelligence` so the orchestrator can inspect available Antigravity skills
@@ -69,5 +89,6 @@ here and in Git history without semantic-version bumps.
 - implementation, image generation, specialist review and cold verification remain structurally
   separated;
 - validator checks specialist wiring, image-tool delegation, portable paths, advanced skill files,
-  autonomous skill intelligence and the permanent 1.0.0 version policy;
+  autonomous skill intelligence, adaptive reasoning, epistemic guard, independent fact checking,
+  and the permanent 1.0.0 version policy;
 - optional consequential-command hook remains disabled by default.
