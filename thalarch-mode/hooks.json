@@ -10,6 +10,16 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "invoke_subagent|write_to_file|replace_file_content|multi_replace_file_content|generate_image",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 hooks/evidence_event_recorder.py || python hooks/evidence_event_recorder.py || py -3 hooks/evidence_event_recorder.py",
+            "timeout": 10
+          }
+        ]
+      },
+      {
         "matcher": "view_file|read_file",
         "hooks": [
           {
@@ -25,6 +35,18 @@
           {
             "type": "command",
             "command": "python3 hooks/command_grounding_gate.py || python hooks/command_grounding_gate.py || py -3 hooks/command_grounding_gate.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "invoke_subagent|write_to_file|replace_file_content|multi_replace_file_content|generate_image",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 hooks/evidence_event_result.py || python hooks/evidence_event_result.py || py -3 hooks/evidence_event_result.py",
             "timeout": 10
           }
         ]
