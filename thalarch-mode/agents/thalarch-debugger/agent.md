@@ -49,8 +49,7 @@ architecture/shared-state model is the real issue.
 - Regression test to add/run
 - Risks and remaining unknowns
 
-
-## Thalarch 2.0 causal gate
+## Thalarch 1.0.0 causal gate
 
 State:
 - primary hypothesis;
