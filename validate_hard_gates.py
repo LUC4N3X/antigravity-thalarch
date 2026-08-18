@@ -17,6 +17,8 @@ required_scripts = [
     hooks_dir / "pre_invocation_epistemic_guard.py",
     hooks_dir / "read_target_gate.py",
     hooks_dir / "command_grounding_gate.py",
+    hooks_dir / "evidence_event_recorder.py",
+    hooks_dir / "evidence_event_result.py",
     hooks_dir / "stop_evidence_gate.py",
     hooks_dir / "test_hard_gates.py",
 ]
@@ -49,6 +51,8 @@ else:
         errors.append("hard gates must define PreInvocation")
     if not isinstance(hard.get("PreToolUse"), list) or not hard.get("PreToolUse"):
         errors.append("hard gates must define PreToolUse")
+    if not isinstance(hard.get("PostToolUse"), list) or not hard.get("PostToolUse"):
+        errors.append("hard gates must define PostToolUse")
     if not isinstance(hard.get("Stop"), list) or not hard.get("Stop"):
         errors.append("hard gates must define Stop")
 
@@ -57,17 +61,26 @@ else:
         "pre_invocation_epistemic_guard.py",
         "read_target_gate.py",
         "command_grounding_gate.py",
+        "evidence_event_recorder.py",
+        "evidence_event_result.py",
         "stop_evidence_gate.py",
     ]:
         if filename not in serialized:
             errors.append(f"hooks.json does not wire {filename}")
 
     pretool = hard.get("PreToolUse") if isinstance(hard.get("PreToolUse"), list) else []
-    matchers = {str(item.get("matcher") or "") for item in pretool if isinstance(item, dict)}
-    if not any("view_file" in matcher for matcher in matchers):
+    posttool = hard.get("PostToolUse") if isinstance(hard.get("PostToolUse"), list) else []
+    pre_matchers = {str(item.get("matcher") or "") for item in pretool if isinstance(item, dict)}
+    post_matchers = {str(item.get("matcher") or "") for item in posttool if isinstance(item, dict)}
+
+    if not any("view_file" in matcher for matcher in pre_matchers):
         errors.append("read-target hard gate must match view_file/read_file")
-    if not any("run_command" in matcher for matcher in matchers):
+    if not any("run_command" in matcher for matcher in pre_matchers):
         errors.append("command-grounding hard gate must match run_command")
+    if not any("invoke_subagent" in matcher for matcher in pre_matchers):
+        errors.append("evidence event recorder must match invoke_subagent")
+    if not any("invoke_subagent" in matcher for matcher in post_matchers):
+        errors.append("evidence event result hook must match invoke_subagent")
 
 if errors:
     print("THALARCH HARD-GATE VALIDATION FAILED")
@@ -92,5 +105,6 @@ print("THALARCH HARD-GATE VALIDATION PASSED")
 print("pre_invocation_epistemic_contract: enforced")
 print("exact_read_target_gate: enforced")
 print("project_command_grounding: enforced")
+print("event_ledger_pre_post_tool_use: enforced")
 print("orchestrated_stop_evidence_gate: enforced")
 print("unit_tests: passed")
