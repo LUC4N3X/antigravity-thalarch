@@ -1,54 +1,111 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <defs>
-    <radialGradient id="bg-glow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-      <stop offset="0%" stop-color="#0F172A" />
-      <stop offset="60%" stop-color="#0A0F1D" />
-      <stop offset="100%" stop-color="#060913" />
+    <!-- Background Gradient -->
+    <radialGradient id="bg-grad" cx="50%" cy="50%" r="70%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#050811" />
+      <stop offset="60%" stop-color="#0B132B" />
+      <stop offset="100%" stop-color="#030712" />
     </radialGradient>
-    <linearGradient id="sigil-glow" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#00F0FF" />
-      <stop offset="50%" stop-color="#0EA5E9" />
-      <stop offset="100%" stop-color="#06B6D4" stop-opacity="0.2" />
-    </linearGradient>
-    <linearGradient id="metallic-edge" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E2E8F0" />
-      <stop offset="100%" stop-color="#64748B" />
-    </linearGradient>
-    <filter id="glow-fx" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="16" result="blur" />
+    
+    <!-- Bioluminescent Glows -->
+    <filter id="glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="15" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
+    <filter id="glow-heavy" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="30" result="blur" />
+      <feComponentTransfer in="blur" result="glow">
+        <feFuncA type="linear" slope="1.5" />
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode in="glow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+    <!-- Metallic Bevel -->
+    <linearGradient id="metal-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC" />
+      <stop offset="50%" stop-color="#CBD5E1" />
+      <stop offset="100%" stop-color="#64748B" />
+    </linearGradient>
+
+    <!-- Cyan Facets -->
+    <linearGradient id="cyan-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00F5FF" />
+      <stop offset="50%" stop-color="#00C2FF" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
   </defs>
 
-  <rect width="512" height="512" fill="url(#bg-glow)" />
+  <!-- Base Background -->
+  <rect width="1024" height="1024" fill="url(#bg-grad)" />
 
-  <g stroke="#14B8A6" stroke-opacity="0.1" stroke-width="1">
-    <path d="M 0 128 L 512 128 M 0 256 L 512 256 M 0 384 L 512 384" />
-    <path d="M 128 0 L 128 512 M 256 0 L 256 512 M 384 0 L 384 512" />
-    <circle cx="256" cy="256" r="200" fill="none" stroke-opacity="0.05" stroke-width="2" />
-    <circle cx="256" cy="256" r="150" fill="none" stroke-dasharray="10, 10" stroke-opacity="0.15" />
-    <circle cx="256" cy="256" r="100" fill="none" stroke-opacity="0.05" />
-  </g>
-
-  <!-- Central T Sigil -->
-  <g transform="translate(156, 126)" filter="url(#glow-fx)">
-    <!-- Top Bar -->
-    <path d="M 0 20 L 200 20 L 180 50 L 20 50 Z" fill="url(#sigil-glow)" />
-    <!-- Down Pillar -->
-    <path d="M 80 50 L 120 50 L 100 260 L 80 260 Z" fill="url(#sigil-glow)" />
-    <!-- Side architectural elements -->
-    <path d="M 40 70 L 60 70 L 50 140 Z" fill="#0EA5E9" opacity="0.6" />
-    <path d="M 160 70 L 140 70 L 150 140 Z" fill="#0EA5E9" opacity="0.6" />
+  <!-- Depth Grids & Sonar Rings -->
+  <g stroke="#10B981" stroke-opacity="0.15" stroke-width="1.5" fill="none">
+    <!-- Grid -->
+    <line x1="512" y1="0" x2="512" y2="1024" />
+    <line x1="0" y1="512" x2="1024" y2="512" />
+    <!-- Diagonal -->
+    <line x1="150" y1="150" x2="874" y2="874" stroke-opacity="0.1" />
+    <line x1="150" y1="874" x2="874" y2="150" stroke-opacity="0.1" />
     
-    <!-- Outer metallic arch -->
-    <path d="M -10 10 L 210 10 L 210 15 L -10 15 Z" fill="url(#metallic-edge)" />
-    <path d="M -10 15 L 0 50 L 10 50 L 0 20 Z" fill="url(#metallic-edge)" />
-    <path d="M 210 15 L 200 50 L 190 50 L 200 20 Z" fill="url(#metallic-edge)" />
+    <!-- Rings -->
+    <circle cx="512" cy="512" r="150" stroke-dasharray="4,8" />
+    <circle cx="512" cy="512" r="280" />
+    <circle cx="512" cy="512" r="380" stroke-dasharray="2,6" />
+    <circle cx="512" cy="512" r="450" stroke-opacity="0.05" />
+    
+    <!-- Micro-ticks -->
+    <path d="M512 112 v20 M512 892 v20 M112 512 h20 M892 512 h20" stroke="#00F5FF" stroke-opacity="0.4" stroke-width="2"/>
+    <circle cx="512" cy="512" r="400" stroke="#00F5FF" stroke-opacity="0.05" stroke-width="20"/>
   </g>
 
-  <!-- Inner precision nodes -->
-  <circle cx="256" cy="146" r="4" fill="#E2E8F0" />
-  <circle cx="256" cy="386" r="4" fill="#E2E8F0" />
-  <circle cx="176" cy="146" r="3" fill="#38BDF8" />
-  <circle cx="336" cy="146" r="3" fill="#38BDF8" />
+  <!-- 6 Orbital Nodes (Agents) -->
+  <g fill="#00C2FF" filter="url(#glow-cyan)">
+    <!-- Node 1 (Orchestrator) -->
+    <circle cx="512" cy="132" r="8" />
+    <path d="M512 140 L512 232" stroke="#00F5FF" stroke-opacity="0.3" stroke-width="2" />
+    
+    <!-- Node 2 (Planner) -->
+    <circle cx="841" cy="322" r="6" />
+    <path d="M836 325 L756 371" stroke="#00F5FF" stroke-opacity="0.3" stroke-width="1" />
+    
+    <!-- Node 3 (Debugger) -->
+    <circle cx="841" cy="702" r="6" />
+    <path d="M836 699 L756 653" stroke="#00F5FF" stroke-opacity="0.3" stroke-width="1" />
+    
+    <!-- Node 4 (Implementer) -->
+    <circle cx="512" cy="892" r="8" />
+    <path d="M512 884 L512 792" stroke="#00F5FF" stroke-opacity="0.3" stroke-width="2" />
+    
+    <!-- Node 5 (Reviewer) -->
+    <circle cx="183" cy="702" r="6" />
+    <path d="M188 699 L268 653" stroke="#00F5FF" stroke-opacity="0.3" stroke-width="1" />
+    
+    <!-- Node 6 (Verifier) -->
+    <circle cx="183" cy="322" r="6" />
+    <path d="M188 325 L268 371" stroke="#00F5FF" stroke-opacity="0.3" stroke-width="1" />
+  </g>
+
+  <!-- Monolith Sigil (T / Arch) -->
+  <g transform="translate(512, 512)">
+    <!-- Ambient Base Shadow -->
+    <path d="M-120 -150 L120 -150 L180 -90 L180 180 L80 180 L80 0 L-80 0 L-80 180 L-180 180 L-180 -90 Z" fill="#000000" opacity="0.6" filter="url(#glow-heavy)"/>
+    
+    <!-- Stabilizers (Left/Right Trident Wings) -->
+    <!-- Left Wing -->
+    <path d="M-150 -60 L-120 -90 L-80 -90 L-80 150 L-120 180 L-150 180 Z" fill="url(#metal-grad)" />
+    <!-- Right Wing -->
+    <path d="M150 -60 L120 -90 L80 -90 L80 150 L120 180 L150 180 Z" fill="url(#metal-grad)" />
+    
+    <!-- T Core Plate -->
+    <path d="M-100 -120 L100 -120 L140 -80 L60 -80 L60 20 L40 40 L-40 40 L-60 20 L-60 -80 L-140 -80 Z" fill="#0A1E3F" stroke="url(#cyan-grad)" stroke-width="4"/>
+    
+    <!-- Fissure Core -->
+    <path d="M-10 -90 L10 -90 L10 10 L-10 10 Z" fill="#00F5FF" filter="url(#glow-heavy)" />
+    
+    <!-- Top Geometric Cap -->
+    <path d="M-80 -140 L80 -140 L110 -110 L-110 -110 Z" fill="url(#cyan-grad)" opacity="0.8" />
+  </g>
 </svg>

@@ -20,7 +20,7 @@ def render_svg_to_png(svg_path, png_path, width, height):
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.abspath(__file__))
     
-    render_svg_to_png(os.path.join(base_dir, "thalarch-icon.svg"), os.path.join(base_dir, "thalarch-icon.png"), 512, 512)
-    render_svg_to_png(os.path.join(base_dir, "thalarch-logo.svg"), os.path.join(base_dir, "thalarch-logo.png"), 1000, 250)
-    render_svg_to_png(os.path.join(base_dir, "thalarch-banner.svg"), os.path.join(base_dir, "thalarch-banner.png"), 1280, 420)
+    render_svg_to_png(os.path.join(base_dir, "thalarch-icon.svg"), os.path.join(base_dir, "thalarch-icon.png"), 1024, 1024)
+    render_svg_to_png(os.path.join(base_dir, "thalarch-logo.svg"), os.path.join(base_dir, "thalarch-logo.png"), 1200, 320)
+    render_svg_to_png(os.path.join(base_dir, "thalarch-banner.svg"), os.path.join(base_dir, "thalarch-banner.png"), 1280, 440)
     print("Done!")
