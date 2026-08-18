@@ -2,19 +2,59 @@
 """Read-only project snapshot for Thalarch Mode."""
 
 from __future__ import annotations
+
 import argparse
 import json
+import os
 import subprocess
+from collections import Counter
 from pathlib import Path
 
 BUILD_MARKERS = [
     "settings.gradle", "settings.gradle.kts", "build.gradle", "build.gradle.kts",
-    "gradlew", "gradlew.bat", "package.json", "pnpm-lock.yaml", "yarn.lock",
-    "pyproject.toml", "requirements.txt", "Cargo.toml", "go.mod", "pom.xml",
+    "gradlew", "gradlew.bat", "pom.xml", "mvnw", "mvnw.cmd",
+    "package.json", "pnpm-lock.yaml", "yarn.lock", "package-lock.json", "bun.lockb",
+    "pyproject.toml", "requirements.txt", "poetry.lock", "uv.lock", "Pipfile",
+    "Cargo.toml", "rust-toolchain", "rust-toolchain.toml", "go.mod", "go.work",
     "Makefile", "CMakeLists.txt",
 ]
 
 RULE_FILES = ["AGENTS.md", "GEMINI.md", "CLAUDE.md", "CONTRIBUTING.md", "README.md"]
+
+LANGUAGE_EXTENSIONS = {
+    ".java": "java",
+    ".kt": "kotlin",
+    ".kts": "kotlin",
+    ".py": "python",
+    ".pyi": "python",
+    ".ts": "typescript",
+    ".tsx": "typescript",
+    ".js": "javascript",
+    ".jsx": "javascript",
+    ".mjs": "javascript",
+    ".cjs": "javascript",
+    ".go": "go",
+    ".rs": "rust",
+    ".c": "c",
+    ".h": "c-cpp",
+    ".cc": "c-cpp",
+    ".cpp": "c-cpp",
+    ".cxx": "c-cpp",
+    ".hpp": "c-cpp",
+    ".cs": "csharp",
+    ".swift": "swift",
+    ".dart": "dart",
+    ".rb": "ruby",
+    ".php": "php",
+    ".scala": "scala",
+    ".sql": "sql",
+}
+
+SKIP_DIRS = {
+    ".git", ".gradle", ".idea", ".vscode", "node_modules", "vendor", "dist", "build",
+    "out", "target", ".venv", "venv", "__pycache__", ".next", ".nuxt", "coverage",
+}
+
 
 def cmd(cwd: Path, *args: str) -> dict:
     try:
@@ -30,6 +70,32 @@ def cmd(cwd: Path, *args: str) -> dict:
         }
     except Exception as exc:
         return {"command": " ".join(args), "error": str(exc)}
+
+
+def language_snapshot(root: Path, max_files: int = 20000) -> dict:
+    counts: Counter[str] = Counter()
+    scanned = 0
+    truncated = False
+
+    for current, dirs, files in os.walk(root):
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+        for name in files:
+            scanned += 1
+            if scanned > max_files:
+                truncated = True
+                break
+            language = LANGUAGE_EXTENSIONS.get(Path(name).suffix.lower())
+            if language:
+                counts[language] += 1
+        if truncated:
+            break
+
+    return {
+        "source_file_counts": dict(counts.most_common()),
+        "files_scanned": min(scanned, max_files),
+        "scan_truncated": truncated,
+    }
+
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Print a read-only project snapshot.")
@@ -49,6 +115,7 @@ def main() -> int:
             str(p.relative_to(root))
             for p in (root / ".agents" / "rules").glob("*.md")
         ) if (root / ".agents" / "rules").exists() else [],
+        "languages": language_snapshot(root),
     }
 
     if (root / ".git").exists() or cmd(root, "git", "rev-parse", "--is-inside-work-tree").get("exit") == 0:
@@ -68,6 +135,13 @@ def main() -> int:
         print(f"Workspace: {snapshot['workspace']}")
         print("Rules:", ", ".join(snapshot["rules_present"] + snapshot["workspace_rules"]) or "none detected")
         print("Build markers:", ", ".join(snapshot["build_markers"]) or "none detected")
+        language_counts = snapshot["languages"]["source_file_counts"]
+        print(
+            "Languages:",
+            ", ".join(f"{name}={count}" for name, count in language_counts.items()) or "none detected",
+        )
+        if snapshot["languages"]["scan_truncated"]:
+            print("Language scan: truncated at 20000 files")
         git = snapshot["git"]
         if git.get("detected") is False:
             print("Git: not detected")
@@ -80,6 +154,7 @@ def main() -> int:
             print("Recent commits:")
             print(git["recent_commits"].get("stdout") or "(none)")
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
