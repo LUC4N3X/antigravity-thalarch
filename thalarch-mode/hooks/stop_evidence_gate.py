@@ -1,30 +1,16 @@
 #!/usr/bin/env python3
-"""Stop hook that prevents an orchestrated mutation from ending without cold evidence.
+"""Prevent orchestrated mutation from ending without independent evidence.
 
-The gate reads Antigravity's transcript JSONL and reasons only over actual tool
-calls recorded in PLANNER_RESPONSE.tool_calls. It does not infer that a tool ran
-from prose. If required specialist tools are unavailable, the agent may exit only
-by explicitly reporting the affected claim as UNVERIFIED instead of fabricating
-completion.
+Primary evidence comes from the hook event ledger written by PreToolUse/PostToolUse.
+Transcript parsing is retained only as a backward-compatible fallback for a
+conversation that began before the event recorder was installed.
 """
 from __future__ import annotations
 
+import json
 from typing import Any
 
-from hook_utils import args_text, emit, latest_model_content, load_state, read_payload, save_state, tool_calls
-
-MUTATING_TOOLS = {
-    "write_to_file",
-    "write_file",
-    "edit_file",
-    "replace_file_content",
-    "multi_replace_file_content",
-    "str_replace",
-    "apply_patch",
-    "create_file",
-    "delete_file",
-    "generate_image",
-}
+from hook_utils import emit, latest_model_content, load_state, read_payload, save_state, tool_calls
 
 MUTATOR_AGENTS = {
     "thalarch-implementer",
@@ -39,16 +25,51 @@ MUTATOR_AGENTS = {
 }
 
 
-def invoked_agent(args: dict[str, Any], agent_name: str) -> bool:
-    return agent_name in args_text(args)
-
-
 def unavailable_but_honest(content: str) -> bool:
     lowered = content.lower()
     return (
         "unverified" in lowered
-        and any(token in lowered for token in ("unavailable", "could not invoke", "cannot invoke", "not available", "unable to invoke"))
+        and any(
+            token in lowered
+            for token in (
+                "unavailable",
+                "could not invoke",
+                "cannot invoke",
+                "not available",
+                "unable to invoke",
+            )
+        )
     )
+
+
+def recorded_calls(payload: dict[str, Any]) -> list[tuple[int, str, str]]:
+    state = load_state(payload, "evidence-events")
+    raw_events = state.get("events") if isinstance(state.get("events"), list) else []
+    result: list[tuple[int, str, str]] = []
+    for fallback, event in enumerate(raw_events):
+        if not isinstance(event, dict) or event.get("status") != "completed":
+            continue
+        try:
+            order = int(event.get("step", fallback))
+        except Exception:
+            order = fallback
+        name = str(event.get("name") or "")
+        text = str(event.get("argsText") or "").lower()
+        if name:
+            result.append((order, name, text))
+    result.sort(key=lambda item: item[0])
+    return result
+
+
+def transcript_fallback_calls(payload: dict[str, Any]) -> list[tuple[int, str, str]]:
+    result: list[tuple[int, str, str]] = []
+    for order, name, args in tool_calls(payload):
+        try:
+            text = json.dumps(args, ensure_ascii=False, sort_keys=True).lower()
+        except Exception:
+            text = str(args).lower()
+        result.append((order, name, text))
+    return result
 
 
 def main() -> None:
@@ -58,11 +79,20 @@ def main() -> None:
         return
 
     reason = str(payload.get("terminationReason") or "").lower()
-    if reason in {"error", "max_steps_exceeded", "cancelled", "canceled", "user_cancelled", "user_canceled"}:
+    if reason in {
+        "error",
+        "max_steps_exceeded",
+        "cancelled",
+        "canceled",
+        "user_cancelled",
+        "user_canceled",
+    }:
         emit({"decision": "stop"})
         return
 
-    calls = tool_calls(payload)
+    calls = recorded_calls(payload)
+    if not calls:
+        calls = transcript_fallback_calls(payload)
     if not calls:
         emit({"decision": "stop"})
         return
@@ -76,36 +106,29 @@ def main() -> None:
     design_review_orders: list[int] = []
     orchestrated_mutation = False
 
-    for order, name, args in calls:
+    for order, name, text in calls:
         lowered_name = name.lower()
-        text = args_text(args)
+        if lowered_name != "invoke_subagent":
+            continue
 
-        if lowered_name in MUTATING_TOOLS:
+        if any(agent in text for agent in MUTATOR_AGENTS):
+            orchestrated_mutation = True
             mutation_orders.append(order)
-            if lowered_name == "generate_image":
-                visual_orders.append(order)
+        if "thalarch-visual-director" in text:
+            visual_orders.append(order)
+        if "thalarch-web-designer" in text:
+            web_orders.append(order)
+        if "thalarch-fact-checker" in text:
+            fact_orders.append(order)
+        if "thalarch-verifier" in text:
+            verifier_orders.append(order)
+        if "thalarch-vision-reviewer" in text:
+            vision_review_orders.append(order)
+        if "thalarch-design-reviewer" in text:
+            design_review_orders.append(order)
 
-        if lowered_name == "invoke_subagent":
-            for agent in MUTATOR_AGENTS:
-                if agent in text:
-                    orchestrated_mutation = True
-                    mutation_orders.append(order)
-            if "thalarch-visual-director" in text:
-                visual_orders.append(order)
-            if "thalarch-web-designer" in text:
-                web_orders.append(order)
-            if "thalarch-fact-checker" in text:
-                fact_orders.append(order)
-            if "thalarch-verifier" in text:
-                verifier_orders.append(order)
-            if "thalarch-vision-reviewer" in text:
-                vision_review_orders.append(order)
-            if "thalarch-design-reviewer" in text:
-                design_review_orders.append(order)
-
-    # This hard completion protocol is intentionally enforced at the orchestrator
-    # boundary. Specialist subagents are allowed to return evidence to the parent;
-    # otherwise each implementer would deadlock waiting for a verifier it cannot own.
+    # Enforce the hard completion protocol only at the parent/orchestrator boundary.
+    # Direct implementation subagents must be able to return evidence to their parent.
     if not orchestrated_mutation:
         emit({"decision": "stop"})
         return
@@ -125,8 +148,7 @@ def main() -> None:
     if web_orders and last_design <= max(web_orders):
         missing.append("independent design review after the final web-design implementation")
 
-    quality_gate_orders = [last_mutation, last_fact, last_vision, last_design]
-    required_before_verifier = max(quality_gate_orders)
+    required_before_verifier = max(last_mutation, last_fact, last_vision, last_design)
     last_verifier = max(verifier_orders) if verifier_orders else -1
     if last_verifier <= required_before_verifier:
         missing.append("cold verifier after all applicable fact/design/vision checks")
@@ -138,7 +160,7 @@ def main() -> None:
 
     latest = latest_model_content(payload)
     if unavailable_but_honest(latest):
-        # Honesty beats a fabricated PASS. The final answer must retain UNVERIFIED.
+        # Honest incompleteness is permitted; fabricated completion is not.
         emit({"decision": "stop"})
         return
 
@@ -151,18 +173,18 @@ def main() -> None:
     escalation = ""
     if attempts >= 3:
         escalation = (
-            " If a required Thalarch specialist is genuinely unavailable, stop trying to fake the "
-            "gate: state which proof could not be obtained and keep that acceptance claim explicitly "
-            "UNVERIFIED in the final response."
+            " If a required Thalarch specialist is genuinely unavailable, stop trying to satisfy "
+            "the gate with prose: report exactly which proof could not be obtained and preserve "
+            "that acceptance claim as UNVERIFIED."
         )
 
     emit({
         "decision": "continue",
         "reason": (
-            "THALARCH HARD EVIDENCE GATE: completion is blocked because the final mutation is not "
-            f"followed by the required independent evidence: {missing_text}. Do not claim DONE, "
-            "PASS, fixed, visually correct, pushed/published, or regression-free yet. Run the missing "
-            "independent checks using current evidence, then cold-verify the acceptance criteria."
+            "THALARCH HARD EVIDENCE GATE: completion is blocked because the final implementation "
+            f"mutation is not followed by the required independent evidence: {missing_text}. "
+            "Do not claim DONE, PASS, fixed, visually correct, pushed/published, or regression-free. "
+            "Run the missing independent checks from current evidence, then cold-verify acceptance."
             + escalation
         ),
     })
