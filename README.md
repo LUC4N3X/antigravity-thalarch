@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/branding/thalarch-logo.png" alt="Thalarch Logo" width="600" />
+![Thalarch Banner](assets/branding/thalarch-banner.png)
 
 <br/>
 

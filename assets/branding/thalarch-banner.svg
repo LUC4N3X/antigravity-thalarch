@@ -1,26 +1,61 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 440" width="1280" height="440">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 340" width="1200" height="340">
   <defs>
-    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-      <stop offset="0%" stop-color="#1E293B" stop-opacity="0.5"/>
-      <stop offset="100%" stop-color="#0D1117" stop-opacity="1"/>
-    </radialGradient>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#060911"/>
+      <stop offset="50%" stop-color="#0C1222"/>
+      <stop offset="100%" stop-color="#080D1A"/>
+    </linearGradient>
+
+    <!-- Grid Pattern -->
+    <pattern id="dotGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="1" fill="#FFFFFF" opacity="0.05"/>
+    </pattern>
+
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F0FF" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0284C7" stop-opacity="0.3"/>
+    </linearGradient>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
-  <rect width="1280" height="440" fill="url(#bgGrad)"/>
-  
-  <!-- Logo group centered -->
-  <g transform="translate(640, 190)">
-    <!-- T-mark -->
-    <g transform="translate(0, -60) scale(1.4)">
-      <path d="M -70 -50 L 70 -50 L 70 -20 L -70 -20 Z" fill="#FFFFFF"/>
-      <path d="M -15 -20 L 15 -20 L 15 60 L 0 75 L -15 60 Z" fill="#E2E8F0"/>
-      <path d="M -25 -65 L 25 -65 L 0 -20 Z" fill="#0D1117"/>
-      <path d="M -18 -55 L 18 -55 L 0 -25 Z" fill="#00F0FF"/>
+
+  <!-- Background -->
+  <rect width="1200" height="340" fill="url(#bgGrad)"/>
+  <rect width="1200" height="340" fill="url(#dotGrid)"/>
+
+  <!-- Geometric Emblem (Left) -->
+  <g transform="translate(260, 170) scale(1.6)">
+    <!-- Glow behind -->
+    <path d="M -50 -35 L 50 -35 L 50 -10 L -50 -10 Z" fill="url(#glowGrad)" filter="url(#glow)" opacity="0.5"/>
+    <path d="M -15 -10 L 15 -10 L 15 50 L -15 50 Z" fill="url(#glowGrad)" filter="url(#glow)" opacity="0.5"/>
+    
+    <!-- White Top -->
+    <path d="M -50 -35 L 50 -35 L 50 -10 L -50 -10 Z" fill="#FFFFFF"/>
+    <!-- Cyan Middle / Core -->
+    <path d="M -20 -10 L 20 -10 L 20 50 L -20 50 Z" fill="#00F0FF"/>
+    <path d="M -10 -10 L 10 -10 L 10 50 L -10 50 Z" fill="#0284C7"/>
+    <!-- Accents -->
+    <path d="M -50 -40 L -40 -40 L -40 -35 L -50 -35 Z" fill="#00F0FF"/>
+    <path d="M 40 -40 L 50 -40 L 50 -35 L 40 -35 Z" fill="#00F0FF"/>
+  </g>
+
+  <!-- Typography (Right) -->
+  <g transform="translate(480, 150)">
+    <!-- Skill Badge -->
+    <g transform="translate(0, -65)">
+      <rect x="0" y="0" width="310" height="26" rx="13" fill="#0D1A2A" stroke="#00F0FF" stroke-width="1" opacity="0.8"/>
+      <circle cx="13" cy="13" r="4" fill="#00F0FF" filter="url(#glow)"/>
+      <text x="26" y="17.5" fill="#00F0FF" font-family="Inter, -apple-system, sans-serif" font-size="11" font-weight="600" letter-spacing="0.1em">SKILL: thalarch-mode • GOOGLE ANTIGRAVITY</text>
     </g>
-    
-    <!-- THALARCH Typography -->
-    <text x="0" y="80" fill="#FFFFFF" font-family="Inter, -apple-system, sans-serif" font-size="72" font-weight="700" letter-spacing="0.3em" text-anchor="middle">THALARCH</text>
-    
-    <!-- Tagline -->
-    <text x="0" y="140" fill="#00F0FF" font-family="Inter, -apple-system, sans-serif" font-size="18" font-weight="500" letter-spacing="0.2em" text-anchor="middle">MULTI-AGENT PROTOCOL FOR GOOGLE ANTIGRAVITY</text>
+
+    <text x="0" y="30" fill="#FFFFFF" font-family="Inter, -apple-system, sans-serif" font-size="76" font-weight="800" letter-spacing="0.25em">THALARCH</text>
+    <text x="0" y="75" fill="#E2E8F0" font-family="Inter, -apple-system, sans-serif" font-size="13" font-weight="500" letter-spacing="0.3em" opacity="0.8">HIGH-RIGOR MULTI-AGENT ENGINEERING PROTOCOL</text>
   </g>
 </svg>

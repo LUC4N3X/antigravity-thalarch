@@ -1,12 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="510" height="510" x="1" y="1" rx="128" fill="#0B0F17" stroke="#1E293B" stroke-width="2"/>
-  <g transform="translate(256, 256)">
-    <!-- Horizontal Crossbar -->
-    <path d="M -110 -80 L 110 -80 L 110 -40 L -110 -40 Z" fill="#FFFFFF"/>
-    <!-- Vertical Pillar -->
-    <path d="M -20 -40 L 20 -40 L 20 90 L 0 110 L -20 90 Z" fill="#E2E8F0"/>
-    <!-- Accent intersecting cut -->
-    <path d="M -40 -100 L 40 -100 L 0 -40 Z" fill="#0B0F17"/>
-    <path d="M -30 -90 L 30 -90 L 0 -45 Z" fill="#00F0FF"/>
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#060911"/>
+      <stop offset="50%" stop-color="#0C1222"/>
+      <stop offset="100%" stop-color="#080D1A"/>
+    </linearGradient>
+
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F0FF" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0284C7" stop-opacity="0.3"/>
+    </linearGradient>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background squircle -->
+  <rect width="512" height="512" rx="120" fill="url(#bgGrad)"/>
+  
+  <g transform="translate(256, 256) scale(2.8)">
+    <!-- Glow behind -->
+    <path d="M -50 -35 L 50 -35 L 50 -10 L -50 -10 Z" fill="url(#glowGrad)" filter="url(#glow)" opacity="0.5"/>
+    <path d="M -15 -10 L 15 -10 L 15 50 L -15 50 Z" fill="url(#glowGrad)" filter="url(#glow)" opacity="0.5"/>
+    
+    <!-- White Top -->
+    <path d="M -50 -35 L 50 -35 L 50 -10 L -50 -10 Z" fill="#FFFFFF"/>
+    <!-- Cyan Middle / Core -->
+    <path d="M -20 -10 L 20 -10 L 20 50 L -20 50 Z" fill="#00F0FF"/>
+    <path d="M -10 -10 L 10 -10 L 10 50 L -10 50 Z" fill="#0284C7"/>
+    <!-- Accents -->
+    <path d="M -50 -40 L -40 -40 L -40 -35 L -50 -35 Z" fill="#00F0FF"/>
+    <path d="M 40 -40 L 50 -40 L 50 -35 L 40 -35 Z" fill="#00F0FF"/>
   </g>
 </svg>

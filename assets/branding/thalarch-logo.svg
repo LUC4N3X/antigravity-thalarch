@@ -1,15 +1,48 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320">
-  <!-- Minimalist T-mark (scaled down) -->
-  <g transform="translate(180, 160) scale(1.2)">
-    <path d="M -70 -50 L 70 -50 L 70 -20 L -70 -20 Z" fill="#FFFFFF"/>
-    <path d="M -15 -20 L 15 -20 L 15 60 L 0 75 L -15 60 Z" fill="#E2E8F0"/>
-    <path d="M -25 -65 L 25 -65 L 0 -20 Z" fill="#0B0F17"/>
-    <path d="M -18 -55 L 18 -55 L 0 -25 Z" fill="#00F0FF"/>
+  <defs>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F0FF" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0284C7" stop-opacity="0.3"/>
+    </linearGradient>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Transparent or Dark Card (Use transparent) -->
+  <rect width="1200" height="320" fill="transparent"/>
+
+  <!-- Geometric Emblem (Left) -->
+  <g transform="translate(260, 160) scale(1.6)">
+    <!-- Glow behind -->
+    <path d="M -50 -35 L 50 -35 L 50 -10 L -50 -10 Z" fill="url(#glowGrad)" filter="url(#glow)" opacity="0.5"/>
+    <path d="M -15 -10 L 15 -10 L 15 50 L -15 50 Z" fill="url(#glowGrad)" filter="url(#glow)" opacity="0.5"/>
+    
+    <!-- White Top -->
+    <path d="M -50 -35 L 50 -35 L 50 -10 L -50 -10 Z" fill="#FFFFFF"/>
+    <!-- Cyan Middle / Core -->
+    <path d="M -20 -10 L 20 -10 L 20 50 L -20 50 Z" fill="#00F0FF"/>
+    <path d="M -10 -10 L 10 -10 L 10 50 L -10 50 Z" fill="#0284C7"/>
+    <!-- Accents -->
+    <path d="M -50 -40 L -40 -40 L -40 -35 L -50 -35 Z" fill="#00F0FF"/>
+    <path d="M 40 -40 L 50 -40 L 50 -35 L 40 -35 Z" fill="#00F0FF"/>
   </g>
-  
-  <!-- THALARCH Typography -->
-  <text x="340" y="170" fill="#FFFFFF" font-family="Inter, -apple-system, sans-serif" font-size="84" font-weight="700" letter-spacing="0.25em">THALARCH</text>
-  
-  <!-- Tagline -->
-  <text x="350" y="220" fill="#94A3B8" font-family="Inter, -apple-system, sans-serif" font-size="20" font-weight="500" letter-spacing="0.1em">MULTI-AGENT PROTOCOL FOR GOOGLE ANTIGRAVITY</text>
+
+  <!-- Typography (Right) -->
+  <g transform="translate(480, 140)">
+    <!-- Skill Badge -->
+    <g transform="translate(0, -65)">
+      <rect x="0" y="0" width="310" height="26" rx="13" fill="#0D1A2A" stroke="#00F0FF" stroke-width="1" opacity="0.8"/>
+      <circle cx="13" cy="13" r="4" fill="#00F0FF" filter="url(#glow)"/>
+      <text x="26" y="17.5" fill="#00F0FF" font-family="Inter, -apple-system, sans-serif" font-size="11" font-weight="600" letter-spacing="0.1em">SKILL: thalarch-mode • GOOGLE ANTIGRAVITY</text>
+    </g>
+
+    <text x="0" y="30" fill="#FFFFFF" font-family="Inter, -apple-system, sans-serif" font-size="76" font-weight="800" letter-spacing="0.25em">THALARCH</text>
+    <text x="0" y="75" fill="#E2E8F0" font-family="Inter, -apple-system, sans-serif" font-size="13" font-weight="500" letter-spacing="0.3em" opacity="0.8">HIGH-RIGOR MULTI-AGENT ENGINEERING PROTOCOL</text>
+  </g>
 </svg>
