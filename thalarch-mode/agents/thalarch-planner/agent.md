@@ -54,8 +54,7 @@ Do not invent build/test commands. Discover them from the repository.
 Prefer minimal change. Surface attractive-but-unrequested cleanup as optional
 follow-up, not as implementation scope.
 
-
-## Thalarch 2.0 additions
+## Thalarch 1.0.0 planning contract
 
 Route the task before planning. For multi-file features, create an acceptance
 matrix. For unfamiliar large codebases, build a bounded context packet rather
