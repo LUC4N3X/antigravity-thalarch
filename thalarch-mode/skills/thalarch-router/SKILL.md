@@ -1,31 +1,35 @@
 ---
 name: thalarch-router
 description: >
-  Chooses the smallest compatible process, language, and domain skill stack for a software or
-  visual task. Use before complex work, when multiple skills could apply, or when the agent must
-  distinguish bug, feature, architecture, refactor, performance, API/data, Java, Kotlin, Python,
-  TypeScript, Go, Rust, UI/image, Android, security, CI, Git, and review workflows.
+  Chooses the smallest compatible process, language, domain, and installed-skill stack for a
+  software or visual task. Use before complex work and after project discovery. Combines
+  autonomous skill intelligence with task, stack, risk, and evidence routing instead of requiring
+  the user to manually name the best skills.
 ---
 
 # Thalarch Router
 
-Classify before loading heavy instructions.
+Use `thalarch-skill-intelligence` before loading heavy instructions.
 
 ## Decision
 
-1. Identify the task's primary goal/failure type.
-2. Detect the project language/runtime/toolchain from repository evidence.
-3. Estimate risk: low / medium / high.
-4. Identify evidence needed for completion.
-5. Select the smallest process + language + domain stack that covers the task.
-6. Prefer process skills before domain/language execution skills.
-7. Prefer official current platform skills when installed and relevant.
-8. Do not load unrelated skills “just in case”.
-9. For image inputs/outputs, classify inspect/generate/edit/vector/capture/compare/annotate/optimize.
+1. Inspect the skill inventory exposed by the current Antigravity session.
+2. Shortlist skills by description without opening every full `SKILL.md`.
+3. Identify the task's primary goal/failure type.
+4. Detect the actual language/runtime/toolchain/framework from repository evidence.
+5. Estimate risk: low / medium / high.
+6. Identify evidence needed for completion.
+7. Select the smallest compatible process + language + domain + platform stack.
+8. Prefer project-local and current official platform skills when they are more specific than a
+   generic Thalarch or community skill.
+9. Remove redundant or conflicting skills instead of stacking everything.
+10. Re-run skill selection after preflight when new stack/version/root-cause evidence could change
+    the best route.
+11. For image inputs/outputs, classify inspect/generate/edit/vector/capture/compare/annotate/optimize.
 
 ## Core process routing
 
-- small safe edit → `thalarch-code-craft` + lightweight `thalarch-review`;
+- small safe edit → `thalarch-code-craft` + lightweight review;
 - bug/regression → `thalarch-debug` + language overlay + `thalarch-test` + review;
 - feature → `thalarch-spec` + language overlay + `thalarch-test` + review;
 - architecture → `thalarch-spec` + `thalarch-codebase-intel` + relevant domain/language + deep review;
@@ -38,7 +42,9 @@ Classify before loading heavy instructions.
 - CI → `thalarch-ci` + language/toolchain overlay + security when relevant;
 - Git/publication → `thalarch-git` + review + remote-state verification.
 
-`thalarch-code-craft` is the default universal coding overlay for meaningful code mutation/review.
+`thalarch-code-craft` is the default universal coding overlay for meaningful mutation/review unless
+a stronger project-specific coding skill already covers the same concern without losing Thalarch's
+verification invariants.
 
 ## Language detection and routing
 
@@ -51,22 +57,35 @@ Use source files plus build manifests. Do not infer from repository name alone.
 - Go (`.go`, `go.mod`) → `thalarch-go` / `thalarch-go-engineer`;
 - Rust (`.rs`, `Cargo.toml`) → `thalarch-rust` / `thalarch-rust-engineer`.
 
-For mixed-language changes, choose the minimum set that covers the changed boundary. Use separate
-specialists when two languages have independent implementation surfaces; use an explicit
-integration stage for their shared contract.
+If an installed project-local or official language/framework skill is more specific, use it with or
+instead of the generic language overlay as judged by `thalarch-skill-intelligence`.
 
-If no dedicated language skill exists, apply `thalarch-code-craft`, project-native conventions,
-and primary documentation for version-sensitive APIs.
+For mixed-language changes, choose the minimum set that covers the changed boundary. Use separate
+specialists for independent implementation surfaces and an explicit integration stage for the
+shared contract.
+
+If no dedicated language skill exists, use `thalarch-code-craft`, project-native conventions, and
+current primary documentation for version-sensitive APIs.
+
+## Platform routing
+
+When installed and relevant, automatically consider official Antigravity/Google platform skills
+such as Android, Chrome/Browser, Firebase, Modern Web, or SDK-specific bundles. Do not require the
+user to remember their names.
+
+Platform skills supply current platform expertise; Thalarch supplies scope, causal debugging,
+review, evidence, and cold verification.
 
 ## Android routing
 
-Kotlin/Java Android work normally combines the language overlay with `thalarch-android`.
-Compose/UI work additionally uses `thalarch-ui` and runtime/device evidence as required.
+Kotlin/Java Android work normally combines the language layer with the strongest installed Android
+skills that match the task. Compose/UI work additionally uses UI/design and runtime/device evidence
+as required.
 
 ## Web / visual routing
 
-- full website → `thalarch-design-system` + `thalarch-web-design` + language/frontend overlay + `thalarch-browser-qa` + design review;
-- UI redesign → `thalarch-spec` + `thalarch-ui` + language overlay + browser/device QA + visual review;
+- full website → design system + web design + best installed frontend/platform skill + language overlay + browser QA + design review;
+- UI redesign → spec + UI/design + best installed framework skill + browser/device QA + visual review;
 - new raster image → `thalarch-image` + `thalarch-imagegen` + `thalarch-visual-qa`;
 - precise image edit → `thalarch-image` + `thalarch-imagegen` + `thalarch-visual-qa`;
 - inspect/compare image → `thalarch-image` + `thalarch-visual-qa`;
@@ -75,32 +94,20 @@ Compose/UI work additionally uses `thalarch-ui` and runtime/device evidence as r
 
 ## Risk signals
 
-Raise risk for:
-
-- auth/security/privacy;
-- concurrency/shared mutable state;
-- persistence/schema migration;
-- networking/protocol parsing;
-- public API/ABI/wire-format compatibility;
-- build/release/signing/toolchain;
-- broad refactor;
-- user data;
-- runtime behavior difficult to reproduce;
-- cross-language or cross-service interfaces;
-- unsafe/FFI/native code;
-- performance hot paths with weak measurement;
-- exact visual identity/brand preservation;
-- “change only X” image edits;
-- production assets with exact text/transparency/dimensions.
+Raise risk for auth/security/privacy, shared concurrency, persistence/schema migration,
+network/protocol parsing, public API/ABI/wire compatibility, build/release/signing/toolchain,
+broad refactor, user data, hard-to-reproduce runtime behavior, cross-language/service interfaces,
+unsafe/FFI/native code, unmeasured hot paths, exact brand preservation, “change only X” image edits,
+and production assets with exact text/transparency/dimensions.
 
 ## Output
 
 Return a compact routing decision:
 
 `Mode: <...>`
-`Languages: <detected from evidence>`
+`Languages/stack: <detected evidence>`
 `Risk: <...>`
 `Skills: <ordered minimal stack>`
 `Agents: <only specialists actually needed>`
 `Evidence required: <...>`
-`Why not other skills: <only meaningful exclusions>`
+`Deferred/rejected: <only close alternatives when useful>`
