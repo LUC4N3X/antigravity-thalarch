@@ -1,5 +1,49 @@
 # Changelog
 
+## 2.2.0 — 2026-08-18
+
+Thalarch 2.2 adds project-aware polyglot engineering. The orchestrator now detects the real
+language/toolchain and can delegate substantial implementation work to isolated language
+specialists instead of applying one generic coding prompt to every stack.
+
+### Added
+
+- `thalarch-code-craft` universal coding guard against API hallucination, speculative
+  abstraction, dependency bloat, error swallowing, fake-success paths, scope creep, and
+  repository-style drift;
+- dedicated project-aware skills for Java, Kotlin, Python, TypeScript/JavaScript, Go, and Rust;
+- dedicated implementation agents for those six language families;
+- `thalarch-refactor` for behavior-preserving refactors with baseline/characterization proof;
+- `thalarch-performance` for measurement/profile-first optimization;
+- `thalarch-api` for compatibility, errors, idempotency, retries, pagination, and distributed
+  boundary semantics;
+- `thalarch-data-sql` for ORM/query correctness, transactions, migrations, query plans, and
+  data-safe rollout;
+- `thalarch-dependency` for dependency/framework/toolchain changes with version/API verification;
+- project-probe language detection across common source extensions while skipping generated,
+  dependency, cache, and build directories;
+- structural validator checks for all six language specialists.
+
+### Changed
+
+- router now selects process + language + domain overlays from repository evidence;
+- orchestrator routes Java/Kotlin/Python/TypeScript/Go/Rust changes to dedicated clean-context
+  specialists and uses an explicit integration stage for mixed-language contracts;
+- `thalarch-test` now includes boundary matrices, property/metamorphic testing, fuzz-style
+  regression discovery, concurrency test discipline, and mock-vs-integration proof boundaries;
+- core coding protocol now requires version-sensitive external APIs to be confirmed rather than
+  generated from memory;
+- code-quality guidance is adaptive to repository conventions rather than imposing universal
+  numeric function-size/argument-count rules;
+- README documents the full polyglot, API/data, performance, and refactoring model.
+
+### Design heritage
+
+The polyglot update synthesizes public agentic-development patterns found in the
+`agentic-awesome-skills` collection — including `super-code`, Java/Python specialist guidance,
+Kotlin coroutine guidance, clean-code agent guardrails, and structured code review — into an
+original project-aware Antigravity workflow.
+
 ## 2.1.0 — 2026-08-18
 
 Thalarch 2.1 adds a full creative-engineering path for production websites,
