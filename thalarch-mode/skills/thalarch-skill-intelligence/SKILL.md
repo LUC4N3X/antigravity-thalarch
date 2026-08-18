@@ -32,6 +32,10 @@ exists.
 Do not read every installed `SKILL.md` just because it is available. Discovery metadata exists to
 avoid context pollution.
 
+When the inventory contains candidate skills from known high-value ecosystems, consult
+`references/known-high-value-sources.md` only as a tie-breaking/source-quality aid. It is not a
+reason to activate a skill that does not fit the task.
+
 ## 2. Re-route after evidence
 
 Initial routing is provisional.
@@ -41,11 +45,12 @@ mechanism, repeat the selection pass when that evidence could change the best sk
 
 Examples:
 
-- generic Kotlin becomes Kotlin + Android + an official Android testing skill after Gradle/manifest
-  evidence confirms an Android app;
-- generic frontend becomes TypeScript + project-local React guidance + Browser/Chrome tooling after
-  the package graph is known;
-- generic Python becomes Python + FastAPI/API/data skills only after those dependencies are proven;
+- generic Kotlin becomes Kotlin + a precise JetBrains/official Android/Kotlin skill after build and
+  import evidence proves its exact scope;
+- generic Java becomes Java + concurrency/JPA/Maven specialization only when those surfaces exist;
+- generic frontend becomes framework-specific + Browser/Chrome + design skill after the package
+  graph and visual brief are known;
+- generic Python becomes Python + API/data/framework skills only after those dependencies are proven;
 - a suspected performance issue may drop the performance skill if root-cause evidence shows the
   problem is actually correctness/configuration.
 
@@ -66,6 +71,11 @@ Evaluate candidates in this order of authority, while still requiring task fit:
 
 A higher-authority skill does not win merely because of its source if it is irrelevant to the
 actual task.
+
+For Kotlin-specific tooling/migrations, an installed skill from the official Kotlin/JetBrains skill
+collection is normally preferred over a generic community Kotlin guide when both match the same
+problem. For version-sensitive Java/JVM facts from community skills, confirm against the project's
+actual version and primary documentation before implementation.
 
 ## 4. Candidate scoring
 
@@ -88,7 +98,7 @@ Select the highest-value compatible set, not every candidate with a positive sco
 
 A normal engineering stack should usually contain only:
 
-- one process skill (debug/spec/refactor/performance/etc.);
+- one process skill (debug/spec/refactor/performance/focused-repair/etc.);
 - one language skill when useful;
 - zero to two domain/platform skills;
 - one verification/review path.
@@ -101,11 +111,11 @@ current, evidence-producing one unless the second adds a distinct capability.
 ## 6. Official/platform specialization
 
 When installed and relevant, prefer current official platform skills for platform-specific facts
-and workflows — for example Android, Chrome/Browser, Firebase, cloud/vendor SDKs, or other curated
-Antigravity integrations.
+and workflows — for example Kotlin/JetBrains tooling, Android, Chrome/Browser, Firebase,
+cloud/vendor SDKs, or other curated integrations.
 
 Thalarch remains the orchestration/quality layer around them. Do not copy their entire guidance
-into Thalarch when Antigravity can load the official skill directly.
+into the active context when Antigravity can load the official skill directly.
 
 ## 7. Project-local skills
 
@@ -115,17 +125,28 @@ they can encode repository-specific build, test, deploy, architecture, or style 
 Before trusting one blindly, check that its scope still matches the current project state. A stale
 project skill can be less reliable than current repository configuration.
 
-## 8. Missing capability
+## 8. Deterministic tools beat extra prose
+
+When a shortlisted skill ships a relevant read-only analyzer/script and it can run safely in the
+current environment, prefer using that tool to guessing manually from a large codebase.
+
+Examples include project/dependency scans, coverage parsing, architecture/dependency analysis, or
+visual/browser evidence collection.
+
+Treat script output as **evidence/leads**, not infallible verdicts. Confirm material findings in the
+actual source/runtime before changing code.
+
+## 9. Missing capability
 
 If no installed skill adequately covers a high-value domain:
 
 - use `thalarch-researcher` and current primary documentation to fill the knowledge gap;
-- if web research discovers a potentially useful external skill/plugin, report it as an optional
+- if research discovers a potentially useful external skill/plugin, report it as an optional
   capability rather than silently installing it unless the current request authorizes installation
   or customization changes;
 - never fabricate a skill name or pretend a missing skill was loaded.
 
-## 9. Conflict resolution
+## 10. Conflict resolution
 
 When loaded guidance conflicts, resolve in this order:
 
@@ -139,7 +160,11 @@ When loaded guidance conflicts, resolve in this order:
 Do not let a community style skill override a repository's established conventions or an explicit
 scope constraint.
 
-## 10. Skill-selection ledger
+A skill that requires artificial findings, arbitrary global style thresholds, blanket framework
+migration, or unmeasured optimization must be narrowed to the useful evidence-producing part or
+rejected.
+
+## 11. Skill-selection ledger
 
 For non-trivial work keep a compact internal/working record:
 
@@ -150,7 +175,7 @@ For non-trivial work keep a compact internal/working record:
 Do not spam the user with the full candidate list. Surface the final stack when useful or when the
 user asks how Thalarch routed the task.
 
-## 11. Failure modes
+## 12. Failure modes
 
 Never:
 
@@ -160,6 +185,7 @@ Never:
 - keep a skill active after evidence shows it is irrelevant;
 - duplicate official platform guidance into the main prompt when it can be loaded on demand;
 - install third-party skills without authorization;
+- let a skill's rigid checklist override stronger project evidence;
 - treat skill activation as proof that the task was executed correctly.
 
 A skill is guidance. Fresh repository/runtime evidence remains the authority for completion.
