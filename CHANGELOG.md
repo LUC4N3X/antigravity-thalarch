@@ -5,6 +5,25 @@
 Thalarch intentionally keeps the public version fixed at **1.0.0**. Capability changes are tracked
 here and in Git history without semantic-version bumps.
 
+### 2026-08-18 — Hard anti-hallucination enforcement
+
+- enabled a default `thalarch-epistemic-hard-gates` hook group using Antigravity `PreInvocation`,
+  `PreToolUse`, and `Stop` lifecycle events;
+- added a compact pre-invocation evidence contract so exact paths/symbols, commands, versions/APIs,
+  runtime results, publication state and visual claims must come from current evidence;
+- added a read-target gate that denies exact local `view_file`/`read_file` requests when the target
+  does not exist, forcing repository discovery instead of invented paths;
+- added a project-command grounding gate for repository wrappers, package scripts, local script
+  paths, Docker Compose files, Git workspaces and declared working directories;
+- added a transcript-backed Stop gate that blocks orchestrated completion after mutation until
+  independent fact checking, applicable design/vision review, and a final cold verifier occur in
+  the correct order;
+- hard completion can escape unavailable specialist tooling only by preserving the affected claim
+  as explicit `UNVERIFIED`, preventing infinite loops without permitting fake PASS results;
+- added `validate_hard_gates.py` plus synthetic hook regression tests and wired them into CI;
+- installers now require Python 3.10+ because the hard evidence gates are executable Python hooks;
+- added `HARD-GATES.md` documenting behavior, evidence boundaries and intentional limitations.
+
 ### 2026-08-18 — Adaptive reasoning and anti-hallucination core
 
 - added `thalarch-reasoning` with adaptive deliberation depths `D0`–`D4`, first-answer resistance,
@@ -91,4 +110,5 @@ here and in Git history without semantic-version bumps.
 - validator checks specialist wiring, image-tool delegation, portable paths, advanced skill files,
   autonomous skill intelligence, adaptive reasoning, epistemic guard, independent fact checking,
   and the permanent 1.0.0 version policy;
-- optional consequential-command hook remains disabled by default.
+- epistemic hard gates are enabled by default; the separate consequential/destructive-command
+  confirmation hook remains disabled by default.
