@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from hook_utils import candidate_cwds, emit, find_nearest_file, read_payload, resolve_existing_path
+from hook_utils import emit, find_nearest_file, read_payload, resolve_existing_path
 
 
 def command_line(args: dict[str, Any]) -> str:
@@ -44,7 +44,10 @@ def load_package_scripts(payload: dict[str, Any], args: dict[str, Any]) -> tuple
 def require_existing_script(raw: str, payload: dict[str, Any], args: dict[str, Any], label: str) -> bool:
     if resolve_existing_path(raw, payload, args) is not None:
         return True
-    deny(f"{label} references a local script/file that does not exist: {raw}. Inspect the repository and derive the real path first.")
+    deny(
+        f"{label} references a local script/file that does not exist: {raw}. "
+        "Inspect the repository and derive the real path first."
+    )
     return False
 
 
@@ -67,12 +70,14 @@ def main() -> None:
         if isinstance(raw_cwd, str) and raw_cwd.strip():
             cwd = Path(raw_cwd).expanduser()
             if not cwd.exists() or not cwd.is_dir():
-                deny(f"working directory does not exist: {raw_cwd}. Search/select the real workspace before running commands.")
+                deny(
+                    f"working directory does not exist: {raw_cwd}. "
+                    "Search/select the real workspace before running commands."
+                )
                 return
             break
 
     normalized = command.strip()
-    lower = normalized.lower()
 
     # Repository-local wrappers must physically exist.
     wrapper_rules = [
@@ -82,7 +87,10 @@ def main() -> None:
     for pattern, filenames, label in wrapper_rules:
         if re.search(pattern, normalized, flags=re.I):
             if not any(find_nearest_file(filename, payload, args) for filename in filenames):
-                deny(f"{label} command was proposed but no matching wrapper exists in/above the current workspace. Discover the repository's actual build tool first.")
+                deny(
+                    f"{label} command was proposed but no matching wrapper exists in/above the "
+                    "current workspace. Discover the repository's actual build tool first."
+                )
                 return
 
     # npm/pnpm/yarn project scripts: deny an exact script name that package.json does not declare.
@@ -95,7 +103,7 @@ def main() -> None:
         match = re.search(pattern, normalized, flags=re.I)
         if not match:
             continue
-        script = match.group(1).strip('"\'')
+        script = match.group(1).strip("\"'")
         # Manager-native commands are not package scripts.
         if script.lower() in {
             "install", "add", "remove", "update", "upgrade", "dlx", "exec", "init",
@@ -104,18 +112,27 @@ def main() -> None:
             break
         package, scripts = load_package_scripts(payload, args)
         if package is None:
-            deny(f"{manager} script '{script}' was proposed but no package.json was found for the current workspace.")
+            deny(
+                f"{manager} script '{script}' was proposed but no package.json was found for the "
+                "current workspace."
+            )
             return
         if script not in scripts:
-            deny(f"{manager} script '{script}' is not declared in {package}. Read package.json and use a real repository script instead of guessing.")
+            deny(
+                f"{manager} script '{script}' is not declared in {package}. Read package.json and "
+                "use a real repository script instead of guessing."
+            )
             return
         break
 
-    # npm test is a special shorthand; require an explicit test script so it cannot be claimed as project-native by memory.
+    # npm test is shorthand; require an explicit test script so it cannot be treated as project-native by memory.
     if re.search(r"^npm\s+(?:test|t)(?:\s|$)", normalized, flags=re.I):
         package, scripts = load_package_scripts(payload, args)
         if package is None or "test" not in scripts:
-            deny("'npm test' was proposed without a declared package.json test script. Discover the repository's actual test command first.")
+            deny(
+                "'npm test' was proposed without a declared package.json test script. "
+                "Discover the repository's actual test command first."
+            )
             return
 
     # Commands that execute a repository script must point at an existing file.
@@ -131,7 +148,11 @@ def main() -> None:
         if match and not require_existing_script(match.group(1), payload, args, label):
             return
 
-    compose_match = re.search(r"\bdocker\s+compose\b[^\n]*?\s-f\s+[\"']?([^\"'\s;&|]+)", normalized, flags=re.I)
+    compose_match = re.search(
+        r"\bdocker\s+compose\b[^\n]*?\s-f\s+[\"']?([^\"'\s;&|]+)",
+        normalized,
+        flags=re.I,
+    )
     if compose_match and resolve_existing_path(compose_match.group(1), payload, args) is None:
         deny(f"docker compose references a file that does not exist: {compose_match.group(1)}.")
         return
@@ -141,7 +162,10 @@ def main() -> None:
     if git_match and git_match.group(1).lower() not in {"init", "clone", "--version", "help"}:
         git_root = find_nearest_file(".git", payload, args)
         if git_root is None:
-            deny(f"git {git_match.group(1)} was proposed outside a detected Git repository. Confirm the correct repository/workspace first.")
+            deny(
+                f"git {git_match.group(1)} was proposed outside a detected Git repository. "
+                "Confirm the correct repository/workspace first."
+            )
             return
 
     emit({"decision": "allow"})
