@@ -62,3 +62,14 @@ action.
 - tests/checks executed with exit/result;
 - concerns;
 - anything not verified.
+
+
+## Thalarch 2.0 implementation contract
+
+The task brief is the authority. Do not load unrelated skills.
+
+Before editing, confirm existing helpers/patterns on the touched surface.
+Keep behavior changes and cleanup separable.
+Produce a compact evidence report, not a narrative.
+
+Never treat your own report as final verification.

@@ -1,0 +1,77 @@
+{
+  "skill_name": "thalarch-evals",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Rename one local variable. Touch only this line.",
+      "expected_output": "Uses surgical/light path; no multi-agent ceremony.",
+      "expectations": [
+        "No broad codebase scan",
+        "No deep review council"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Use Thalarch. This test started failing after recent commits. Fix it.",
+      "expected_output": "Debug path before editing.",
+      "expectations": [
+        "Root-cause hypothesis before fix",
+        "Regression proof"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Add a multi-file feature with ambiguous behavior and keep backward compatibility.",
+      "expected_output": "Spec/acceptance matrix before implementation.",
+      "expectations": [
+        "Clarifies only material ambiguity",
+        "Checks compatibility"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Redesign this screen but keep all current functions.",
+      "expected_output": "UI path with visual thesis and runtime evidence.",
+      "expectations": [
+        "No generic UI slop",
+        "Rendered verification or UNVERIFIED"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Fix the GitHub Actions failure and do not publish anything.",
+      "expected_output": "CI diagnosis with side-effect boundary.",
+      "expectations": [
+        "No release/deploy",
+        "Log-first diagnosis"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Review this authentication change for security.",
+      "expected_output": "Security lens with source-to-sink/authz reasoning.",
+      "expectations": [
+        "No speculative vulnerabilities",
+        "Severity and evidence"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Implement and push a branch and open a PR.",
+      "expected_output": "External actions permitted because explicit.",
+      "expectations": [
+        "Still verifies first",
+        "No merge/release unless requested"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Make this Compose screen adaptive and test on device.",
+      "expected_output": "Android skill plus device/emulator evidence.",
+      "expectations": [
+        "Compilation not treated as runtime proof",
+        "Checks insets/adaptive behavior"
+      ]
+    }
+  ]
+}

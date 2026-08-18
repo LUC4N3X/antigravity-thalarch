@@ -1,235 +1,316 @@
 ---
 name: thalarch-mode
 description: >
-  Runs a high-rigor software engineering workflow for complex, risky, multi-file,
-  debugging, refactoring, UI, architecture, or PR-preparation tasks. Uses staged
-  planning, Antigravity subagents, root-cause investigation, minimal scoped edits,
-  adversarial code review, and fresh verification evidence before completion.
-  Use when the user asks for deep work, maximum quality, systematic handling,
-  autonomous end-to-end execution, or when a task has meaningful regression risk.
-  Do not use for trivial one-line edits or simple factual questions.
+  High-rigor multi-agent engineering protocol for complex, risky, multi-file,
+  debugging, architecture, UI, Android, CI, security, performance, refactoring,
+  or PR-preparation tasks. Routes the task through the smallest relevant skill
+  stack, uses isolated specialist subagents, evidence-backed planning and root
+  cause analysis, selective parallel review, and cold verification before any
+  completion claim. Use when the user asks for Thalarch, deep work, maximum
+  quality, autonomous end-to-end execution, or when regression risk is meaningful.
+  Skip for trivial edits with one obvious low-risk solution.
 ---
 
-# Thalarch Mode
+# Thalarch Mode 2.0
 
-Thalarch Mode is a coordination protocol for serious engineering work. It improves
-execution discipline; it does not magically change the base model's intelligence.
+Thalarch is an engineering harness, not a persona.
+
+Its job is to make difficult work **auditable, scoped, evidence-backed, and hard
+to prematurely declare complete**.
 
 ## Prime directive
 
-**Understand → plan → prove → implement → review → verify → report.**
+**Route → understand → specify → investigate → implement → review → verify → compound.**
 
-Never jump from a symptom directly to a fix. Never call work complete because it
-"looks right". Never widen scope merely because nearby code could be improved.
+Use the smallest process that safely fits the task. More agents are not
+automatically better.
 
-## Activation
+## 0. Skill routing before action
 
-If the current agent is `thalarch-orchestrator`, execute this protocol directly.
-Do **not** invoke another `thalarch-orchestrator`.
+Before exploring deeply or editing, classify the task:
 
-Otherwise, for a task that qualifies for Thalarch Mode and when the custom agent is
-available, invoke `thalarch-orchestrator` and give it:
+- `surgical`: obvious low-risk edit, narrow verification;
+- `bug`: unexpected behavior, crash, failure, flaky/performance regression;
+- `feature`: new or changed behavior across meaningful code surface;
+- `architecture`: cross-cutting design, concurrency, state, persistence, API boundaries;
+- `ui`: visual/interaction quality matters;
+- `android`: Kotlin/Compose/Gradle/Media3/device behavior;
+- `security`: auth, secrets, untrusted input, permissions, workflows, network exposure;
+- `ci`: build pipeline, GitHub Actions, packaging, release automation.
+- `git`: branch, commit, push, pull request, or repository publication workflow.
 
-- the user's exact goal;
-- explicit scope and "do not touch" constraints;
-- workspace/repository location;
-- any already-known evidence;
-- whether external side effects such as commit/push/PR were explicitly authorized.
+Then load only the relevant Thalarch skills.
 
-If custom agents are unavailable, use the same protocol inline and clearly mark
-which checks could not be independently delegated.
+Process skills come before domain skills.
 
-## Mode selection
+Recommended stacks:
 
-Use the lightest path that still controls risk:
+- surgical → `thalarch-review`
+- bug → `thalarch-debug` + `thalarch-test` + `thalarch-review`
+- feature → `thalarch-spec` + `thalarch-test` + `thalarch-review`
+- architecture → `thalarch-spec` + `thalarch-codebase-intel` + `thalarch-review`
+- ui → `thalarch-spec` + `thalarch-ui` + `thalarch-review`
+- android → `thalarch-android` + task-appropriate process skills
+- security → `thalarch-security` + `thalarch-review`
+- ci → `thalarch-ci` + `thalarch-security` + `thalarch-review`
+- git → `thalarch-git` + `thalarch-review`
 
-1. **Simple path** — one obvious edit, low regression risk:
-   inspect → edit → targeted check → diff review.
-2. **Bug path** — crash, failure, regression, intermittent behavior:
-   debugger → confirmed root cause → implementer → reviewer → verifier.
-3. **Feature path** — multi-file or behavior change:
-   planner → implementer(s) → reviewer → verifier.
-4. **High-risk path** — architecture, concurrency, auth/security, persistence,
-   networking, build/release, broad refactor:
-   planner + debugger/research as needed → isolated implementation →
-   adversarial reviewer → cold verifier.
-5. **UI path** — visual or interaction work:
-   planner → implementer → visual/interaction evidence → reviewer → verifier.
+For unfamiliar large repositories, add `thalarch-codebase-intel`.
 
-Read only the relevant reference files below; do not preload all of them:
+If official platform skills are installed and current, prefer invoking them rather
+than duplicating their reference knowledge. Thalarch coordinates; it does not
+need to reinvent every platform guide.
 
-- Bug/failure: `references/debugging-protocol.md`
-- Review/PR/change validation: `references/review-protocol.md`
-- UI/UX/visual work: `references/ui-protocol.md`
-- Android/Compose/Gradle work: `references/android-protocol.md`
-- Efficiency/context control: `references/context-efficiency.md`
+## 1. Intent contract
 
-## Phase 0 — Preflight before touching code
+Before non-trivial work, establish:
 
-1. Read repository instructions first:
-   `AGENTS.md`, `GEMINI.md`, `CLAUDE.md`, README/contributing files, and
-   relevant `.agents/rules` when present.
-2. Establish Git state:
-   current branch, dirty files, current diff, recent relevant commits.
-3. Identify the project's real build/test/lint commands from repository files.
-   Do not guess commands when the repo defines them.
-4. Record exact scope:
-   - requested outcome;
-   - files/areas likely involved;
-   - explicit exclusions;
-   - external actions authorized by the user.
-5. For non-trivial work, maintain a task/implementation-plan artifact as the
-   source of truth. Re-read it after long tool sequences or context compaction.
-6. Optional: run `python scripts/project_probe.py --path <workspace>` for a
-   read-only project snapshot.
+- exact user outcome;
+- acceptance criteria;
+- explicit scope;
+- explicit exclusions;
+- externally visible side effects authorized by the user;
+- evidence required to call the result complete.
 
-## Phase 1 — Build an evidence-backed plan
+Do not ask a question when a reversible engineering ruling can safely resolve
+the ambiguity. Record the ruling and continue.
 
-For meaningful work, the planner must produce stages. Every stage needs:
+Stop for ambiguity only when every plausible interpretation materially changes
+the requested result or safety.
 
-- **goal**
-- **inputs**
-- **expected output**
-- **proof/check that can fail**
-- **risk if wrong**
-- **dependencies on other stages**
+## 2. Preflight
 
-Separate independent tasks from tightly coupled tasks.
+Read applicable repository instructions before edits:
 
-Parallelize only genuinely independent work. Prefer isolated worktrees for
-parallel edits that may collide. Cap concurrent subagents at four.
+- `AGENTS.md`
+- `GEMINI.md`
+- `CLAUDE.md`
+- contribution/build/test docs
+- workspace rules
+- relevant CI definitions
 
-A plan is allowed to change when evidence changes. Do not silently expand scope.
+Inspect Git state and preserve unrelated dirty work.
 
-## Phase 2 — Investigate before editing
+Discover real build/test/lint commands from repository configuration. Do not
+invent them.
 
-For bugs, failures, performance regressions, flaky behavior, build errors, or
-unexpected results, root cause comes first.
+For large or unfamiliar codebases, use `thalarch-codebase-intel`.
 
-Required evidence may include:
+## 3. Plan as a testable argument
 
-- exact reproduction;
-- stack trace/error output;
-- request/response or data-flow boundary evidence;
-- git history/diff around the regression;
-- comparison with a known-working path;
-- a falsifiable hypothesis.
+A meaningful stage has:
 
-No "probably X, so let's patch X". If evidence is insufficient, gather more.
+- objective;
+- exact inputs;
+- expected artifact/change;
+- dependency;
+- risk;
+- proof that can fail.
 
-After three failed fix hypotheses, stop stacking patches. Reassess the design or
-architecture with a fresh planner/debugger pass.
+The plan is not ceremonial prose. Every stage must be falsifiable.
 
-## Phase 3 — Implement with scope discipline
+When requirements are broad or cross-file, use `thalarch-spec` to build an
+acceptance matrix before implementation.
 
-Implementation rules:
+## 4. Delegate structurally
 
-- Change the smallest surface that solves the confirmed problem.
-- Preserve existing architecture and conventions unless the task explicitly
-  requires architectural change.
-- No drive-by refactors, mass formatting, dependency upgrades, renames, or
-  cleanup unrelated to the requested result.
-- Do not duplicate existing helpers or abstractions without first searching for
-  the repository's established pattern.
-- Keep behavior changes and refactors separable when possible.
-- Add or update tests where they provide real regression protection.
-- Exercise at least one failure/error path for behavioral changes when feasible.
-- If a task says "only this", interpret it literally.
+When custom agents are available, the primary `thalarch-orchestrator` coordinates
+and delegates.
 
-An implementer does not self-certify completion.
+Use a clean subagent context per bounded task.
 
-## Phase 4 — Review in two different lenses
+For independent edit streams, use isolated worktrees when available.
 
-### A. Specification review
+Do not parallelize tasks that share mutable state or tightly coupled interfaces
+unless there is an explicit integration stage.
 
-Ask: **Did the change implement exactly the requested behavior and nothing else?**
+Cap concurrent subagents at four by default.
 
-Check every user requirement against actual code/diff/evidence.
+Every brief contains:
 
-### B. Engineering review
+- one bounded objective;
+- exact workspace;
+- exact relevant paths;
+- acceptance criteria;
+- hard exclusions;
+- prior decisions/interfaces required;
+- expected evidence;
+- external actions authorized.
 
-Ask: **Even if it matches the spec, is the implementation safe and maintainable?**
+Never dump the whole conversation into a subagent.
 
-Check correctness, edge cases, error handling, lifecycle/state, concurrency,
-performance, security/privacy, compatibility, tests, and project conventions.
+## 5. Evidence ledger
 
-For substantial work, use `thalarch-reviewer` as a separate read-only agent.
+For non-trivial work, maintain a compact artifact or file-based ledger containing:
 
-A finding is not real merely because a reviewer said it. Confirm it against the
-actual code, test, log, or documented contract before changing code.
+- requirements and status;
+- important rulings;
+- confirmed root cause, if applicable;
+- changed files;
+- commands run;
+- review findings and dispositions;
+- verification evidence;
+- explicit UNVERIFIED items.
 
-## Phase 5 — Cold verification
+Treat the ledger as recovery state after long sessions or context compaction.
 
-Use `thalarch-verifier` with **only**:
+Never trust memory over current Git state, source files, command output, or the
+ledger.
 
-- the user's requirements/spec;
-- the final diff or changed file paths;
-- the commands that are supposed to prove correctness.
+## 6. Root-cause gate
 
-Do not give it the implementer's reasoning or "why this should work".
+For any bug, failing test/build, unexpected behavior, intermittent issue, or
+performance regression, load `thalarch-debug`.
 
-The verifier independently derives checks and runs them fresh.
+No symptom patch before a supported causal hypothesis.
 
-Minimum completion evidence for code changes:
+After three failed fix hypotheses, reassess assumptions and architecture instead
+of stacking a fourth speculative patch.
 
-1. targeted test or reproduction of the original behavior;
-2. relevant build/compile check;
-3. relevant lint/static check when the project uses one;
-4. diff inspection including unintended files;
-5. fresh check of the original acceptance criteria.
+## 7. Implementation gate
 
-Do not claim:
-- "fixed"
-- "build passes"
-- "tests pass"
-- "ready"
-- "done"
+Implementation is allowed only after enough evidence exists to state what must
+change and why.
 
-without fresh evidence from this run.
+Rules:
 
-If a check cannot be run, report it as **UNVERIFIED**, with the exact reason.
+- minimal correct surface;
+- no drive-by refactor;
+- no unrelated formatting;
+- no dependency/toolchain upgrade unless required;
+- search for existing abstractions before adding another;
+- preserve unrelated behavior;
+- add useful regression protection;
+- exercise failure paths where practical.
 
-## Phase 6 — Delivery
+An implementer never self-certifies completion.
 
-Final report should be compact and operational:
+## 8. Selective review council
 
-- root cause or design decision;
-- what changed;
-- files changed;
-- verification commands and actual results;
-- remaining risk / unverified items;
-- suggested professional commit message;
-- external actions performed, if the user explicitly authorized them.
+Review depth is risk-sized.
 
-Do not hide failed checks.
+### Lite
+Use one general reviewer for small, low-risk diffs.
 
-## External side effects and stop conditions
+### Standard
+Use two independent lenses:
+- specification/correctness;
+- code quality/regression.
 
-Do not commit, push, open/modify a PR, merge, publish, deploy, release, delete
-data, rotate secrets, or make other external/destructive changes unless the user
-has explicitly authorized that class of action in the current task.
+### Deep
+For high-risk changes, dispatch independent read-only reviewers in parallel:
+- spec/correctness;
+- security;
+- performance/concurrency;
+- domain-specific UI/Android/CI review as relevant.
 
-If the current task explicitly says to perform an external action, do not ask
-again merely for ceremony. Stop only if:
+Reviewers receive the requirement and diff, not the implementer's persuasion.
 
-- the operation is destructive/irreversible beyond the stated request;
-- security-sensitive authorization is missing;
-- the action affects a target outside the authorized scope;
-- requirements are so contradictory that every implementation path is guesswork.
+A reviewer finding is a hypothesis until confirmed against code, tests, logs,
+or a documented contract.
 
-Otherwise make a defensible ruling, record it in the plan artifact, and continue.
+Do not fix speculative findings.
 
-## Context discipline
+## 9. Cold verification
 
-- Search before opening huge files.
-- Read narrow line ranges first, then expand only when needed.
-- Pass subagents file paths and concise briefs instead of dumping long logs.
-- Keep bulky evidence in artifacts/files, not repeated in conversation.
-- Use scripts as black boxes when possible; run `--help` before reading them.
-- Reuse verified facts; do not repeatedly rediscover the same repository state.
-- Prefer one high-quality subagent turn over many cheap, wandering turns.
+The final verifier receives only:
 
-## Quality bar
+- requirement/acceptance matrix;
+- changed paths or final diff;
+- commands/scenarios that should prove correctness.
 
-Thalarch Mode succeeds when the answer is not merely plausible but **auditable**:
-the user can see what was changed, why, what proves it, and what is still unknown.
+It does not receive the implementer's reasoning narrative.
+
+Use `PASS`, `FAIL`, `UNVERIFIED`.
+
+Minimum evidence for meaningful code changes:
+
+1. original acceptance case or closest executable reproduction;
+2. targeted test;
+3. relevant compile/build;
+4. relevant lint/static check when the project uses one;
+5. diff check for unintended files;
+6. domain evidence:
+   - UI → rendered result / screenshots / interaction;
+   - Android runtime → device/emulator/log evidence when runtime-specific;
+   - network → observed request/response behavior;
+   - CI → actual workflow/config validation where possible.
+
+Never promote a weaker check into a stronger claim.
+
+## 10. Convergence, not ritual
+
+If review finds a confirmed issue:
+
+- batch compatible findings;
+- apply the smallest fix set;
+- re-run invalidated checks;
+- re-review only the affected surface unless the fix changes architecture.
+
+Stop when acceptance criteria are proved or residual uncertainty is explicitly
+reported.
+
+Do not create infinite review loops.
+
+## 11. Compound verified knowledge
+
+After difficult work, use `thalarch-compound`.
+
+Extract only reusable, evidence-backed knowledge:
+
+- repository convention discovered;
+- recurring failure pattern;
+- proven diagnostic command;
+- architecture invariant;
+- test strategy;
+- non-obvious integration contract.
+
+Do not write permanent project documentation or rules unless the user asked for
+it or the repository already has a designated knowledge sink.
+
+A lesson must make future work cheaper; otherwise discard it.
+
+## 12. External-action boundary
+
+Do not commit, push, open/modify PRs, merge, publish, deploy, release, send
+messages, or mutate external resources unless the current user request explicitly
+authorizes that class of action.
+
+If explicitly authorized, do not ask again merely for ceremony.
+
+Still stop for:
+
+- destructive/irreversible scope beyond the request;
+- missing security-sensitive authorization;
+- target ambiguity that could affect the wrong repository/environment/account.
+
+## 13. Context economy
+
+- Search before opening large files.
+- Read narrow regions first.
+- Run bundled scripts as black boxes with `--help` before reading source.
+- Store bulky evidence in artifacts/files.
+- Prefer paths and concise briefs over pasted logs.
+- Reuse verified facts.
+- Use the strongest available reasoning tier for planning, architecture,
+  debugging, adjudication, and final verification.
+- Use cheaper/faster agents only for truly mechanical, well-specified work.
+
+## 14. Self-evaluation
+
+Use `thalarch-evals` when modifying Thalarch itself.
+
+Do not assume a longer prompt is a better prompt.
+
+Benchmark:
+
+- trigger accuracy;
+- scope discipline;
+- debugging behavior;
+- review recall vs false positives;
+- verification honesty;
+- context/turn cost;
+- completion rate.
+
+Keep changes only when they measurably improve the behavior or fix a demonstrated
+failure mode.

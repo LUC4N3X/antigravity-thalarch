@@ -1,0 +1,32 @@
+name: Validate Thalarch
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate package structure
+        run: python validate_thalarch.py .
+
+      - name: Check shell installer syntax
+        run: bash -n INSTALL.sh
+
+      - name: Check PowerShell installer syntax
+        shell: pwsh
+        run: |
+          $null = [scriptblock]::Create((Get-Content -Raw ./INSTALL.ps1))

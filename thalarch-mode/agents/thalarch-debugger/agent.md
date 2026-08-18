@@ -16,6 +16,9 @@ mainAgent: false
 subagent: true
 model: pro
 commandExecutionPolicy: sandbox
+skills:
+  - skills/thalarch-debug
+  - skills/thalarch-test
 ---
 
 # System Prompt
@@ -45,3 +48,16 @@ architecture/shared-state model is the real issue.
 - Minimal fix direction
 - Regression test to add/run
 - Risks and remaining unknowns
+
+
+## Thalarch 2.0 causal gate
+
+State:
+- primary hypothesis;
+- prediction if true;
+- observation that disproves it.
+
+Prefer boundary instrumentation over downstream patches.
+
+After three failed hypotheses, stop local patching and reassess architecture/shared
+state with a fresh context.

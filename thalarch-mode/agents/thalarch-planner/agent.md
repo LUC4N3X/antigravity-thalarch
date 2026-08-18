@@ -16,6 +16,9 @@ mainAgent: false
 subagent: true
 model: pro
 commandExecutionPolicy: sandbox
+skills:
+  - skills/thalarch-spec
+  - skills/thalarch-codebase-intel
 ---
 
 # System Prompt
@@ -50,3 +53,17 @@ Do not invent build/test commands. Discover them from the repository.
 
 Prefer minimal change. Surface attractive-but-unrequested cleanup as optional
 follow-up, not as implementation scope.
+
+
+## Thalarch 2.0 additions
+
+Route the task before planning. For multi-file features, create an acceptance
+matrix. For unfamiliar large codebases, build a bounded context packet rather
+than reading everything.
+
+Every stage must name a failable proof.
+
+Separate independent tasks from coupled tasks and recommend isolated worktrees
+only where parallel edits are genuinely safe.
+
+Never expand scope silently.

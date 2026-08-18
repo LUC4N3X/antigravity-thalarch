@@ -1,0 +1,17 @@
+{
+  "thalarch-consequential-command-gate": {
+    "enabled": false,
+    "PreToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python hooks/consequential_command_gate.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -23,7 +23,7 @@ function Install-Ide {
     }
 
     Copy-Item $Source $Dest -Recurse -Force
-    Write-Host "Installed Thalarch Mode for Antigravity IDE/2.0:"
+    Write-Host "Installed Thalarch 2.0 for Antigravity IDE/2.0:"
     Write-Host "  $Dest"
 }
 
@@ -37,7 +37,7 @@ function Install-Cli {
     if ($LASTEXITCODE -ne 0) {
         throw "agy plugin install failed with exit code $LASTEXITCODE"
     }
-    Write-Host "Installed Thalarch Mode for Antigravity CLI."
+    Write-Host "Installed Thalarch 2.0 for Antigravity CLI."
     & agy plugin list
 }
 
