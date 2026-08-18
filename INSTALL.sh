@@ -23,7 +23,7 @@ install_ide() {
   fi
 
   cp -R "$SOURCE" "$destination"
-  echo "Installed Thalarch 2.0 for Antigravity IDE:"
+  echo "Installed Thalarch 1.0.0 for Antigravity IDE:"
   echo "  $destination"
 }
 
@@ -34,7 +34,7 @@ install_cli() {
   fi
 
   agy plugin install "$SOURCE"
-  echo "Installed Thalarch 2.0 for Antigravity CLI."
+  echo "Installed Thalarch 1.0.0 for Antigravity CLI."
   agy plugin list
 }
 
