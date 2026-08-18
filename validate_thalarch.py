@@ -47,7 +47,7 @@ for agent_md in agent_files:
         if key not in text:
             errors.append(f"{agent_md.relative_to(root)}: missing {key}")
 
-# Structural visual-safety checks.
+# Structural visual-safety and orchestration checks.
 visual_director = plugin / "agents" / "thalarch-visual-director" / "agent.md"
 orchestrator = plugin / "agents" / "thalarch-orchestrator" / "agent.md"
 if visual_director.exists():
@@ -62,8 +62,28 @@ if orchestrator.exists():
         errors.append("thalarch-orchestrator must not have direct generate_image access")
     if "skills/thalarch-skill-intelligence" not in orchestrator_text:
         errors.append("thalarch-orchestrator must include thalarch-skill-intelligence")
+    if "skills/thalarch-reasoning" not in orchestrator_text:
+        errors.append("thalarch-orchestrator must include thalarch-reasoning")
+    if "skills/thalarch-epistemic-guard" not in orchestrator_text:
+        errors.append("thalarch-orchestrator must include thalarch-epistemic-guard")
+    if "thalarch-deliberator" not in orchestrator_text:
+        errors.append("thalarch-orchestrator must know thalarch-deliberator")
+    if "thalarch-fact-checker" not in orchestrator_text:
+        errors.append("thalarch-orchestrator must know thalarch-fact-checker")
     if "Thalarch Orchestrator 1.0.0" not in orchestrator_text:
         errors.append("thalarch-orchestrator public version must remain 1.0.0")
+else:
+    errors.append("missing thalarch-orchestrator")
+
+verifier = plugin / "agents" / "thalarch-verifier" / "agent.md"
+if verifier.exists():
+    verifier_text = verifier.read_text(encoding="utf-8")
+    if "skills/thalarch-epistemic-guard" not in verifier_text:
+        errors.append("thalarch-verifier must include thalarch-epistemic-guard")
+    if "UNVERIFIED" not in verifier_text:
+        errors.append("thalarch-verifier must preserve UNVERIFIED state")
+else:
+    errors.append("missing thalarch-verifier")
 
 # Structural polyglot checks.
 language_agents = {
@@ -97,6 +117,8 @@ required = [
     root / "CHANGELOG.md",
     root / "DESIGN-NOTES.md",
     plugin / "hooks.json",
+    plugin / "skills" / "thalarch-reasoning" / "SKILL.md",
+    plugin / "skills" / "thalarch-epistemic-guard" / "SKILL.md",
     plugin / "skills" / "thalarch-skill-intelligence" / "SKILL.md",
     plugin / "skills" / "thalarch-skill-intelligence" / "references" / "known-high-value-sources.md",
     plugin / "skills" / "thalarch-code-craft" / "SKILL.md",
@@ -119,6 +141,8 @@ required = [
     plugin / "skills" / "thalarch-codebase-intel" / "scripts" / "change_probe.py",
     plugin / "skills" / "thalarch-visual-qa" / "scripts" / "image_probe.py",
     plugin / "skills" / "thalarch-visual-qa" / "scripts" / "image_compare.py",
+    plugin / "agents" / "thalarch-deliberator" / "agent.md",
+    plugin / "agents" / "thalarch-fact-checker" / "agent.md",
     plugin / "agents" / "thalarch-web-designer" / "agent.md",
     plugin / "agents" / "thalarch-design-reviewer" / "agent.md",
     plugin / "agents" / "thalarch-vision-reviewer" / "agent.md",
@@ -183,5 +207,8 @@ print("hooks:", (plugin / "hooks.json").exists())
 print("visual_director_generate_image: enforced")
 print("orchestrator_generate_image: structurally delegated")
 print("autonomous_skill_intelligence: enforced")
+print("adaptive_reasoning: enforced")
+print("epistemic_guard: enforced")
+print("independent_fact_checker: enforced")
 print("polyglot_specialists:", ", ".join(language_agents))
 print("portable-path check: passed")
