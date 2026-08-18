@@ -10,7 +10,7 @@ description: >
   or when regression risk is meaningful. Skip ceremonial orchestration for trivial edits.
 ---
 
-# Thalarch Mode 2.2
+# Thalarch Mode 1.0.0
 
 Thalarch is an engineering harness, not a persona and not a claim that a prompt changes the
 underlying model's intrinsic capability.
