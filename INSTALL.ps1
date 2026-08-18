@@ -10,6 +10,31 @@ if (-not (Test-Path $Source)) {
     throw "Plugin folder not found: $Source"
 }
 
+function Test-Python3 {
+    foreach ($candidate in @("python3", "python")) {
+        $cmd = Get-Command $candidate -ErrorAction SilentlyContinue
+        if ($cmd) {
+            try {
+                & $candidate -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)"
+                if ($LASTEXITCODE -eq 0) { return $true }
+            } catch {}
+        }
+    }
+
+    $py = Get-Command py -ErrorAction SilentlyContinue
+    if ($py) {
+        try {
+            & py -3 -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)"
+            if ($LASTEXITCODE -eq 0) { return $true }
+        } catch {}
+    }
+    return $false
+}
+
+if (-not (Test-Python3)) {
+    throw "Thalarch 1.0.0 requires Python 3.10+ for its hard anti-hallucination hooks. Install Python 3 and rerun this installer."
+}
+
 function Install-Ide {
     $Root = Join-Path $HOME ".gemini\config\plugins"
     $Dest = Join-Path $Root "thalarch-mode"
@@ -25,6 +50,7 @@ function Install-Ide {
     Copy-Item $Source $Dest -Recurse -Force
     Write-Host "Installed Thalarch 1.0.0 for Antigravity IDE:"
     Write-Host "  $Dest"
+    Write-Host "Hard anti-hallucination evidence gates: ENABLED"
 }
 
 function Install-Cli {
@@ -38,6 +64,7 @@ function Install-Cli {
         throw "agy plugin install failed with exit code $LASTEXITCODE"
     }
     Write-Host "Installed Thalarch 1.0.0 for Antigravity CLI."
+    Write-Host "Hard anti-hallucination evidence gates: ENABLED"
     & agy plugin list
 }
 
@@ -50,5 +77,5 @@ switch ($Target) {
 Write-Host ""
 Write-Host "Next:"
 Write-Host "1. Restart/reload Antigravity."
-Write-Host "2. Open the Agents panel and look for 'thalarch-orchestrator'."
-Write-Host "3. Ask: 'Use Thalarch Mode for this task.'"
+Write-Host "2. Select 'thalarch-orchestrator' as the primary agent."
+Write-Host "3. Ask: 'Use Thalarch for this task.'"
