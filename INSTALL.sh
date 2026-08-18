@@ -9,6 +9,20 @@ if [[ ! -d "$SOURCE" ]]; then
   exit 1
 fi
 
+PYTHON_BIN=""
+for candidate in python3 python; do
+  if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' >/dev/null 2>&1; then
+    PYTHON_BIN="$candidate"
+    break
+  fi
+done
+
+if [[ -z "$PYTHON_BIN" ]]; then
+  echo "Thalarch 1.0.0 requires Python 3.10+ for its hard anti-hallucination hooks." >&2
+  echo "Install Python 3 and rerun this installer." >&2
+  exit 1
+fi
+
 install_ide() {
   local plugin_root="$HOME/.gemini/config/plugins"
   local destination="$plugin_root/thalarch-mode"
@@ -25,6 +39,7 @@ install_ide() {
   cp -R "$SOURCE" "$destination"
   echo "Installed Thalarch 1.0.0 for Antigravity IDE:"
   echo "  $destination"
+  echo "Hard anti-hallucination evidence gates: ENABLED"
 }
 
 install_cli() {
@@ -35,6 +50,7 @@ install_cli() {
 
   agy plugin install "$SOURCE"
   echo "Installed Thalarch 1.0.0 for Antigravity CLI."
+  echo "Hard anti-hallucination evidence gates: ENABLED"
   agy plugin list
 }
 
