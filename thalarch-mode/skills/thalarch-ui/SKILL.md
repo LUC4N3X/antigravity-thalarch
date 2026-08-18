@@ -62,3 +62,19 @@ Create a fidelity ledger:
 - fix/disposition.
 
 If render tooling is unavailable, mark appearance `UNVERIFIED`.
+
+## Generated imagery inside UI
+
+If the UI needs hero art, illustrations, textures, avatars, backgrounds, or
+other generated raster assets, route that bounded asset task through
+`thalarch-image` + `thalarch-imagegen`.
+
+Do not use generated screenshots as implementation proof.
+
+After the asset is created:
+- verify it independently with `thalarch-visual-qa`;
+- integrate it into the real UI;
+- then capture the implemented runtime UI again for final review.
+
+For exact icons, logos, charts, diagrams, or typography, prefer deterministic
+vector/code-native production over raster generation.

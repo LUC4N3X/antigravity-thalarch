@@ -2,8 +2,8 @@
 name: thalarch-mode
 description: >
   High-rigor multi-agent engineering protocol for complex, risky, multi-file,
-  debugging, architecture, UI, Android, CI, security, performance, refactoring,
-  or PR-preparation tasks. Routes the task through the smallest relevant skill
+  debugging, architecture, UI, images, visual assets, Android, CI, security,
+  performance, refactoring, or PR-preparation tasks. Routes the task through the smallest relevant skill
   stack, uses isolated specialist subagents, evidence-backed planning and root
   cause analysis, selective parallel review, and cold verification before any
   completion claim. Use when the user asks for Thalarch, deep work, maximum
@@ -11,7 +11,7 @@ description: >
   Skip for trivial edits with one obvious low-risk solution.
 ---
 
-# Thalarch Mode 2.0
+# Thalarch Mode 2.1
 
 Thalarch is an engineering harness, not a persona.
 
@@ -34,6 +34,7 @@ Before exploring deeply or editing, classify the task:
 - `feature`: new or changed behavior across meaningful code surface;
 - `architecture`: cross-cutting design, concurrency, state, persistence, API boundaries;
 - `ui`: visual/interaction quality matters;
+- `image`: generation, editing, inspection, branding, screenshots, diagrams, or visual assets;
 - `android`: Kotlin/Compose/Gradle/Media3/device behavior;
 - `security`: auth, secrets, untrusted input, permissions, workflows, network exposure;
 - `ci`: build pipeline, GitHub Actions, packaging, release automation.
@@ -50,6 +51,9 @@ Recommended stacks:
 - feature → `thalarch-spec` + `thalarch-test` + `thalarch-review`
 - architecture → `thalarch-spec` + `thalarch-codebase-intel` + `thalarch-review`
 - ui → `thalarch-spec` + `thalarch-ui` + `thalarch-review`
+- image generation/editing → `thalarch-image` + `thalarch-imagegen` + `thalarch-visual-qa`
+- image inspection/comparison → `thalarch-image` + `thalarch-visual-qa`
+- UI with generated visual assets → add `thalarch-imagegen` + `thalarch-visual-qa`
 - android → `thalarch-android` + task-appropriate process skills
 - security → `thalarch-security` + `thalarch-review`
 - ci → `thalarch-ci` + `thalarch-security` + `thalarch-review`
@@ -157,6 +161,21 @@ Treat the ledger as recovery state after long sessions or context compaction.
 Never trust memory over current Git state, source files, command output, or the
 ledger.
 
+## 5.1. Image and visual artifacts
+
+When images are inputs or outputs:
+
+- label every reference image by role instead of assuming it is an edit target;
+- preserve source/reference assets unless replacement is requested;
+- use `thalarch-image` to choose raster generation, vector/code-native creation,
+  screenshot capture, annotation, comparison, or optimization;
+- use `thalarch-visual-director` for bounded creation/editing;
+- use `thalarch-vision-reviewer` as the independent visual quality gate;
+- never treat a generation prompt as proof that the final pixels satisfy it.
+
+For exact vector geometry or typography, prefer deterministic SVG/code-native
+construction over raster generation.
+
 ## 6. Root-cause gate
 
 For any bug, failing test/build, unexpected behavior, intermittent issue, or
@@ -202,7 +221,7 @@ For high-risk changes, dispatch independent read-only reviewers in parallel:
 - spec/correctness;
 - security;
 - performance/concurrency;
-- domain-specific UI/Android/CI review as relevant.
+- domain-specific UI/image/Android/CI review as relevant.
 
 Reviewers receive the requirement and diff, not the implementer's persuasion.
 
@@ -231,6 +250,8 @@ Minimum evidence for meaningful code changes:
 4. relevant lint/static check when the project uses one;
 5. diff check for unintended files;
 6. domain evidence:
+   - image/visual asset → actual rendered image, metadata, exact text, alpha/dimensions,
+     and matched-reference/before-after evidence as relevant;
    - UI → rendered result / screenshots / interaction;
    - Android runtime → device/emulator/log evidence when runtime-specific;
    - network → observed request/response behavior;

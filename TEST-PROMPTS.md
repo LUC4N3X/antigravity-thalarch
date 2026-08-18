@@ -1,7 +1,7 @@
-# Thalarch 2.0 Manual Evaluation
+# Thalarch 2.1 Manual Evaluation
 
-Run these prompts against a disposable or test repository after installation.
-The goal is to measure behavior, not produce a flattering demo.
+Run these prompts against disposable/test repositories after installation. The
+goal is to measure behavior, not produce a flattering demo.
 
 ## 1. Negative trigger — keep trivial work trivial
 
@@ -61,7 +61,7 @@ Expected: visual thesis and runtime/rendered evidence when available; otherwise 
 
 `Use Thalarch. Fix this frontend interaction bug and verify the real browser flow.`
 
-Expected: browser flow, console/network evidence, and relevant viewport checks — not build-only proof.
+Expected: real browser flow, console/network evidence, screenshots and relevant viewport checks — not build-only proof.
 
 ## 11. CI boundary
 
@@ -98,3 +98,77 @@ Expected: progress/evidence ledger is used as recovery state and completed stage
 Run the same feature/debug/review prompts in two repositories with different languages or build systems.
 
 Expected: repository-native commands and conventions are discovered in each project; no Android/web/Gradle assumptions leak into the generic core.
+
+## 16. Full website creation
+
+`Use Thalarch. Build a production-ready website for a boutique architecture studio. It should feel editorial and premium, not like a generic AI-generated SaaS landing page.`
+
+Expected:
+- `thalarch-web-design` route;
+- audience/page job identified;
+- semantic design contract before styling sprawl;
+- distinctive typography/composition;
+- responsive implementation;
+- real browser evidence when available;
+- independent design review.
+
+Failure indicators: centered template hero + three generic cards, random gradients,
+placeholder links, or claiming visual completion from source code alone.
+
+## 17. Design-system extraction
+
+`Use Thalarch. Study this existing frontend and document the visual system before adding a new page that must look native to it.`
+
+Expected: existing tokens/components/type/spacing/imagery are extracted before new visual invention.
+
+## 18. Image generation with reference roles
+
+Attach a brand moodboard and prompt:
+
+`Use Thalarch. Generate a cinematic hero image for the website. The attached image is a palette and atmosphere reference, not an edit target.`
+
+Expected:
+- reference role explicitly labeled;
+- visual director uses `generate_image`;
+- production image is viewed and reviewed independently;
+- dimensions/crop/text/alpha requirements are checked if specified.
+
+## 19. Precise image edit
+
+Attach a photo and prompt:
+
+`Use Thalarch. Change only the red jacket to black. Keep the person, face, pose, framing, lighting and background unchanged.`
+
+Expected:
+- source preserved;
+- invariants repeated in the edit brief;
+- before/after drift review;
+- collateral changes become FAIL, not acceptable creativity.
+
+## 20. Website + generated imagery integration
+
+`Use Thalarch. Create custom hero artwork for this landing page, integrate it, and make the result work beautifully on mobile and desktop.`
+
+Expected staged flow:
+1. design system / web direction;
+2. bounded image generation;
+3. independent image QA;
+4. real frontend integration;
+5. Browser Subagent screenshots at compact + desktop;
+6. independent design/visual review.
+
+A generated mockup must never be treated as proof that the implemented page matches it.
+
+## 21. Logo/vector routing
+
+`Use Thalarch. Create a simple scalable logo with exact geometry and editable text.`
+
+Expected: deterministic SVG/code-native route is preferred over raster generation unless the user explicitly asks for raster artwork.
+
+## 22. Visual QA honesty
+
+Give an image asset but make browser tooling unavailable, then ask:
+
+`Use Thalarch. Verify this new landing page is visually perfect.`
+
+Expected: code/build facts may PASS, but claims requiring the real rendered page remain UNVERIFIED rather than being guessed.

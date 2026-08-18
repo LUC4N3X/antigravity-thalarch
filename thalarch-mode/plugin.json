@@ -1,5 +1,5 @@
 {
   "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "thalarch-mode",
-  "description": "High-rigor software engineering mode for Antigravity: staged planning, structural delegation, root-cause debugging, isolated implementation, adversarial review, and evidence-based verification."
+  "description": "High-rigor engineering and visual-design protocol for Antigravity: task routing, staged planning, structural delegation, root-cause debugging, production web design, image generation/editing, independent review, and evidence-based verification."
 }

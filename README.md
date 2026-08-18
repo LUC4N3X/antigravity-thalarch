@@ -4,11 +4,11 @@
 
 <br/>
 
-**High-rigor, project-agnostic multi-agent engineering protocol for Google Antigravity.**
+**High-rigor, project-agnostic engineering + visual design protocol for Google Antigravity.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Antigravity: IDE & CLI](https://img.shields.io/badge/Antigravity-IDE%20%7C%20CLI-06B6D4.svg?style=flat-square)](#installation)
-[![Version: 2.0](https://img.shields.io/badge/Version-2.0-0EA5E9.svg?style=flat-square)](CHANGELOG.md)
+[![Version: 2.1](https://img.shields.io/badge/Version-2.1-0EA5E9.svg?style=flat-square)](CHANGELOG.md)
 [![Validation](https://img.shields.io/badge/Validation-Thalarch%20Gate-14B8A6.svg?style=flat-square)](.github/workflows/validate.yml)
 
 </div>
@@ -18,44 +18,49 @@
 ## Why Thalarch?
 
 Coding agents are capable, but the failure modes are familiar: patching symptoms
-before understanding the cause, widening scope, overloading the main context,
-trusting their own implementation reports, and declaring success from evidence
-that proves less than the final claim.
+before understanding the cause, widening scope, overloading context, trusting
+their own implementation reports, producing generic-looking UI, and declaring
+success from evidence that proves less than the final claim.
 
-**Thalarch** is an Antigravity-native engineering harness designed to reduce those
-failure modes. It separates planning, implementation, review, and verification;
-routes each task through the smallest relevant specialist stack; and requires
-fresh evidence before a result is called complete.
+**Thalarch** is an Antigravity-native multi-agent harness designed to reduce those
+failure modes. It separates planning, implementation, creative direction, review,
+and verification; routes each task through the smallest relevant specialist
+stack; and requires fresh evidence before a result is called complete.
 
-The core protocol is intentionally **language-, framework-, repository-, and
-user-agnostic**. Android, UI, browser, security, CI, and Git behavior live in
-focused optional skills and are loaded only when relevant.
+The core is intentionally **language-, framework-, repository-, and user-agnostic**.
+Android, web, image generation, UI, browser, security, CI, and Git behavior live
+in focused skills loaded only when relevant.
 
-> Thalarch improves the engineering process around the underlying model. It does
-> not claim to change the model's intrinsic reasoning capability.
+> Thalarch improves the process around the underlying model. It does not claim to
+> change the model's intrinsic reasoning capability.
 
 ---
 
-## What changed in 2.0
+## 2.1 — Creative Engineering
 
-Version 1 established structural delegation and cold verification. Version 2
-turns that foundation into a progressively disclosed engineering system:
+Thalarch 2.1 adds a full visual-production path instead of treating design as a
+small add-on to coding:
 
-- **task/risk router** instead of one heavy workflow for everything;
-- **executable acceptance contract** for broad features and architecture work;
-- **bounded codebase intelligence** for unfamiliar repositories;
-- **causal debugging** with falsifiable hypotheses before fixes;
-- **regression-test design** focused on proofs that can actually fail;
-- **risk-sized review council** with independent spec, security, and performance lenses;
-- **isolated research agent** for current docs, APIs, and external contracts;
-- **UI/browser, Android, security, CI, and Git specialist skills**;
-- **evidence ledger** for long-session recovery instead of relying on conversation memory;
-- **self-evaluation suite** for testing Thalarch itself;
-- **optional hard command gate** for consequential shell operations;
-- **Windows, Linux, and macOS installation paths**;
-- **repository validation CI**.
+- **web designer-engineer** for production websites and frontend redesigns;
+- **semantic design-system skill** for product-specific visual language;
+- **image router** that chooses generation, editing, vector, capture, compare,
+  annotation, or optimization instead of using generation for everything;
+- **visual director** with Antigravity's native `generate_image` capability;
+- **independent vision reviewer** for cold image QA;
+- **web design reviewer** for hierarchy, craft, responsiveness, accessibility,
+  image integration, and anti-template quality;
+- **image generation protocol** with reference-role labeling and edit invariants;
+- **visual QA protocol** for exact text, metadata, alpha, before/after drift,
+  brand fidelity, and image artifacts;
+- **Browser Subagent QA** for real screenshots, viewport checks, console/network
+  evidence, and interaction recordings;
+- read-only image metadata and optional pixel-diff utilities.
 
-See [CHANGELOG.md](CHANGELOG.md) for the release summary.
+Thalarch deliberately distinguishes **mockup**, **asset**, **implemented UI**, and
+**runtime evidence**. A generated website mockup is not proof that the real site
+matches it.
+
+See [CHANGELOG.md](CHANGELOG.md) for release notes.
 
 ---
 
@@ -70,101 +75,206 @@ graph TD
     R --> Q[Researcher]
     R --> D[Debugger]
     R --> I[Implementer]
+    R --> WD[Web Designer]
+    R --> VD[Visual Director]
 
     I --> C[(Project Repository)]
+    WD --> C
     D --> C
     Q --> C
+    VD --> A[(Visual Assets)]
 
-    I --> RS[Spec & Correctness Review]
-    I --> RG[General Review]
+    A --> VR[Vision Reviewer]
+    WD --> DR[Design Reviewer]
+    I --> RS[Spec Review]
     I --> RSEC[Security Review]
     I --> RPERF[Performance Review]
 
-    RS --> V[Cold Verifier]
-    RG --> V
+    VR --> V[Cold Verifier]
+    DR --> V
+    RS --> V
     RSEC --> V
     RPERF --> V
     V --> E([PASS / FAIL / UNVERIFIED])
 ```
 
-The orchestrator is intentionally defined without project file-writing tools and
-without shell execution. Mutation and executable checks are delegated to bounded
-specialists rather than quietly performed by the coordinator.
+The orchestrator is intentionally defined without project write tools and without
+shell execution. Mutation and executable checks are delegated to bounded
+specialists.
 
 ---
 
 ## Agents
 
-| Agent | Purpose | Mutates project files? |
+| Agent | Purpose | Mutates files? |
 | --- | --- | :---: |
-| `thalarch-orchestrator` | Routes and coordinates the full workflow | No |
+| `thalarch-orchestrator` | Routes and coordinates the workflow | No |
 | `thalarch-planner` | Acceptance contract, architecture, execution plan | No |
 | `thalarch-researcher` | Current documentation, APIs, external contracts | No |
-| `thalarch-debugger` | Root-cause investigation and falsifiable diagnosis | No |
-| `thalarch-implementer` | Executes one bounded change | **Yes** |
-| `thalarch-reviewer` | Lightweight/general review path | No |
+| `thalarch-debugger` | Root-cause investigation | No |
+| `thalarch-implementer` | Executes one bounded engineering change | **Yes** |
+| `thalarch-web-designer` | Designs and implements production web UI | **Yes** |
+| `thalarch-visual-director` | Generates/edits raster images and deterministic visual assets | **Yes** |
+| `thalarch-design-reviewer` | Independent website/UI design review | No |
+| `thalarch-vision-reviewer` | Cold image/visual artifact review | No |
+| `thalarch-reviewer` | Lightweight/general code review | No |
 | `thalarch-review-spec` | Requirement compliance and correctness | No |
-| `thalarch-review-security` | Threat-model and trust-boundary review | No |
-| `thalarch-review-performance` | Performance and concurrency review | No |
+| `thalarch-review-security` | Security/trust-boundary review | No |
+| `thalarch-review-performance` | Performance/concurrency review | No |
 | `thalarch-verifier` | Cold acceptance verification | No |
 
-Review depth is proportional to risk. A one-line edit should not summon a review
-council; a security-sensitive concurrency change should not receive a one-line
-review.
+Review depth is proportional to risk. Small changes stay small; visual and
+security-sensitive work receive the extra specialists only when relevant.
 
 ---
 
 ## Skills
 
-Thalarch 2.0 ships focused skills rather than one monolithic prompt:
+Thalarch uses progressive disclosure rather than one giant prompt.
 
-| Skill | When it is useful |
+### Core engineering
+
+| Skill | Purpose |
 | --- | --- |
 | `thalarch-mode` | Core orchestration protocol |
 | `thalarch-router` | Chooses the smallest relevant skill stack |
-| `thalarch-spec` | Broad feature, refactor, migration, architecture |
-| `thalarch-codebase-intel` | Large or unfamiliar repository |
-| `thalarch-debug` | Bug, regression, failure, flaky behavior |
+| `thalarch-spec` | Features, refactors, migrations, architecture |
+| `thalarch-codebase-intel` | Large or unfamiliar repositories |
+| `thalarch-debug` | Bugs, regressions, failures, flaky behavior |
 | `thalarch-test` | Regression and falsifiable test design |
 | `thalarch-review` | Evidence-first risk-sized review |
 | `thalarch-security` | Auth, input, secrets, tools, dependencies, workflows |
-| `thalarch-ui` | Visual/interaction design and rendered evidence |
-| `thalarch-browser-qa` | Real browser flow, console, network, responsive QA |
-| `thalarch-android` | Kotlin, Compose, Gradle, Media3, device/runtime work |
-| `thalarch-ci` | Build pipelines, GitHub Actions, packaging/signing |
-| `thalarch-git` | Branch, commit, push, PR and publication workflow |
+| `thalarch-android` | Kotlin, Compose, Gradle, Media3, runtime/device work |
+| `thalarch-ci` | Build pipelines, Actions, packaging/signing |
+| `thalarch-git` | Branch, commit, push, PR and publication workflows |
 | `thalarch-compound` | Distills verified reusable project knowledge |
 | `thalarch-evals` | Benchmarks and retunes Thalarch itself |
+
+### Web + visual design
+
+| Skill | Purpose |
+| --- | --- |
+| `thalarch-design-system` | Extracts/creates the product's semantic visual language |
+| `thalarch-web-design` | Distinctive production websites and frontend implementation |
+| `thalarch-ui` | UI/UX composition and product interaction design |
+| `thalarch-browser-qa` | Real browser flow, screenshots, console/network, responsive QA |
+| `thalarch-image` | Routes image work to the correct production method |
+| `thalarch-imagegen` | High-discipline raster generation/editing |
+| `thalarch-visual-qa` | Cold visual inspection, comparison, metadata and drift checks |
 
 ### Example routing
 
 | Task | Typical stack |
 | --- | --- |
-| Small safe edit | General review only |
+| Small safe edit | Review only |
 | Bug/regression | Debug → Test → Review → Verify |
 | Multi-file feature | Spec → Test → Review → Verify |
 | Architecture | Spec → Codebase Intel → Deep Review → Verify |
-| UI change | Spec → UI → Browser/Runtime QA → Review → Verify |
+| Full website | Design System → Web Design → Browser QA → Design Review → Verify |
+| UI redesign | Spec → UI → Browser/Runtime QA → Visual Review → Verify |
+| Generate hero artwork | Image → Imagegen → Vision Review |
+| Precise photo edit | Image → Imagegen → Before/After Visual QA |
+| Website + custom imagery | Design System → Web Design + Imagegen → Asset QA → Integration → Browser QA → Design Review |
+| Exact logo/icon/diagram | Image router → deterministic SVG/code path → Visual QA |
 | Security-sensitive change | Security → Review Council → Verify |
 | CI failure | CI → Security when relevant → Review → Verify |
-| Publish a branch/PR | Git → Review → Verify remote state |
+| Publish branch/PR | Git → Review → Verify remote state |
+
+---
+
+## Website quality model
+
+For substantial websites, Thalarch works in stages:
+
+1. **Ground the product** — audience, page job, information hierarchy.
+2. **Choose a visual thesis** — a specific aesthetic direction and one memorable
+   idea that belongs to this product.
+3. **Extract/create the design system** — typography, color roles, geometry,
+   components, layout, motion, imagery, responsive behavior, anti-patterns.
+4. **Plan the asset strategy** — reuse real assets, generate raster imagery only
+   when useful, prefer SVG/code for exact vector work.
+5. **Implement in the existing stack** — no framework rewrite just for styling.
+6. **Run repository checks** — type/build/lint/test as relevant.
+7. **Open the real site in Antigravity's Browser Subagent** — compact + desktop,
+   primary flow, screenshots, console/network checks.
+8. **Independent design review** — hierarchy, craft, responsive behavior,
+   accessibility, image integration and performance-sensitive visual choices.
+9. **Cold verification** — PASS / FAIL / UNVERIFIED against the actual acceptance
+   contract.
+
+A page that could become a different product by swapping the logo is not
+considered sufficiently distinctive.
+
+---
+
+## Image quality model
+
+Thalarch does not send every visual request blindly to an image generator.
+
+It first classifies the work as:
+
+- inspect;
+- generate;
+- edit;
+- compose;
+- vector;
+- capture;
+- compare;
+- annotate;
+- optimize.
+
+`thalarch-visual-director` can use Antigravity's native `generate_image` tool for
+raster generation and semantic edits. Reference images are labeled by role — edit
+target, style reference, composition reference, identity reference, brand/palette
+reference, source, or comparison baseline — so an attached moodboard is not
+accidentally treated as something to edit.
+
+For "change only X" edits, Thalarch restates locked invariants on every pass and
+then independently checks for collateral drift.
+
+For exact logos, diagrams, UI geometry, charts, and typography, deterministic
+SVG/code-native construction is preferred when it gives stronger guarantees.
+
+---
+
+## Visual verification utilities
+
+The visual QA skill ships small read-only helpers:
+
+```bash
+python thalarch-mode/skills/thalarch-visual-qa/scripts/image_probe.py image.png
+```
+
+Reports supported format, dimensions, aspect ratio, file size and alpha knowledge
+without external Python packages.
+
+Optional decoded pixel comparison:
+
+```bash
+python thalarch-mode/skills/thalarch-visual-qa/scripts/image_compare.py before.png after.png --out diff.png
+```
+
+Pixel comparison uses Pillow **only if already installed**. If it is missing, the
+script reports the comparison as unverified instead of silently installing a
+dependency.
+
+Mechanical checks complement visual judgment; they do not replace it.
 
 ---
 
 ## The core execution loop
 
 1. **Route** — classify task and risk before loading heavy instructions.
-2. **Understand** — read repository rules and the smallest necessary code surface.
-3. **Specify** — convert broad intent into observable acceptance criteria.
+2. **Understand** — read rules and the smallest necessary project surface.
+3. **Specify** — convert intent into observable acceptance criteria.
 4. **Investigate** — for failures, establish causal evidence before editing.
-5. **Implement** — mutate only the bounded surface required by the task.
-6. **Review** — use independent lenses sized to the actual risk.
+5. **Create / Implement** — bounded code or visual production.
+6. **Review** — use independent technical/design/visual lenses sized to risk.
 7. **Verify** — cold-check acceptance criteria with fresh evidence.
-8. **Compound** — keep only reusable, evidence-backed lessons from difficult work.
+8. **Compound** — retain only reusable, evidence-backed lessons.
 
-A successful compile proves compilation. It does not automatically prove runtime,
-visual, network, integration, or device behavior. Thalarch deliberately keeps
-those claims separate.
+A successful compile proves compilation. A prompt proves intent. Neither proves
+runtime behavior or final visual quality.
 
 ---
 
@@ -172,13 +282,11 @@ those claims separate.
 
 ### Antigravity IDE — Windows
 
-From the repository root:
-
 ```powershell
 .\INSTALL.ps1 -Target IDE
 ```
 
-The installer copies `thalarch-mode` to:
+Installs to:
 
 ```text
 %USERPROFILE%\.gemini\config\plugins\thalarch-mode
@@ -191,7 +299,7 @@ chmod +x ./INSTALL.sh
 ./INSTALL.sh IDE
 ```
 
-The plugin is installed to:
+Installs to:
 
 ```text
 ~/.gemini/config/plugins/thalarch-mode
@@ -199,95 +307,95 @@ The plugin is installed to:
 
 ### Antigravity CLI
 
-From any supported platform with `agy` available:
-
 ```text
 agy plugin install ./thalarch-mode
 ```
 
-Or use the included installer:
-
-```powershell
-.\INSTALL.ps1 -Target CLI
-```
-
-```bash
-./INSTALL.sh CLI
-```
+Or use `INSTALL.ps1 -Target CLI` / `./INSTALL.sh CLI`.
 
 After installation, restart/reload Antigravity and select
 `thalarch-orchestrator` as the primary agent.
+
+For real web verification, enable Antigravity Browser tools; the Browser Subagent
+can capture screenshots and recordings of the implemented site.
 
 ---
 
 ## Usage
 
-Thalarch can route complex tasks automatically, but explicit activation is the
-most deterministic way to test or demonstrate the protocol:
-
 ```text
 Use Thalarch.
 
 Work end-to-end. Route this task to the smallest relevant skill stack.
-Investigate root cause before editing if this is a bug.
-Keep the diff minimal and preserve repository conventions.
+Keep the implementation specific to this product rather than generic.
+For visual work, establish the design direction before implementation.
+For image work, preserve reference roles and edit invariants.
+Use real browser/device/image evidence where the acceptance criterion is visual.
 Use independent review appropriate to the risk.
-Cold-verify the final acceptance criteria with fresh evidence.
+Cold-verify the final acceptance criteria.
 Do not push, merge, publish, deploy, or release unless I explicitly requested it.
 ```
 
-The same protocol is meant to work across application code, libraries, services,
-CLI tools, web projects, mobile projects, build systems, and mixed-language
-repositories. Domain skills add specialized checks without changing the generic
-core contract.
+### Website example
+
+```text
+Use Thalarch. Build this website end-to-end.
+Create a product-specific design system, generate only the imagery that genuinely
+improves the concept, implement it in the existing stack, verify mobile and desktop
+in the real browser, and send the final screenshots through independent design review.
+Avoid generic AI-template aesthetics.
+```
+
+### Image-edit example
+
+```text
+Use Thalarch. Change only the jacket from red to black in the provided image.
+Keep identity, pose, framing, background and lighting unchanged. Compare the final
+result with the original and reject collateral drift.
+```
 
 ---
 
 ## Safety and evidence invariants
 
 - **No unauthorized external actions.** Push, merge, publish, deploy, release,
-  credential/permission changes, and destructive operations require authorization
-  for that class of action.
-- **Root cause before symptom patching.** Bugs require evidence and a falsifiable
-  hypothesis before mutation.
-- **Implementers do not self-certify.** Final status comes from independent evidence.
-- **Reviewer findings are hypotheses until confirmed.** Speculation is not silently
-  converted into code churn.
+  credential/permission changes, and destructive operations require authorization.
+- **Root cause before symptom patching.** Bugs require causal evidence.
+- **Implementers/creators do not self-certify.** Final status comes from independent evidence.
+- **Reviewer findings are hypotheses until confirmed.** Speculation does not become churn.
 - **PASS / FAIL / UNVERIFIED stay distinct.** Missing proof is not proof of success.
-- **Scope is binding.** Unrequested cleanup is surfaced separately rather than
-  silently included.
+- **Scope is binding.** Unrequested cleanup or visual redesign is surfaced separately.
+- **Prompts are not proof.** Final pixels and real runtime behavior are inspected.
 
 ### Optional consequential-command hook
 
 `thalarch-mode/hooks.json` includes a disabled hook that can force confirmation
-for commands such as push, merge, release/publish, destructive recursive deletion,
-and deployment operations.
+for consequential commands such as push, merge, release/publish, destructive
+recursive deletion, and deployment operations.
 
-It is **disabled by default** because plugin hooks affect every session in which
-they are enabled. Review it for your environment before turning it on.
+It is disabled by default because plugin hooks affect every session in which they
+are enabled.
 
 ---
 
 ## Validation and evaluation
 
-Validate the distribution locally:
-
 ```bash
 python validate_thalarch.py .
 ```
 
-Expected result:
+Expected:
 
 ```text
 THALARCH VALIDATION PASSED
 ```
 
-The repository also runs this validator automatically through GitHub Actions.
+The repository also runs the validator through GitHub Actions.
 
-`thalarch-evals` and [TEST-PROMPTS.md](TEST-PROMPTS.md) are intentionally included
-because longer prompts and more agents are not automatically improvements. Changes
-to Thalarch should be kept when they improve routing, scope discipline, debugging,
-review quality, verification honesty, or cost on representative tasks.
+`thalarch-evals` and [TEST-PROMPTS.md](TEST-PROMPTS.md) include design/image cases
+because a longer prompt is not automatically a better skill. Visual additions
+should improve routing, distinctiveness, fidelity, scope preservation, browser
+proof, or review honesty on representative tasks.
 
 ---
 
@@ -318,14 +426,16 @@ antigravity-thalarch/
 
 ## Design heritage
 
-Thalarch is an original Antigravity-native implementation. Its engineering ideas
-were informed by several public agentic-development patterns, including staged
-execution and cold verification, systematic root-cause debugging, subagent-driven
-development, specification-first workflows, independent code-review lenses, and
-progressive-disclosure skill design.
+Thalarch is an original Antigravity-native implementation. Its creative workflow
+was informed by public agent-skill patterns including Anthropic's distinctive
+frontend-design methodology, Google Stitch's semantic design-system / design
+iteration skills, Microsoft's frontend design-review framework, and Vercel's web
+interface review guidelines. Engineering behavior is also informed by staged
+execution, systematic debugging, independent review, and cold verification
+patterns.
 
-The project is not a fork of those systems and does not copy their identity or
-claim equivalence with any underlying model.
+Thalarch does not copy those projects' identity or claim equivalence with any
+underlying model.
 
 ---
 

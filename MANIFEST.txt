@@ -16,6 +16,7 @@ assets/branding/thalarch-icon.svg
 assets/branding/thalarch-logo.png
 assets/branding/thalarch-logo.svg
 thalarch-mode/agents/thalarch-debugger/agent.md
+thalarch-mode/agents/thalarch-design-reviewer/agent.md
 thalarch-mode/agents/thalarch-implementer/agent.md
 thalarch-mode/agents/thalarch-orchestrator/agent.md
 thalarch-mode/agents/thalarch-planner/agent.md
@@ -25,6 +26,9 @@ thalarch-mode/agents/thalarch-review-security/agent.md
 thalarch-mode/agents/thalarch-review-spec/agent.md
 thalarch-mode/agents/thalarch-reviewer/agent.md
 thalarch-mode/agents/thalarch-verifier/agent.md
+thalarch-mode/agents/thalarch-vision-reviewer/agent.md
+thalarch-mode/agents/thalarch-visual-director/agent.md
+thalarch-mode/agents/thalarch-web-designer/agent.md
 thalarch-mode/hooks.json
 thalarch-mode/hooks/consequential_command_gate.py
 thalarch-mode/plugin.json
@@ -35,9 +39,12 @@ thalarch-mode/skills/thalarch-codebase-intel/SKILL.md
 thalarch-mode/skills/thalarch-codebase-intel/scripts/project_probe.py
 thalarch-mode/skills/thalarch-compound/SKILL.md
 thalarch-mode/skills/thalarch-debug/SKILL.md
+thalarch-mode/skills/thalarch-design-system/SKILL.md
 thalarch-mode/skills/thalarch-evals/SKILL.md
 thalarch-mode/skills/thalarch-evals/evals/evals.json
 thalarch-mode/skills/thalarch-git/SKILL.md
+thalarch-mode/skills/thalarch-image/SKILL.md
+thalarch-mode/skills/thalarch-imagegen/SKILL.md
 thalarch-mode/skills/thalarch-mode/SKILL.md
 thalarch-mode/skills/thalarch-review/SKILL.md
 thalarch-mode/skills/thalarch-router/SKILL.md
@@ -46,4 +53,8 @@ thalarch-mode/skills/thalarch-security/references/review-rubric.md
 thalarch-mode/skills/thalarch-spec/SKILL.md
 thalarch-mode/skills/thalarch-test/SKILL.md
 thalarch-mode/skills/thalarch-ui/SKILL.md
+thalarch-mode/skills/thalarch-visual-qa/SKILL.md
+thalarch-mode/skills/thalarch-visual-qa/scripts/image_compare.py
+thalarch-mode/skills/thalarch-visual-qa/scripts/image_probe.py
+thalarch-mode/skills/thalarch-web-design/SKILL.md
 validate_thalarch.py

@@ -19,7 +19,8 @@ else:
     except Exception as exc:
         errors.append(f"invalid plugin.json: {exc}")
 
-for skill_md in sorted((plugin / "skills").glob("*/SKILL.md")):
+skill_files = sorted((plugin / "skills").glob("*/SKILL.md"))
+for skill_md in skill_files:
     text = skill_md.read_text(encoding="utf-8")
     m = re.match(r"^---\n(.*?)\n---", text, re.S)
     if not m:
@@ -39,11 +40,24 @@ for skill_md in sorted((plugin / "skills").glob("*/SKILL.md")):
                     break
             break
 
-for agent_md in sorted((plugin / "agents").glob("*/agent.md")):
+agent_files = sorted((plugin / "agents").glob("*/agent.md"))
+for agent_md in agent_files:
     text = agent_md.read_text(encoding="utf-8")
     for key in ["name:", "description:", "tools:", "model:"]:
         if key not in text:
             errors.append(f"{agent_md.relative_to(root)}: missing {key}")
+
+# Structural visual-safety checks introduced in 2.1.
+visual_director = plugin / "agents" / "thalarch-visual-director" / "agent.md"
+orchestrator = plugin / "agents" / "thalarch-orchestrator" / "agent.md"
+if visual_director.exists():
+    if "  - generate_image" not in visual_director.read_text(encoding="utf-8"):
+        errors.append("thalarch-visual-director must have generate_image access")
+else:
+    errors.append("missing thalarch-visual-director")
+
+if orchestrator.exists() and "  - generate_image" in orchestrator.read_text(encoding="utf-8"):
+    errors.append("thalarch-orchestrator must not have direct generate_image access")
 
 for p in root.rglob("*"):
     if not p.is_file():
@@ -72,6 +86,16 @@ required = [
     root / "INSTALL.sh",
     root / "TEST-PROMPTS.md",
     plugin / "hooks.json",
+    plugin / "skills" / "thalarch-design-system" / "SKILL.md",
+    plugin / "skills" / "thalarch-web-design" / "SKILL.md",
+    plugin / "skills" / "thalarch-image" / "SKILL.md",
+    plugin / "skills" / "thalarch-imagegen" / "SKILL.md",
+    plugin / "skills" / "thalarch-visual-qa" / "SKILL.md",
+    plugin / "skills" / "thalarch-visual-qa" / "scripts" / "image_probe.py",
+    plugin / "skills" / "thalarch-visual-qa" / "scripts" / "image_compare.py",
+    plugin / "agents" / "thalarch-web-designer" / "agent.md",
+    plugin / "agents" / "thalarch-design-reviewer" / "agent.md",
+    plugin / "agents" / "thalarch-vision-reviewer" / "agent.md",
 ]
 for p in required:
     if not p.exists():
@@ -84,7 +108,9 @@ if errors:
     raise SystemExit(1)
 
 print("THALARCH VALIDATION PASSED")
-print("skills:", len(list((plugin / "skills").glob("*/SKILL.md"))))
-print("agents:", len(list((plugin / "agents").glob("*/agent.md"))))
+print("skills:", len(skill_files))
+print("agents:", len(agent_files))
 print("hooks:", (plugin / "hooks.json").exists())
+print("visual_director_generate_image: enforced")
+print("orchestrator_generate_image: structurally delegated")
 print("portable-path check: passed")

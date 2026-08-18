@@ -1,5 +1,45 @@
 # Changelog
 
+## 2.1.0 — 2026-08-18
+
+Thalarch 2.1 adds a full creative-engineering path for production websites,
+visual design, and image generation/editing while keeping the core protocol
+project-agnostic.
+
+### Added
+
+- `thalarch-web-design` for distinctive production websites and frontend work;
+- `thalarch-design-system` for semantic visual-system extraction/creation;
+- `thalarch-image` for routing visual tasks to generation, edit, vector, capture,
+  compare, annotate, or optimization paths;
+- `thalarch-imagegen` for disciplined use of Antigravity's native image generator;
+- `thalarch-visual-qa` for independent pixel/metadata/reference verification;
+- `thalarch-web-designer` agent for production frontend design + implementation;
+- `thalarch-visual-director` agent with `generate_image` access;
+- `thalarch-design-reviewer` for independent website/UI design review;
+- `thalarch-vision-reviewer` for cold image/visual review;
+- standard-library image metadata probe and optional Pillow-based decoded pixel diff;
+- image and full-website cases in the evaluation corpus.
+
+### Changed
+
+- the router now recognizes image/visual work as a first-class mode;
+- the orchestrator can coordinate web design, image creation, and independent
+  visual review without gaining direct mutation/image-generation tools itself;
+- UI work can delegate generated imagery while keeping implemented runtime UI
+  separate from generated mockups;
+- browser QA now explicitly uses real page screenshots/recordings and checks
+  generated-image integration at responsive sizes;
+- final verification distinguishes prompts, standalone assets, implemented UI,
+  and real runtime visual evidence.
+
+### Design principles
+
+The new design path synthesizes proven public patterns around strong aesthetic
+direction, semantic design systems, responsive composition, accessibility,
+review discipline, and anti-template quality while remaining an original
+Antigravity-native implementation.
+
 ## 2.0.0 — 2026-08-18
 
 Thalarch 2.0 changes the project from a single broad high-rigor mode into a
