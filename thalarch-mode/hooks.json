@@ -1,4 +1,43 @@
 {
+  "thalarch-epistemic-hard-gates": {
+    "enabled": true,
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "python3 hooks/pre_invocation_epistemic_guard.py || python hooks/pre_invocation_epistemic_guard.py || py -3 hooks/pre_invocation_epistemic_guard.py",
+        "timeout": 10
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "view_file|read_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 hooks/read_target_gate.py || python hooks/read_target_gate.py || py -3 hooks/read_target_gate.py",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 hooks/command_grounding_gate.py || python hooks/command_grounding_gate.py || py -3 hooks/command_grounding_gate.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "python3 hooks/stop_evidence_gate.py || python hooks/stop_evidence_gate.py || py -3 hooks/stop_evidence_gate.py",
+        "timeout": 15
+      }
+    ]
+  },
   "thalarch-consequential-command-gate": {
     "enabled": false,
     "PreToolUse": [
@@ -7,7 +46,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python hooks/consequential_command_gate.py",
+            "command": "python3 hooks/consequential_command_gate.py || python hooks/consequential_command_gate.py || py -3 hooks/consequential_command_gate.py",
             "timeout": 10
           }
         ]
