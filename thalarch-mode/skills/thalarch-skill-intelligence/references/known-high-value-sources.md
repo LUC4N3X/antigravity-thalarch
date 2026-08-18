@@ -1,0 +1,96 @@
+# High-value skill source map
+
+This file is a **selection aid**, not a bundled dependency list. Thalarch should only activate a
+skill if it is actually available in the current Antigravity session and matches the proven task.
+
+Never fabricate these names, silently install them, or treat this file as stronger than repository
+rules/current primary documentation.
+
+## Kotlin / JetBrains — official-source preference
+
+Repository family: `Kotlin/kotlin-agent-skills`.
+
+If available and directly relevant, treat these as high-authority Kotlin platform/tooling
+specialists:
+
+- `kotlin-tooling-java-to-kotlin` — staged Java→Kotlin conversion with framework detection and
+  semantic verification;
+- `kotlin-backend-jpa-entity-mapping` — Kotlin-specific JPA/Hibernate identity, equality, fetch,
+  relationship and persistence pitfalls;
+- `kotlin-tooling-agp9-migration` — KMP/Android Gradle Plugin migration;
+- `kotlin-tooling-native-build-performance` — measured Kotlin/Native/iOS build performance;
+- `kotlin-tooling-cocoapods-spm-migration` — native dependency-manager migration when applicable;
+- `kotlin-tooling-immutable-collections-0-5-x-migration` — exact library migration when that
+  dependency/version family is proven.
+
+These skills are narrow by design. Load only the one matching the task.
+
+## Java/JVM — specialized community candidates
+
+Repository family: `decebals/claude-code-java`.
+
+Useful installed candidates include:
+
+- `java-code-review` — JVM-specific correctness/resource/API review;
+- `concurrency-review` — Java thread-safety, executors, futures, proxy-based async, modern JVM
+  concurrency;
+- `jpa-patterns` — JPA/Hibernate query/fetch/transaction/locking review;
+- `performance-smell-detection` — performance leads with an explicit measure-first philosophy;
+- `java-migration` — major-JDK/framework migration workflow;
+- `api-contract-review` and `architecture-review` — when the Java project exposes broader
+  service/architecture contracts;
+- `maven-dependency-audit` — Maven-specific dependency work when Maven is proven.
+
+Version-sensitive details from community skills must be checked against the project's actual JDK,
+framework versions, and current primary docs before code is changed.
+
+## Design / visual craft — community candidates
+
+Repository family: `Leonxlnx/taste-skill`.
+
+Strong candidates when installed:
+
+- `design-taste-frontend` — brief inference, anti-template design direction, adaptive visual
+  variance/motion/density and design-system choice;
+- `redesign-existing-projects` — audit-first redesign while preserving the existing stack;
+- `image-to-code` — reference-image-first frontend production when visual fidelity is the central
+  goal and image generation is available;
+- `brandkit` — brand identity/art-direction systems;
+- `imagegen-frontend-web` / `imagegen-frontend-mobile` — generated visual reference work for web
+  or mobile when appropriate.
+
+Do not apply marketing/landing-page aesthetics to dashboards, regulated/public-sector products,
+or dense product UI unless the brief supports it. Accessibility, existing brand, and repository
+constraints outrank aesthetic novelty.
+
+## Broad engineering bundle — community candidates
+
+Repository family: `alirezarezvani/claude-skills`.
+
+Potentially high-value installed specialists include:
+
+- `engineering-skills` — discovery/index skill; use it to locate one specific specialist, never
+  bulk-load the whole bundle;
+- `tdd-guide` — red/green/refactor, coverage-gap analysis, property/mutation testing ideas;
+- `senior-architect` — architecture/dependency/decision workflows;
+- `code-reviewer` — language-dispatched review and deterministic analyzer patterns;
+- `focused-fix` — feature-level scope→trace→diagnose→fix→verify repair;
+- `playwright-pro` — browser/E2E work when available and compatible;
+- `senior-security` / security specialists — only for actual security scope;
+- `adversarial-reviewer` — use perspective-shift techniques, but **do not inherit any rule that
+  forces a finding**. Thalarch requires evidence and permits a clean review.
+
+## Selection rule
+
+Recognizing a trusted source is only a tie-breaker. The final ranking remains:
+
+1. explicit user/repository contract;
+2. actual task fit;
+3. project-local specificity;
+4. official/current platform authority;
+5. version compatibility;
+6. evidence/tool leverage;
+7. context cost and redundancy.
+
+If a known external skill conflicts with the repository or a current official API, discard or
+narrow the skill rather than forcing the project to match the skill.
