@@ -46,8 +46,8 @@
     {
       "id": 8,
       "prompt": "Make this Compose screen adaptive and test on device.",
-      "expected_output": "Android skill plus device/emulator evidence.",
-      "expectations": ["Compilation not treated as runtime proof", "Checks insets/adaptive behavior"]
+      "expected_output": "Kotlin/Android route plus device/emulator evidence.",
+      "expectations": ["Kotlin specialist selected", "Compilation not treated as runtime proof", "Checks insets/adaptive behavior"]
     },
     {
       "id": 9,
@@ -72,6 +72,54 @@
       "prompt": "Use Thalarch. Add the generated hero artwork to the landing page and make it work beautifully on mobile and desktop.",
       "expected_output": "Combined web + image integration route followed by real browser visual review.",
       "expectations": ["Asset QA before integration", "Responsive crop checked", "Implemented UI screenshot evidence", "Generated mockup not treated as implementation proof"]
+    },
+    {
+      "id": 13,
+      "prompt": "Use Thalarch. Fix this Java service on its current JDK. Do not upgrade Java or Spring. The method I think exists may be version-specific.",
+      "expected_output": "Java specialist discovers real JDK/framework versions and verifies APIs before coding.",
+      "expectations": ["Java specialist selected", "No toolchain upgrade", "Version-sensitive API confirmed", "Project-native tests"]
+    },
+    {
+      "id": 14,
+      "prompt": "Use Thalarch. This Kotlin Flow intermittently loses UI events. Find the cause and fix it without changing app architecture.",
+      "expected_output": "Causal debugging plus Kotlin coroutine/Flow specialist reasoning.",
+      "expectations": ["Kotlin specialist selected", "Hot/cold/replay/lifecycle semantics checked", "No speculative architecture migration", "Cancellation preserved"]
+    },
+    {
+      "id": 15,
+      "prompt": "Use Thalarch. Optimize this Python endpoint. Do not add dependencies unless measurement proves we need one.",
+      "expected_output": "Python + performance route with baseline/profiling before optimization.",
+      "expectations": ["Python specialist selected", "No guessed optimization", "No fashionable-tool migration", "Before/after metric"]
+    },
+    {
+      "id": 16,
+      "prompt": "Use Thalarch. Refactor this TypeScript module with exactly the same external behavior.",
+      "expected_output": "Refactor + TypeScript route with behavior baseline and compiler strictness preserved.",
+      "expectations": ["TypeScript specialist selected", "No behavior change bundled", "No tsconfig weakening", "Before/after tests"]
+    },
+    {
+      "id": 17,
+      "prompt": "Use Thalarch. This Go worker occasionally leaks goroutines under cancellation. Fix and prove it.",
+      "expected_output": "Go specialist plus causal concurrency debugging and race/lifecycle evidence.",
+      "expectations": ["Go specialist selected", "Goroutine ownership identified", "Cancellation path tested", "Race evidence when feasible"]
+    },
+    {
+      "id": 18,
+      "prompt": "Use Thalarch. Review and modify this Rust unsafe parsing boundary without expanding the unsafe surface.",
+      "expected_output": "Rust specialist treats unsafe as a proof obligation and keeps the surface minimal.",
+      "expectations": ["Rust specialist selected", "Unsafe invariant explicit", "No clone-to-silence-borrow-checker shortcut", "Cargo checks"]
+    },
+    {
+      "id": 19,
+      "prompt": "Use Thalarch. Change the Kotlin Android client and Python backend to evolve one shared API without breaking old clients.",
+      "expected_output": "Polyglot route with explicit shared compatibility contract and separate language specialists.",
+      "expectations": ["Kotlin and Python specialists separated", "API compatibility plan", "Integration stage", "No independent interface redesign"]
+    },
+    {
+      "id": 20,
+      "prompt": "Use Thalarch. Upgrade this dependency to fix the bug, but do not update anything unrelated.",
+      "expected_output": "Dependency migration route with exact-version API/compatibility verification.",
+      "expectations": ["Minimal dependency set", "Lockfile discipline", "Version-specific docs/API evidence", "Relevant tests"]
     }
   ]
 }
