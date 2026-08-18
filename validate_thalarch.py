@@ -56,10 +56,16 @@ if visual_director.exists():
 else:
     errors.append("missing thalarch-visual-director")
 
-if orchestrator.exists() and "  - generate_image" in orchestrator.read_text(encoding="utf-8"):
-    errors.append("thalarch-orchestrator must not have direct generate_image access")
+if orchestrator.exists():
+    orchestrator_text = orchestrator.read_text(encoding="utf-8")
+    if "  - generate_image" in orchestrator_text:
+        errors.append("thalarch-orchestrator must not have direct generate_image access")
+    if "skills/thalarch-skill-intelligence" not in orchestrator_text:
+        errors.append("thalarch-orchestrator must include thalarch-skill-intelligence")
+    if "Thalarch Orchestrator 1.0.0" not in orchestrator_text:
+        errors.append("thalarch-orchestrator public version must remain 1.0.0")
 
-# Structural polyglot checks introduced in 2.2.
+# Structural polyglot checks.
 language_agents = {
     "java": "thalarch-java-engineer",
     "kotlin": "thalarch-kotlin-engineer",
@@ -82,6 +88,51 @@ for language, agent_name in language_agents.items():
     if f"skills/thalarch-{language}" not in agent_text:
         errors.append(f"{agent_path.relative_to(root)} must include thalarch-{language}")
 
+required = [
+    root / "README.md",
+    root / "LICENSE",
+    root / "INSTALL.ps1",
+    root / "INSTALL.sh",
+    root / "TEST-PROMPTS.md",
+    root / "CHANGELOG.md",
+    root / "DESIGN-NOTES.md",
+    plugin / "hooks.json",
+    plugin / "skills" / "thalarch-skill-intelligence" / "SKILL.md",
+    plugin / "skills" / "thalarch-skill-intelligence" / "references" / "known-high-value-sources.md",
+    plugin / "skills" / "thalarch-code-craft" / "SKILL.md",
+    plugin / "skills" / "thalarch-architecture" / "SKILL.md",
+    plugin / "skills" / "thalarch-refactor" / "SKILL.md",
+    plugin / "skills" / "thalarch-performance" / "SKILL.md",
+    plugin / "skills" / "thalarch-api" / "SKILL.md",
+    plugin / "skills" / "thalarch-data-sql" / "SKILL.md",
+    plugin / "skills" / "thalarch-dependency" / "SKILL.md",
+    plugin / "skills" / "thalarch-jvm-concurrency" / "SKILL.md",
+    plugin / "skills" / "thalarch-kotlin-migration" / "SKILL.md",
+    plugin / "skills" / "thalarch-kotlin-jpa" / "SKILL.md",
+    plugin / "skills" / "thalarch-design-system" / "SKILL.md",
+    plugin / "skills" / "thalarch-web-design" / "SKILL.md",
+    plugin / "skills" / "thalarch-image-to-code" / "SKILL.md",
+    plugin / "skills" / "thalarch-image" / "SKILL.md",
+    plugin / "skills" / "thalarch-imagegen" / "SKILL.md",
+    plugin / "skills" / "thalarch-visual-qa" / "SKILL.md",
+    plugin / "skills" / "thalarch-codebase-intel" / "scripts" / "project_probe.py",
+    plugin / "skills" / "thalarch-codebase-intel" / "scripts" / "change_probe.py",
+    plugin / "skills" / "thalarch-visual-qa" / "scripts" / "image_probe.py",
+    plugin / "skills" / "thalarch-visual-qa" / "scripts" / "image_compare.py",
+    plugin / "agents" / "thalarch-web-designer" / "agent.md",
+    plugin / "agents" / "thalarch-design-reviewer" / "agent.md",
+    plugin / "agents" / "thalarch-vision-reviewer" / "agent.md",
+]
+for path in required:
+    if not path.exists():
+        errors.append(f"missing required file: {path.relative_to(root)}")
+
+# Portability, branding, and permanent 1.0.0 version policy.
+thalarch_newer_version = re.compile(
+    r"(?i)\bThalarch(?:\s+(?:Mode|Orchestrator))?\s+v?[2-9]\d*(?:\.\d+)*\b"
+)
+version_badge_newer = re.compile(r"(?i)Version(?:%3A|:|-)[_ -]*[2-9]\d*(?:\.\d+)*")
+
 for p in root.rglob("*"):
     if not p.is_file():
         continue
@@ -101,34 +152,22 @@ for p in root.rglob("*"):
         errors.append(f"absolute Windows user path in {rel}")
     if re.search(r"/(?:home|users)/[^/\s]+/", text):
         errors.append(f"absolute Unix/macOS user path in {rel}")
+    if thalarch_newer_version.search(text) or version_badge_newer.search(text):
+        errors.append(f"Thalarch version must remain 1.0.0: {rel}")
 
-required = [
-    root / "README.md",
-    root / "LICENSE",
-    root / "INSTALL.ps1",
-    root / "INSTALL.sh",
-    root / "TEST-PROMPTS.md",
-    plugin / "hooks.json",
-    plugin / "skills" / "thalarch-code-craft" / "SKILL.md",
-    plugin / "skills" / "thalarch-refactor" / "SKILL.md",
-    plugin / "skills" / "thalarch-performance" / "SKILL.md",
-    plugin / "skills" / "thalarch-api" / "SKILL.md",
-    plugin / "skills" / "thalarch-data-sql" / "SKILL.md",
-    plugin / "skills" / "thalarch-dependency" / "SKILL.md",
-    plugin / "skills" / "thalarch-design-system" / "SKILL.md",
-    plugin / "skills" / "thalarch-web-design" / "SKILL.md",
-    plugin / "skills" / "thalarch-image" / "SKILL.md",
-    plugin / "skills" / "thalarch-imagegen" / "SKILL.md",
-    plugin / "skills" / "thalarch-visual-qa" / "SKILL.md",
-    plugin / "skills" / "thalarch-visual-qa" / "scripts" / "image_probe.py",
-    plugin / "skills" / "thalarch-visual-qa" / "scripts" / "image_compare.py",
-    plugin / "agents" / "thalarch-web-designer" / "agent.md",
-    plugin / "agents" / "thalarch-design-reviewer" / "agent.md",
-    plugin / "agents" / "thalarch-vision-reviewer" / "agent.md",
-]
-for p in required:
-    if not p.exists():
-        errors.append(f"missing required file: {p.relative_to(root)}")
+readme = root / "README.md"
+if readme.exists():
+    readme_text = readme.read_text(encoding="utf-8")
+    if "Version-1.0.0" not in readme_text:
+        errors.append("README version badge must be 1.0.0")
+
+for installer in [root / "INSTALL.ps1", root / "INSTALL.sh"]:
+    if installer.exists() and "Thalarch 1.0.0" not in installer.read_text(encoding="utf-8"):
+        errors.append(f"{installer.name} must report Thalarch 1.0.0")
+
+mode = plugin / "skills" / "thalarch-mode" / "SKILL.md"
+if mode.exists() and "# Thalarch Mode 1.0.0" not in mode.read_text(encoding="utf-8"):
+    errors.append("thalarch-mode heading must remain 1.0.0")
 
 if errors:
     print("THALARCH VALIDATION FAILED")
@@ -137,10 +176,12 @@ if errors:
     raise SystemExit(1)
 
 print("THALARCH VALIDATION PASSED")
+print("version: 1.0.0 (fixed)")
 print("skills:", len(skill_files))
 print("agents:", len(agent_files))
 print("hooks:", (plugin / "hooks.json").exists())
 print("visual_director_generate_image: enforced")
 print("orchestrator_generate_image: structurally delegated")
+print("autonomous_skill_intelligence: enforced")
 print("polyglot_specialists:", ", ".join(language_agents))
 print("portable-path check: passed")
