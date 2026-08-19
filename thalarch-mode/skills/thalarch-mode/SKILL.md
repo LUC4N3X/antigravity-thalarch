@@ -1,19 +1,19 @@
 ---
 name: thalarch-mode
 description: >
-  High-rigor multi-agent engineering and visual-production protocol for complex, risky,
+  High-rigor model-agnostic engineering and visual-production protocol for complex, risky,
   multi-file, debugging, architecture, refactoring, performance, API/data, Java, Kotlin,
-  Python, TypeScript, Go, Rust, UI, images, Android, CI, security, or PR/publication tasks.
+  Python, TypeScript, Go, Rust, UI, images, Android, CI, security, or publication tasks.
   Routes work through the smallest relevant skill stack, adaptive deliberation, anti-hallucination
-  evidence gates, isolated specialists, causal analysis, risk-sized review, and cold verification.
-  Use when the user asks for Thalarch, deep work, maximum quality, autonomous end-to-end work,
-  or when regression/uncertainty risk is meaningful. Skip ceremony for trivial edits.
+  evidence gates, host-native specialists when available, causal analysis, risk-sized review,
+  and cold verification before completion. Use for Thalarch/deep-work/maximum-quality requests or
+  whenever regression/uncertainty risk is meaningful. Skip ceremony for trivial edits.
 ---
 
 # Thalarch Mode 1.0.0
 
-Thalarch is an engineering harness, not a persona and not a claim that prompting changes the
-underlying model's intrinsic capability.
+Thalarch is an engineering reliability harness, not a persona and not a claim that prompting changes
+the underlying model's intrinsic capability.
 
 Its highest-level objective is **epistemic reliability**: reason deliberately when needed, use tools
 to replace guesswork with evidence, and prefer an explicit unknown over a plausible hallucination.
@@ -22,24 +22,31 @@ to replace guesswork with evidence, and prefer an explicit unknown over a plausi
 
 **Route → reason → ground → understand → specify → investigate → implement/create → review → verify → compound.**
 
-Use the smallest process that safely fits the task. More agents, more skills, more files, and more
-prompt text are not automatically better.
+Use the smallest process that safely fits the task. More agents, skills, files, or prompt text are
+not automatically better.
 
-## 0. Route, reason, and ground before heavy work
+## 0. Detect host capabilities before orchestration
 
-For meaningful work:
+Thalarch can run on hosts with different skills, custom-agent formats, browser/image tools, shell
+semantics, and lifecycle hooks.
 
-1. use `thalarch-skill-intelligence` to choose the smallest strong skill stack;
-2. use `thalarch-router` to classify process/language/domain/risk/evidence needs;
-3. use `thalarch-reasoning` to choose deliberation depth `D0`–`D4`;
-4. apply `thalarch-epistemic-guard` to material claims before they drive implementation.
+Before relying on a named agent/tool:
+
+1. inspect what the current host actually exposes;
+2. use `thalarch-skill-intelligence` to choose the smallest strong skill/capability stack;
+3. use `thalarch-router` to classify process/language/domain/risk/evidence needs;
+4. use `thalarch-reasoning` to choose deliberation depth `D0`–`D4`;
+5. apply `thalarch-epistemic-guard` to material claims before they drive implementation.
+
+A role is portable; a host-specific name is not. If a named Thalarch specialist is unavailable,
+load the relevant canonical skill in a compatible host-native context instead. Never invent an agent,
+tool, MCP server, browser, image generator, or command because another host has one.
 
 Common modes include surgical edit, bug/regression, feature, architecture, refactor, performance,
 API/service boundary, database/migration, dependency/toolchain, UI/web/image, Android, security, CI,
 and Git/publication.
 
-For meaningful coding work, add `thalarch-code-craft` plus the detected language overlay when one
-exists:
+For meaningful coding work add `thalarch-code-craft` plus the detected language overlay when useful:
 
 - Java → `thalarch-java`;
 - Kotlin → `thalarch-kotlin`;
@@ -64,13 +71,12 @@ A material claim must have the right evidence class.
 Never invent exact paths, symbols, APIs, signatures, versions, commands, logs, counts, benchmark
 values, endpoints, commit/PR identifiers, or tool results.
 
-If evidence is missing, use `UNKNOWN` or `UNVERIFIED`. Do not fill a gap with confidence.
-
-Structured/syntactically valid output still requires semantic validation against the real contract.
+If evidence is missing, use `UNKNOWN` or `UNVERIFIED`. Structured/syntactically valid output still
+requires semantic validation against the real contract.
 
 ## 2. Adaptive reasoning
 
-Do not force deep reasoning onto trivial work.
+Use the smallest reasoning depth that fits the consequence and uncertainty:
 
 - `D0` direct — obvious reversible edit;
 - `D1` guarded — one meaningful assumption;
@@ -78,12 +84,13 @@ Do not force deep reasoning onto trivial work.
 - `D3` deep — architecture, concurrency, security/data integrity, elusive regression, major migration;
 - `D4` critical — high-consequence work or repeated disciplined hypothesis failure.
 
-For `D2+`, separate `FACT`, `INFERENCE`, and `UNKNOWN`; resist the first plausible answer; use
-competing hypotheses/approaches only when real alternatives exist; seek evidence that can falsify
-the favorite; then commit.
+For `D2+`, separate `FACT`, `INFERENCE`, and `UNKNOWN`; resist the first plausible answer; compare
+real alternatives when they exist; seek evidence that could falsify the favorite; then commit.
 
-For `D3+`, an independent `thalarch-deliberator` can challenge the model in a clean context.
-For disputed or high-risk factual premises, use `thalarch-fact-checker`.
+For `D3+`, use an independent clean-context deliberation role when the host exposes one. For disputed
+or high-risk factual premises, use an independent fact-checking role when available. Thalarch host
+adapters may provide native `thalarch-deliberator` / `thalarch_fact_checker` variants, but capability
+existence must be confirmed before invocation.
 
 Do not expose private chain-of-thought. Persist only compact decisions, evidence, rejected
 alternatives, uncertainty, and proof status.
@@ -99,73 +106,74 @@ Before non-trivial work establish:
 - authorized external side effects;
 - evidence required to call the result complete.
 
-Do not ask questions for reversible implementation details that can be safely decided from
-repository conventions. Stop for ambiguity when plausible interpretations materially change the
-result, compatibility, safety, or target environment.
+Do not ask questions for reversible implementation details that repository conventions can safely
+resolve. Stop for ambiguity when plausible interpretations materially change result, compatibility,
+safety, or target environment.
 
 ## 4. Preflight
 
-Read applicable repository instructions before editing:
-
-- `AGENTS.md`;
-- `GEMINI.md`;
-- `CLAUDE.md`;
-- contribution/build/test documentation;
-- workspace rules;
-- relevant CI/configuration.
+Read applicable repository instructions before editing, including host/project files such as
+`AGENTS.md`, `GEMINI.md`, `CLAUDE.md`, contribution/build/test docs, workspace rules, and relevant CI
+configuration when they actually exist.
 
 Inspect Git state and preserve unrelated dirty work.
 
 Discover actual language/runtime/toolchain/framework/dependency versions and project-native
 build/test/lint/typecheck commands. Do not invent commands or APIs.
 
-For unfamiliar repositories, use `thalarch-codebase-intel` and its probes.
+For unfamiliar repositories use `thalarch-codebase-intel` and available read-only probes.
 
 ## 5. Plan as a testable argument
 
 A meaningful stage has objective, exact inputs, expected artifact/change, dependency, risk, and a
 proof that can fail.
 
-For broad features and architecture, use `thalarch-spec` to create an acceptance matrix before
-implementation. For refactors, use `thalarch-refactor` to freeze observable behavior first.
+For broad features/architecture use `thalarch-spec` to create an acceptance matrix. For refactors,
+use `thalarch-refactor` to freeze observable behavior. For bugs use `thalarch-debug`: hypotheses must
+be falsifiable and symptom patches are forbidden before causal evidence.
 
-For debugging, use `thalarch-debug`: root-cause hypotheses must be falsifiable and symptom patches
-are forbidden before causal evidence. After three disproven fix hypotheses, reassess assumptions,
-shared state, environment, and architecture.
+After three disproven fix hypotheses, reassess assumptions, shared state, environment, and
+architecture rather than stacking another speculative patch.
 
-## 6. Delegate structurally
+## 6. Delegate by role, not by fantasy
 
-When custom agents are available, `thalarch-orchestrator` coordinates instead of implementing.
+When the host exposes custom/subagent capability, use clean contexts for bounded roles such as:
 
-Use clean contexts for bounded specialists. Prefer dedicated language engineers for substantial
-Java/Kotlin/Python/TypeScript/Go/Rust work.
+- planner/spec;
+- researcher/current-doc investigator;
+- causal debugger;
+- language/domain implementer;
+- independent deliberator;
+- independent fact checker;
+- correctness/security/performance/design reviewer;
+- cold verifier.
 
-Use `thalarch-deliberator` only when independent reasoning adds real information. Use
-`thalarch-fact-checker` when an exact factual premise is material, version-sensitive, disputed, or
-suspiciously memory-based.
+Antigravity may expose named `thalarch-*` agents; Codex/Claude adapters may expose a smaller native
+set; other hosts may expose none. **Only invoke an exact name after confirming it exists.**
 
-For independent edit streams, use isolated worktrees/workspaces when available. Do not parallelize
-coupled tasks sharing mutable files/interfaces without an explicit integration stage.
+If no specialist context exists, run the corresponding canonical skill in the current context and
+preserve separation through explicit stages/evidence. Missing delegation capability is not permission
+to fabricate a delegated result.
 
-Cap live subagents at four by default.
+For independent edit streams, use isolated worktrees/workspaces when the host supports them. Do not
+parallelize coupled tasks sharing mutable files/interfaces without an integration stage.
 
-Every task brief contains one bounded objective, workspace/paths, acceptance criteria, hard
-exclusions, required interfaces/decisions, expected evidence, and authorized external actions.
-
-Never dump the entire conversation into a subagent.
+Cap live subagents at four by default. Every brief contains one bounded objective, workspace/paths,
+acceptance criteria, exclusions, required interfaces/decisions, expected evidence, and authorized
+external actions. Never dump the whole conversation into a subagent.
 
 ## 7. Evidence ledger
 
 For non-trivial work maintain compact recovery state containing:
 
 - requirement status;
-- selected skill stack;
+- selected skill/capability stack;
 - `FACT` / `INFERENCE` / `UNKNOWN` distinctions;
-- active and rejected hypotheses when relevant;
+- active/rejected hypotheses when relevant;
 - rulings/assumptions;
 - material claim evidence/status;
 - changed files;
-- commands and results actually observed;
+- commands/results actually observed;
 - review findings/dispositions;
 - verification evidence;
 - explicit `UNVERIFIED` items.
@@ -178,32 +186,33 @@ Implementation begins only when there is enough evidence to state what must chan
 
 Apply `thalarch-code-craft`:
 
-- repository-native style and existing abstractions;
+- repository-native style/existing abstractions;
 - version-aware APIs;
 - minimal correct surface;
 - no speculative architecture/config/dependencies;
 - validation at real trust boundaries without defensive noise inside proven contracts;
-- specific error handling that preserves cancellation/interruption semantics;
-- no hardcoded fake-success paths;
+- specific error handling preserving cancellation/interruption semantics;
+- no fake-success paths;
 - no unrelated formatting/refactor;
 - no weakening tests/static checks to make the diff pass.
 
-Language overlays refine these rules for the actual runtime/toolchain.
-
-An implementer never self-certifies completion.
+Language overlays refine these rules for the actual runtime/toolchain. A producer never self-certifies
+completion merely because it authored the change.
 
 ## 9. Testing gate
 
 Use `thalarch-test` for meaningful behavior changes.
 
 Prefer the cheapest layer that proves the acceptance criterion. Add stronger layers only when the
-real boundary requires them.
-
-Use red-green regression proof where practical. For invariant-heavy parsers, protocols, state
-machines, transformations, and boundary logic, consider property/metamorphic/fuzz/mutation testing
-when the project ecosystem and risk justify it.
+real boundary requires them. Use red-green regression proof where practical. For invariant-heavy
+parsers, protocols, state machines, transformations, and boundary logic, consider
+property/metamorphic/fuzz/mutation testing when ecosystem and risk justify it.
 
 Mocks do not prove integration.
+
+A verification used for completion must be **successful and newer than the final relevant mutation**.
+An earlier PASS cannot prove code changed afterward, and a later failed check invalidates earlier
+success for the affected claim.
 
 ## 10. Specialized overlays
 
@@ -228,47 +237,54 @@ These overlays supplement — not replace — language-specific reasoning.
 For substantial websites:
 
 1. establish/extract the design system;
-2. use `thalarch-web-designer` for implementation;
-3. use the relevant frontend language overlay;
-4. use `thalarch-visual-director` for custom raster assets only when useful;
-5. obtain real browser evidence when available;
-6. send screenshots/design contract to independent design review;
-7. cold-verify acceptance.
+2. use `thalarch-web-design` plus the relevant frontend language overlay;
+3. delegate implementation to a host-native web/frontend specialist only if one actually exists;
+4. use `thalarch-image` / `thalarch-imagegen` for custom raster assets only when the current host has
+   a suitable image-generation/editing capability;
+5. obtain real browser evidence when a browser/runtime tool is actually available;
+6. use independent design/visual review when the host supports it;
+7. cold-verify acceptance with the strongest available evidence.
 
 For images:
 
 - label every reference by role;
 - preserve source/reference assets unless replacement is requested;
-- use `thalarch-image` to choose raster generation, deterministic vector/code creation, capture,
-  annotation, comparison, or optimization;
-- use `thalarch-visual-director` for bounded generation/editing;
-- use `thalarch-vision-reviewer` as independent visual gate;
+- use `thalarch-image` to choose raster generation, deterministic vector/code, capture, annotation,
+  comparison, or optimization;
+- invoke the host's actual image tool only after confirming it exists;
+- inspect final pixels independently when possible;
 - never treat a generation prompt as proof of final pixels.
 
-For exact vector geometry/typography, prefer deterministic SVG/code-native construction when it
+If browser/image/device tooling required by acceptance is unavailable, implementation can continue
+where safe but those visual/runtime claims remain `UNVERIFIED`.
+
+For exact vector geometry/typography prefer deterministic SVG/code-native construction when it
 provides stronger guarantees.
 
 ## 12. Risk-sized review council
 
 ### Lite
-One general reviewer for a small low-risk diff.
+One general independent review for a small low-risk diff when review capability exists.
 
 ### Standard
-Independent spec/correctness plus general engineering review.
+Spec/correctness plus general engineering review.
 
 ### Deep
 Add only relevant lenses: security, performance/concurrency, language/domain, Android/UI/design,
 vision, CI, or data.
 
-Reviewers receive requirements and actual diff/evidence, not the implementer's persuasion.
-
-A reviewer finding is a hypothesis until confirmed against code, tests, logs, runtime behavior, or
-a documented contract. Do not fix speculative findings merely because a reviewer emitted them.
+Review can use separate agents, host-native review tools, or staged clean-context passes. Findings are
+hypotheses until confirmed against code, tests, logs, runtime behavior, or a documented contract.
+Do not fix speculative findings merely because a reviewer emitted them.
 
 ## 13. Cold verification
 
-The final verifier receives acceptance matrix/requirement, final changed paths/diff, expected proof
-commands/scenarios, and required runtime/visual/integration evidence — not producer reasoning.
+Use a cold verifier role/context when the host can provide one. Host adapters may install native
+verifier agents; otherwise perform a final staged verification that derives checks from the
+requirement rather than producer reasoning.
+
+The verifier receives acceptance criteria, final changed state/diff, expected proof scenarios, and
+required runtime/visual/integration evidence.
 
 Use `PASS`, `FAIL`, `UNVERIFIED`.
 
@@ -281,8 +297,8 @@ Minimum evidence for meaningful code changes usually includes:
 5. diff inspection for unintended files;
 6. domain evidence appropriate to the claim.
 
-Never promote a weaker check into a stronger claim. If the proof class is missing, the claim stays
-`UNVERIFIED`.
+Never promote a weaker check into a stronger claim. If the required proof class or capability is
+missing, the claim stays `UNVERIFIED`.
 
 ## 14. Convergence, not ritual
 
@@ -306,10 +322,9 @@ exists.
 Do not commit, push, open/modify PRs, merge, publish, deploy, release, send messages, or mutate
 external resources unless the current request explicitly authorizes that class of action.
 
-If authorized, do not re-ask merely for ceremony.
-
-Still stop for destructive/irreversible scope beyond the request, missing security-sensitive
-authorization, or target ambiguity that could affect the wrong repository/environment/account.
+If authorized, do not re-ask merely for ceremony. Still stop for destructive/irreversible scope
+beyond the request, missing security-sensitive authorization, or target ambiguity that could affect
+the wrong repository/environment/account.
 
 ## 17. Context economy
 
@@ -320,14 +335,15 @@ authorization, or target ambiguity that could affect the wrong repository/enviro
 - reuse verified facts;
 - use strongest available reasoning for architecture/debugging/adjudication/final verification;
 - use cheaper/faster agents only for mechanical well-specified work;
-- load only relevant language/domain skills.
+- load only relevant language/domain skills;
+- do not carry unavailable-host instructions in active reasoning as if they were executable.
 
 ## 18. Self-evaluation
 
-Use `thalarch-evals` and the anti-hallucination eval suite when modifying Thalarch itself.
+Use `thalarch-evals`, anti-hallucination evals, and host-adapter validators when modifying Thalarch.
 
-Benchmark routing accuracy, scope discipline, unsupported-claim rate, API/version hallucination
-resistance, command/path hallucination resistance, debugging quality, review precision, verification
-honesty, context cost, visual quality, and cross-project portability.
+Benchmark routing accuracy, scope discipline, unsupported-claim rate, API/version and command/path
+hallucination resistance, debugging quality, review precision, verification honesty, context cost,
+visual quality, cross-project portability, and **cross-host/model portability**.
 
-A longer prompt that does not measurably improve behavior is a regression.
+A longer prompt, extra agent, or new adapter that does not measurably improve behavior is a regression.
