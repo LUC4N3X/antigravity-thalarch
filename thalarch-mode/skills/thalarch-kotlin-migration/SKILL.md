@@ -9,17 +9,10 @@ license: Apache-2.0
 metadata:
   upstream: https://github.com/Kotlin/kotlin-agent-skills/tree/main/skills/kotlin-tooling-java-to-kotlin
   upstream-author: JetBrains
-  modification: Substantially modified and integrated into the Thalarch reliability model.
+  modification-notice: Modified for Thalarch; see THIRD_PARTY_NOTICES.md.
 ---
 
 # Thalarch Kotlin Migration
-
-> **Upstream attribution / modification notice:** This workflow is based in part on JetBrains'
-> `kotlin-tooling-java-to-kotlin` skill from `Kotlin/kotlin-agent-skills` (Apache-2.0). It has been
-> substantially modified for Thalarch, including different wording, scope, host-neutral behavior,
-> authorization boundaries, evidence gates, and integration with Thalarch verification. See
-> [`THIRD_PARTY_NOTICES.md`](../../../THIRD_PARTY_NOTICES.md) and
-> [`LICENSES/Apache-2.0.txt`](../../../LICENSES/Apache-2.0.txt).
 
 Migration is not transliteration. The first goal is preserved behavior and contracts; idiomatic
 Kotlin comes only after the faithful baseline is understood and verified.
