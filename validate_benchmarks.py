@@ -23,6 +23,7 @@ required = [
     quick / "response.schema.json",
     quick / "judge.py",
     quick / "test_judge.py",
+    quick / "plugin_integrity.py",
     quick / "run_antigravity.py",
     quick / "run_pair.py",
 ]
@@ -48,6 +49,7 @@ for script in [
     bench / "score_run.py",
     quick / "judge.py",
     quick / "test_judge.py",
+    quick / "plugin_integrity.py",
     quick / "run_antigravity.py",
     quick / "run_pair.py",
 ]:
@@ -175,6 +177,21 @@ if not errors:
     if "--dangerously-skip-permissions" in runner:
         errors.append("quick benchmark must not bypass all user permissions")
 
+    plugin_integrity = (quick / "plugin_integrity.py").read_text(encoding="utf-8")
+    for term in [
+        "DEFAULT_STAGED_PLUGIN",
+        "antigravity-cli",
+        "behavior_files",
+        "verify_plugin_tree",
+        "source_fingerprint",
+        "staged_fingerprint",
+        "missing",
+        "extra",
+        "mismatched",
+    ]:
+        if term not in plugin_integrity:
+            errors.append(f"quick plugin-integrity checker missing control: {term}")
+
     pair_driver = (quick / "run_pair.py").read_text(encoding="utf-8")
     for term in [
         "--model",
@@ -186,6 +203,11 @@ if not errors:
         "runner.run_case",
         "score_run.py",
         "run_validator()",
+        "verify_plugin_tree()",
+        "plugin_match_verified",
+        "plugin_source_fingerprint",
+        "plugin_staged_fingerprint",
+        "staged Antigravity CLI copy",
     ]:
         if term not in pair_driver:
             errors.append(f"quick paired driver missing control: {term}")
@@ -201,6 +223,17 @@ if not errors:
     ]:
         if term not in judge:
             errors.append(f"quick benchmark judge missing semantic guard: {term}")
+
+    scorer = (bench / "score_run.py").read_text(encoding="utf-8")
+    for term in [
+        "UNVERIFIED:plugin-checkout",
+        "INVALID:plugin-fingerprint",
+        "plugin_match_verified",
+        "plugin_source_fingerprint",
+        "plugin_staged_fingerprint",
+    ]:
+        if term not in scorer:
+            errors.append(f"benchmark scorer missing plugin-integrity control: {term}")
 
 if not errors:
     proc = subprocess.run(
@@ -300,6 +333,7 @@ print("quick_infra_errors: separated_from_hallucinations")
 print("quick_paired_manifest: model_effort_revision_fingerprint")
 print("quick_repeated_trials: supported")
 print("quick_counterbalanced_driver: enforced")
+print("quick_plugin_checkout_integrity: enforced")
 print("quick_thalarch_activation: explicit_skill_slash_command")
 print("hallucination_taxonomy: enforced")
 print("paired_scorer: passed")
