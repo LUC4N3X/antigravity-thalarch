@@ -1,6 +1,6 @@
 <div align="center">
 
-![Thalarch Banner](assets/branding/thalarch-banner.png)
+![Thalarch Banner](assets/branding/thalarch-banner.svg)
 
 <br/>
 
@@ -117,7 +117,6 @@ implementation:
 - **`thalarch-doubt`** challenges non-trivial D2+ decisions while they are still cheap to change.
   A fresh reviewer receives the artifact + contract rather than the producer's persuasive reasoning;
   findings are reconciled against evidence and the loop is bounded.
-
 Multi-file implementation is also sliced by evidence: vertical, contract-first, behavior-first, or
 risk-first depending on what can falsify the plan earliest. Repeating the same successful check with
 no relevant mutation in between is not stronger proof; final evidence must remain newer than the
@@ -238,7 +237,6 @@ critical code can have high coverage but weak assertions. Mocks prove local coll
 not prove the external integration they replace.
 
 ---
-
 ## Architecture and performance
 
 Architecture decisions start from existing modules, dependency direction, data ownership, runtime
