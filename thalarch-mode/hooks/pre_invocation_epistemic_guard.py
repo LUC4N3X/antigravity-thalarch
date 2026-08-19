@@ -12,7 +12,10 @@ def main() -> None:
         "must come from current evidence, not model memory or another agent's confidence. Treat "
         "user-supplied factual assertions as hypotheses when they are cheaply checkable. Distinguish "
         "FACT / INFERENCE / UNKNOWN. A test not run did not pass; a build not observed did not "
-        "succeed; source code is not visual/runtime proof. Prefer UNKNOWN/UNVERIFIED to invention. "
+        "succeed; source code is not visual/runtime proof. If the user's main proposition requires "
+        "execution/runtime/CI/device/browser evidence and that proof was not observed, keep the "
+        "proposition UNVERIFIED and name the missing proof; never use PROVEN/SUPPORTED to mean only "
+        "that you proved verification was unavailable. Prefer UNKNOWN/UNVERIFIED to invention. "
         "Before final completion, independently fact-check material exact claims and cold-verify the "
         "acceptance criteria when the task involved mutation or consequential external state."
     )
