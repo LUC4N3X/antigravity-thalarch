@@ -22,6 +22,14 @@ The hook layer grounds selected project commands and requires verification evide
 
 The hook does not claim that regex inspection proves arbitrary program correctness; semantic claims still flow through Thalarch reasoning, independent review/fact checking, and cold verification.
 
+## Visual parity
+
+Codex receives the same canonical visual doctrine as Antigravity. In particular, `thalarch-design-system` carries the `VoltAgent/awesome-design-md` reference-atlas protocol and the image/web skills consume the same compact design-capsule approach. User/project identity always wins; one primary reference (optionally one secondary) is used for principles, not cloning.
+
+This does **not** imply every Codex environment exposes raster image generation. Thalarch first inspects host capabilities and uses the atlas for design reasoning, image-to-code, deterministic assets, or raster generation only when the corresponding tool actually exists.
+
+The same runtime proof seal also applies: a test/build/runtime proposition that was not executed or otherwise observed stays `UNVERIFIED`, even when source inspection looks convincing.
+
 ## Install
 
 From the Thalarch repository:
