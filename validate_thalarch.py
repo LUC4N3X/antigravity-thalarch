@@ -66,6 +66,9 @@ if orchestrator.exists():
         errors.append("thalarch-orchestrator must include thalarch-reasoning")
     if "skills/thalarch-epistemic-guard" not in orchestrator_text:
         errors.append("thalarch-orchestrator must include thalarch-epistemic-guard")
+    for capability in ["thalarch-context", "thalarch-source-grounding", "thalarch-doubt", "thalarch-observability"]:
+        if capability not in orchestrator_text:
+            errors.append(f"thalarch-orchestrator must know {capability}")
     if "thalarch-deliberator" not in orchestrator_text:
         errors.append("thalarch-orchestrator must know thalarch-deliberator")
     if "thalarch-fact-checker" not in orchestrator_text:
@@ -119,6 +122,10 @@ required = [
     plugin / "hooks.json",
     plugin / "skills" / "thalarch-reasoning" / "SKILL.md",
     plugin / "skills" / "thalarch-epistemic-guard" / "SKILL.md",
+    plugin / "skills" / "thalarch-context" / "SKILL.md",
+    plugin / "skills" / "thalarch-source-grounding" / "SKILL.md",
+    plugin / "skills" / "thalarch-doubt" / "SKILL.md",
+    plugin / "skills" / "thalarch-observability" / "SKILL.md",
     plugin / "skills" / "thalarch-skill-intelligence" / "SKILL.md",
     plugin / "skills" / "thalarch-skill-intelligence" / "references" / "known-high-value-sources.md",
     plugin / "skills" / "thalarch-code-craft" / "SKILL.md",
@@ -150,6 +157,23 @@ required = [
 for path in required:
     if not path.exists():
         errors.append(f"missing required file: {path.relative_to(root)}")
+
+# Final reliability-layer wiring checks.
+mode = plugin / "skills" / "thalarch-mode" / "SKILL.md"
+router = plugin / "skills" / "thalarch-router" / "SKILL.md"
+code_craft = plugin / "skills" / "thalarch-code-craft" / "SKILL.md"
+source_map = plugin / "skills" / "thalarch-skill-intelligence" / "references" / "known-high-value-sources.md"
+for path, required_terms in [
+    (mode, ["thalarch-context", "thalarch-source-grounding", "thalarch-doubt", "thalarch-observability"]),
+    (router, ["thalarch-context", "thalarch-source-grounding", "thalarch-doubt", "thalarch-observability"]),
+    (code_craft, ["Incremental evidence slices", "thalarch-source-grounding"]),
+    (source_map, ["addyosmani/agent-skills"]),
+]:
+    if path.exists():
+        text = path.read_text(encoding="utf-8")
+        for term in required_terms:
+            if term not in text:
+                errors.append(f"{path.relative_to(root)} missing final reliability wiring: {term}")
 
 # Portability, branding, and permanent 1.0.0 version policy.
 thalarch_newer_version = re.compile(
@@ -189,7 +213,6 @@ for installer in [root / "INSTALL.ps1", root / "INSTALL.sh"]:
     if installer.exists() and "Thalarch 1.0.0" not in installer.read_text(encoding="utf-8"):
         errors.append(f"{installer.name} must report Thalarch 1.0.0")
 
-mode = plugin / "skills" / "thalarch-mode" / "SKILL.md"
 if mode.exists() and "# Thalarch Mode 1.0.0" not in mode.read_text(encoding="utf-8"):
     errors.append("thalarch-mode heading must remain 1.0.0")
 
@@ -209,6 +232,11 @@ print("orchestrator_generate_image: structurally delegated")
 print("autonomous_skill_intelligence: enforced")
 print("adaptive_reasoning: enforced")
 print("epistemic_guard: enforced")
+print("context_hygiene: enforced")
+print("source_grounding: enforced")
+print("in_flight_doubt: enforced")
+print("observability: enforced")
+print("incremental_evidence_slices: enforced")
 print("independent_fact_checker: enforced")
 print("polyglot_specialists:", ", ".join(language_agents))
 print("portable-path check: passed")
