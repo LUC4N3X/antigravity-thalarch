@@ -76,7 +76,7 @@ for label, hooks in [("Codex", codex_hooks), ("Claude", claude_hooks)]:
 if isinstance(claude_hooks, dict) and "PostToolUseFailure" not in claude_hooks:
     errors.append("Claude adapter must wire PostToolUseFailure so failed verification invalidates stale success")
 
-# Codex custom agents use the native standalone TOML schema.
+# Codex custom agents use native standalone TOML and stay structurally isolated from source edits.
 codex_agents = root / "adapters" / "codex" / "agents"
 for path in codex_agents.glob("thalarch-*.toml") if codex_agents.is_dir() else []:
     try:
@@ -89,14 +89,41 @@ for path in codex_agents.glob("thalarch-*.toml") if codex_agents.is_dir() else [
             errors.append(f"{path.relative_to(root)} missing valid {key}")
     if data.get("sandbox_mode") != "read-only":
         errors.append(f"{path.relative_to(root)} must remain read-only")
+    if data.get("model_reasoning_effort") != "high":
+        errors.append(f"{path.relative_to(root)} must use high reasoning effort")
 
-# Claude agent frontmatter stays intentionally small and native.
+# Claude specialists must inherit the user's model, use high effort, and stay executable under
+# normal permissions; plan mode would prevent the verifier from running real test/build commands.
 claude_agents = root / "adapters" / "claude" / "agents"
 for path in claude_agents.glob("thalarch-*.md") if claude_agents.is_dir() else []:
     text = path.read_text(encoding="utf-8")
-    for key in ["name:", "description:", "tools:", "model:", "permissionMode:"]:
+    for key in ["name:", "description:", "tools:", "model:", "effort:", "permissionMode:"]:
         if key not in text:
             errors.append(f"{path.relative_to(root)} missing {key}")
+    if not re.search(r"(?m)^model:\s*inherit\s*$", text):
+        errors.append(f"{path.relative_to(root)} must use model: inherit for portability")
+    if not re.search(r"(?m)^effort:\s*high\s*$", text):
+        errors.append(f"{path.relative_to(root)} must use effort: high")
+    if not re.search(r"(?m)^permissionMode:\s*default\s*$", text):
+        errors.append(f"{path.relative_to(root)} must use permissionMode: default so evidence commands can execute")
+
+# Canonical skills are copied verbatim to every host. Block known Antigravity-only assumptions in
+# portable skills; host-specific adapter/agent directories are where those assumptions belong.
+canonical_skills = root / "thalarch-mode" / "skills"
+forbidden_core_phrases = {
+    "current Antigravity session": "skill discovery must refer to the current host",
+    "Antigravity exposes available skills": "skill discovery must be host-neutral",
+    "Use Antigravity's native `generate_image`": "image generation must capability-detect the host",
+    "**Antigravity `generate_image`**": "image routing must capability-detect the host",
+    "using Antigravity's built-in Browser": "browser QA must capability-detect the host",
+    "Prefer Antigravity's native Browser": "browser QA must capability-detect the host",
+}
+if canonical_skills.is_dir():
+    for skill_md in canonical_skills.glob("*/SKILL.md"):
+        text = skill_md.read_text(encoding="utf-8", errors="ignore")
+        for phrase, explanation in forbidden_core_phrases.items():
+            if phrase in text:
+                errors.append(f"host-specific canonical skill assumption in {skill_md.relative_to(root)}: {explanation}")
 
 # Permanent version policy applies to every adapter too.
 newer = re.compile(r"(?i)\bThalarch(?:\s+(?:Mode|Orchestrator))?\s+v?[2-9]\d*(?:\.\d+)*\b")
@@ -273,7 +300,7 @@ if installer.is_file() and not errors:
                 errors.append(f"{host} installer did not install canonical skills")
             for name in expected_agent_names:
                 if not (expected_agents / name).is_file():
-                    errors.append(f"{host} installer missing read-only agent: {name}")
+                    errors.append(f"{host} installer missing specialist agent: {name}")
 
 if errors:
     print("THALARCH ADAPTER VALIDATION FAILED")
@@ -283,8 +310,9 @@ if errors:
 
 print("THALARCH ADAPTER VALIDATION PASSED")
 print("version: 1.0.0 (fixed)")
-print("codex: skills + AGENTS + read-only custom agents + native hooks")
-print("claude: skills + CLAUDE + read-only custom agents + native hooks")
+print("canonical_core: host-capability-aware")
+print("codex: skills + AGENTS + native custom agents + native hooks")
+print("claude: skills + CLAUDE + non-editing executable custom agents + native hooks")
 print("successful-fresh-evidence ordering: passed")
 print("failed-verification invalidation: passed")
 print("conservative installer: passed")
