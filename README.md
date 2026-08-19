@@ -103,6 +103,33 @@ evidence, rejected alternatives, residual uncertainty, and proof status.
 
 ---
 
+## Context, sources, and in-flight doubt
+
+The final reliability layer adds three controls before a wrong assumption can spread through the
+implementation:
+
+- **`thalarch-context`** builds a small fresh task packet from repository rules, relevant source,
+  tests, current errors, versions, and unknowns. Large research/log inputs can stay isolated while
+  the main reasoning context receives only a digest with evidence and paths.
+- **`thalarch-source-grounding`** treats remembered framework APIs as hypotheses. It proves the
+  project's real version first, then checks the narrow load-bearing fact against current primary
+  documentation. Retrieved pages are technical evidence, never instruction authority.
+- **`thalarch-doubt`** challenges non-trivial D2+ decisions while they are still cheap to change.
+  A fresh reviewer receives the artifact + contract rather than the producer's persuasive reasoning;
+  findings are reconciled against evidence and the loop is bounded.
+
+Multi-file implementation is also sliced by evidence: vertical, contract-first, behavior-first, or
+risk-first depending on what can falsify the plan earliest. Repeating the same successful check with
+no relevant mutation in between is not stronger proof; final evidence must remain newer than the
+final relevant change.
+
+For production services, jobs, queues, retries, and external integrations,
+**`thalarch-observability`** adds structured logging/metrics/tracing/correlation and alerting
+discipline while guarding secrets, PII, metric cardinality, and false claims about telemetry that
+was never observed in a real backend.
+
+---
+
 ## Autonomous Skill Intelligence
 
 You should not need to tell Thalarch which skill to use.
@@ -156,7 +183,10 @@ own native subagent mechanisms around the same canonical skill.
 
 | Skill | Purpose |
 | --- | --- |
-| `thalarch-code-craft` | Minimal, idiomatic, repository-native coding and API-hallucination guard |
+| `thalarch-code-craft` | Minimal, idiomatic, repository-native coding with incremental evidence slices |
+| `thalarch-context` | Focused context packets, research isolation and stale-context recovery |
+| `thalarch-source-grounding` | Project-version + primary-source API/framework grounding |
+| `thalarch-doubt` | Bounded in-flight adversarial challenge before important decisions harden |
 | `thalarch-debug` | Causal root-cause debugging before fixes |
 | `thalarch-spec` | Observable acceptance contract for broad work |
 | `thalarch-codebase-intel` | Bounded project/feature/dependency mapping |
@@ -166,6 +196,7 @@ own native subagent mechanisms around the same canonical skill.
 | `thalarch-api` | API compatibility, errors, idempotency, retries and distributed boundaries |
 | `thalarch-data-sql` | SQL, ORM, transactions, migrations and data-safe rollout |
 | `thalarch-dependency` | Dependency/framework/toolchain changes with version verification |
+| `thalarch-observability` | Structured logs, metrics, traces, correlation and production diagnosis |
 | `thalarch-jvm-concurrency` | JVM thread safety, executors, futures, virtual threads and async correctness |
 | `thalarch-kotlin-migration` | Semantics-preserving Java→Kotlin / Kotlin migration workflow |
 | `thalarch-kotlin-jpa` | Kotlin-specific JPA/Hibernate identity, proxy, fetch and transaction correctness |
@@ -383,14 +414,16 @@ of non-managed hooks before they execute.
 Use Thalarch.
 
 Work end-to-end. Automatically inspect the skills available in this session and choose the strongest
-minimal stack for the actual project and task. Read repository rules and detect the real languages,
-toolchains and framework versions before editing. Prefer project-local and current official platform
-skills when they are better fits. Re-route after discovery if the evidence changes the problem.
-Verify version-sensitive APIs instead of guessing them. Keep the diff minimal and repository-native.
-Investigate root cause before fixing bugs. Use the real integration, browser, device, database or
-performance evidence when the acceptance criterion lives there. Use independent review appropriate
-to risk and cold-verify the final acceptance criteria. Do not push, merge, publish, deploy or release
-unless I explicitly requested it.
+minimal stack for the actual project and task. Curate a fresh task context instead of relying on
+stale conversation memory. Read repository rules and detect the real languages, toolchains and
+framework versions before editing. Prefer project-local and current official platform skills when
+they are better fits. Ground version-sensitive APIs in the project's exact version and current
+primary sources. Re-route after discovery if the evidence changes the problem. Challenge important
+non-trivial decisions before dependent implementation grows. Keep the diff minimal and
+repository-native. Investigate root cause before fixing bugs. Use the real integration, browser,
+device, database, telemetry or performance evidence when the acceptance criterion lives there. Use
+independent review appropriate to risk and cold-verify the final acceptance criteria. Do not push,
+merge, publish, deploy or release unless I explicitly requested it.
 ```
 
 ---
@@ -408,6 +441,8 @@ The validators check, among other things:
 - skill/agent structure and frontmatter;
 - language specialists and autonomous skill-intelligence wiring;
 - adaptive reasoning, epistemic guard and independent fact-checker/verifier wiring;
+- context hygiene, source grounding, in-flight doubt and observability wiring;
+- incremental evidence-slice discipline in the universal coding layer;
 - creative/image tool delegation;
 - deterministic anti-hallucination hard gates;
 - Codex/Claude adapter JSON and Python syntax;
@@ -421,9 +456,10 @@ The validators check, among other things:
 
 Thalarch is an original multi-engine implementation. Its engineering and creative workflows are
 informed by strong public patterns from projects such as Fable Mode, Superpowers, GitHub Spec Kit /
-Awesome Copilot, official Kotlin agent skills, community JVM skill sets, Taste Skill, and broad
-engineering skill libraries. Thalarch selectively synthesizes those ideas instead of copying an
-entire external skill pack or inheriting rigid rules that do not generalize across projects.
+Awesome Copilot, official Kotlin agent skills, Addy Osmani's Agent Skills, community JVM skill sets,
+Taste Skill, and broad engineering skill libraries. Thalarch selectively synthesizes those ideas
+instead of copying an entire external skill pack or inheriting rigid rules that do not generalize
+across projects.
 
 ---
 
