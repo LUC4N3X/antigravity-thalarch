@@ -350,7 +350,7 @@ def standard_result(
         "requested_model": manifest["requested_model"],
         "effort": manifest["effort"],
         "thalarch": phase == "thalarch",
-        "thalarch_activation": "thalarch-orchestrator" if phase == "thalarch" else "native-default-agent",
+        "thalarch_activation": "slash-skill:thalarch-mode" if phase == "thalarch" else "native-default-agent",
         "thalarch_version": "1.0.0",
         "protocol_revision": manifest["protocol_revision"],
         "protocol_fingerprint": manifest["protocol_fingerprint"],
@@ -419,7 +419,7 @@ def run_case(
             f"- Set case_id exactly to {case['id']}.\n"
         )
         if phase == "thalarch":
-            prompt = "Use Thalarch. Apply the smallest relevant Thalarch stack.\n\n" + prompt + common
+            prompt = "/thalarch-mode\n\n" + prompt + common
         else:
             prompt += common
 
@@ -433,8 +433,6 @@ def run_case(
             "--output-format=stream-json",
             f"--json-schema={schema_inline}",
         ]
-        if phase == "thalarch":
-            cmd.append("--agent=thalarch-orchestrator")
         if model:
             cmd.append(f"--model={model}")
         if effort:
@@ -543,8 +541,8 @@ def main() -> None:
     )
     print(f"Plugin state requested by runner: {'ENABLED' if args.phase == 'thalarch' else 'DISABLED'}")
     print(
-        "Agent condition: "
-        + ("thalarch-orchestrator" if args.phase == "thalarch" else "native default agent")
+        "Skill condition: "
+        + ("/thalarch-mode explicit" if args.phase == "thalarch" else "native, no Thalarch skill")
     )
     print("Workspace policy: active fixture only; list_dir/view_file read tools only.")
     print(f"Protocol fingerprint: {manifest['protocol_fingerprint'][:12]}")
