@@ -3,8 +3,8 @@ name: thalarch-router
 description: >
   Chooses the smallest compatible process, language, domain, platform, visual, and installed-skill
   stack for a task. Use before complex work and after project discovery. Combines autonomous skill
-  intelligence with task, stack, risk, and evidence routing instead of requiring the user to
-  manually name the best skills.
+  intelligence with task, stack, risk, evidence, source-grounding, context, and in-flight doubt
+  routing instead of requiring the user to manually name the best skills.
 ---
 
 # Thalarch Router
@@ -19,12 +19,15 @@ Use `thalarch-skill-intelligence` before loading heavy instructions.
 4. Detect the actual language/runtime/toolchain/framework from repository evidence.
 5. Estimate risk: low / medium / high.
 6. Identify evidence needed for completion.
-7. Select the smallest compatible process + language + domain + platform stack.
-8. Prefer project-local and current official platform/vendor skills when they are more specific
-   than a generic Thalarch or community skill.
-9. Remove redundant or conflicting skills instead of stacking everything.
-10. Re-run selection after preflight when new stack/version/root-cause evidence changes the route.
-11. For image inputs/outputs, classify inspect/generate/edit/vector/capture/compare/annotate/optimize.
+7. Decide whether stale/large context requires `thalarch-context`.
+8. Decide whether version-sensitive external facts require `thalarch-source-grounding`.
+9. Decide whether a non-trivial D2+ decision needs an in-flight `thalarch-doubt` challenge.
+10. Select the smallest compatible process + language + domain + platform stack.
+11. Prefer project-local and current official platform/vendor skills when they are more specific
+    than a generic Thalarch or community skill.
+12. Remove redundant or conflicting skills instead of stacking everything.
+13. Re-run selection after preflight when new stack/version/root-cause evidence changes the route.
+14. For image inputs/outputs, classify inspect/generate/edit/vector/capture/compare/annotate/optimize.
 
 ## Core process routing
 
@@ -40,6 +43,8 @@ Use `thalarch-skill-intelligence` before loading heavy instructions.
 - API/service boundary → language overlay + `thalarch-api` + security/data skills as relevant;
 - database/ORM/migration → language overlay + `thalarch-data-sql` + test/review;
 - dependency/toolchain change → `thalarch-dependency` + affected language/domain + compatibility verification;
+- production service/job/queue/external integration telemetry → `thalarch-observability` + relevant
+  language/security/performance skills;
 - security → `thalarch-security` + relevant language/domain + review council;
 - CI → `thalarch-ci` + language/toolchain overlay + security when relevant;
 - Git/publication → `thalarch-git` + review + remote-state verification.
@@ -47,6 +52,46 @@ Use `thalarch-skill-intelligence` before loading heavy instructions.
 `thalarch-code-craft` is the default universal coding overlay for meaningful mutation/review unless
 a stronger project-specific coding skill already covers the same concern without losing Thalarch's
 scope and verification invariants.
+
+## Epistemic process overlays
+
+These are not loaded mechanically on every task.
+
+### Context hygiene
+
+Add `thalarch-context` when:
+
+- the repository/task area is unfamiliar;
+- a large amount of source/log/docs would otherwise enter the main context;
+- the task switches modules/features;
+- a long session/compaction risks stale assumptions;
+- outputs start ignoring current project conventions or referencing unsupported facts.
+
+### Source grounding
+
+Add `thalarch-source-grounding` when a load-bearing decision depends on:
+
+- framework/library/runtime version behavior;
+- exact external API/signature/configuration;
+- deprecation/migration guidance;
+- browser/platform compatibility;
+- current official vendor recommendations.
+
+Pure local logic does not need documentation ceremony merely because a dependency exists nearby.
+
+### In-flight doubt
+
+Add `thalarch-doubt` for D2+ decisions when at least one is true:
+
+- branching/state semantics change materially;
+- a service/module/data boundary changes;
+- correctness relies on concurrency/idempotency/ordering/lifecycle/ownership;
+- the codebase is unfamiliar and a mistaken premise would propagate;
+- the decision is difficult to reverse or high-blast-radius;
+- the leading answer is confident but not strongly disconfirmed.
+
+A good failing regression/invariant test can serve as executable disconfirmation for the specific
+behavioral claim. Do not spawn reviewers for mechanical edits.
 
 ## Language detection and routing
 
@@ -86,8 +131,8 @@ Add only when evidence proves the surface:
   `thalarch-kotlin-migration`, plus the most specific installed official Kotlin migration skill;
 - ordinary Java/JVM JPA work → language skill + `thalarch-data-sql`, and an installed focused JPA
   skill when it adds current framework-specific evidence;
-- major JDK/framework migration → `thalarch-dependency` + `thalarch-java` + current primary docs and
-  a focused installed migration skill when compatible.
+- major JDK/framework migration → `thalarch-dependency` + `thalarch-java` +
+  `thalarch-source-grounding` and a focused installed migration skill when compatible.
 
 Do not activate every JVM skill for every JVM repository.
 
@@ -99,7 +144,7 @@ Modern Web, cloud/vendor SDKs, or other curated integrations. Do not require the
 their names.
 
 Platform skills supply current platform expertise; Thalarch supplies scope, causal debugging,
-review, evidence, and cold verification.
+source grounding, review, evidence, and cold verification.
 
 ## Android routing
 
