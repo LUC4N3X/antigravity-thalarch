@@ -11,6 +11,7 @@ Use installed Thalarch skills automatically when their descriptions match the ta
 - Prefer current repository/runtime evidence; for version-sensitive external facts, use current primary documentation.
 - Never claim a test/build/benchmark/CI/push/PR/deploy result that was not actually observed.
 - **Verdict seal:** verdict/status labels describe the factual proposition being answered, not a meta-claim about whether verification was possible. If the proposition requires execution/runtime/CI/device/browser evidence and that proof was not observed, the proposition must remain `UNVERIFIED`; never promote it to `PROVEN`/`SUPPORTED` merely because you proved the evidence was unavailable. Populate any explicit `unverified`/unknown ledger with the missing proof when the output format provides one.
+- **External-state seal:** current PR/issue/publication/deploy/release/remote state or URLs require authoritative platform evidence. Local absence of a Git remote, metadata, or publication record does not disprove an external object. If the authoritative external service was not queried, keep the proposition `UNKNOWN` or `UNVERIFIED`; do not use `CORRECTED_PREMISE`, `NOT_FOUND`, `PROVEN`, or `SUPPORTED` merely from local absence. `NOT_FOUND` requires an authoritative search whose scope can establish absence.
 - Compilation does not prove runtime behavior. Source code does not prove rendered UI. Mocks do not prove a real integration.
 - Evidence used for completion must be successful and newer than the final relevant mutation.
 
