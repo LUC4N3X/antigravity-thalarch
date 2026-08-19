@@ -14,11 +14,6 @@ checks = {
         "cannot** be promoted to `PROVEN` or `SUPPORTED`",
         "This seal is host-agnostic",
     ],
-    root / "thalarch-mode/hooks/pre_invocation_epistemic_guard.py": [
-        "requires execution/runtime/CI/device/browser evidence",
-        "keep the proposition UNVERIFIED",
-        "never use PROVEN/SUPPORTED",
-    ],
     root / "thalarch-mode/skills/thalarch-design-system/SKILL.md": [
         "External design-reference atlas",
         "references/awesome-design-md.md",
@@ -41,12 +36,12 @@ checks = {
     root / "adapters/codex/AGENTS.md": [
         "Visual/design reference contract",
         "VoltAgent/awesome-design-md",
-        "remain `UNVERIFIED`",
+        "Verdict seal",
     ],
     root / "adapters/claude/CLAUDE.md": [
         "Visual/design reference contract",
         "VoltAgent/awesome-design-md",
-        "remains `UNVERIFIED`",
+        "Verdict seal",
     ],
     root / "adapters/codex/README.md": [
         "Visual parity",
@@ -76,19 +71,51 @@ def policy_text(path: Path) -> str:
         for node in ast.walk(tree)
         if isinstance(node, ast.Constant) and isinstance(node.value, str)
     ]
-    # Keep raw source too for identifiers/comments, but use AST-folded constants so
-    # adjacent literals split across formatting lines are checked as Python sees them.
     return source + "\n" + "\n".join(strings)
 
 
-for path, terms in checks.items():
+def require_terms(path: Path, terms: list[str]) -> str:
     if not path.is_file():
         errors.append(f"missing cross-host policy file: {path.relative_to(root)}")
-        continue
+        return ""
     text = policy_text(path)
     for term in terms:
         if term not in text:
             errors.append(f"{path.relative_to(root)} missing policy guard: {term}")
+    return text
+
+
+for path, terms in checks.items():
+    require_terms(path, terms)
+
+# The Antigravity hook is executable policy. Validate the semantic cluster instead of brittle prose.
+hook = root / "thalarch-mode/hooks/pre_invocation_epistemic_guard.py"
+hook_text = require_terms(hook, ["VERDICT SEAL", "UNVERIFIED", "PROVEN", "SUPPORTED"])
+hook_lower = hook_text.lower()
+for concept in [
+    "execution/runtime/ci/device/browser evidence",
+    "factual proposition",
+    "evidence is unavailable",
+    "missing proof",
+]:
+    if concept not in hook_lower:
+        errors.append(f"{hook.relative_to(root)} missing verdict-seal concept: {concept}")
+
+# Codex and Claude must preserve the same proposition-level semantics, not merely mention statuses.
+for adapter in [root / "adapters/codex/AGENTS.md", root / "adapters/claude/CLAUDE.md"]:
+    if not adapter.is_file():
+        continue
+    text = adapter.read_text(encoding="utf-8").lower()
+    for concept in [
+        "factual proposition",
+        "execution/runtime/ci/device/browser evidence",
+        "unverified",
+        "proven",
+        "supported",
+        "evidence was unavailable",
+    ]:
+        if concept not in text:
+            errors.append(f"{adapter.relative_to(root)} missing cross-host verdict concept: {concept}")
 
 # Permanent public version contract.
 for path in [root / "adapters/codex/AGENTS.md", root / "adapters/claude/CLAUDE.md"]:
@@ -104,6 +131,7 @@ if errors:
 print("THALARCH CROSS-HOST POLICY VALIDATION PASSED")
 print("version: 1.0.0 (fixed)")
 print("runtime_proof_seal: antigravity_codex_claude")
+print("verdict_semantics: proposition_level")
 print("design_reference_atlas: awesome-design-md")
 print("visual_policy: canonical_cross_host")
 print("python_policy_strings: ast_semantic")
