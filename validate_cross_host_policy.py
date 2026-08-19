@@ -9,10 +9,21 @@ root = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
 errors: list[str] = []
 
 checks = {
+    root / "thalarch-mode/skills/thalarch-mode/SKILL.md": [
+        "Verdict decision seals",
+        "External-state seal",
+        "authoritative external service",
+        "local absence",
+        "CORRECTED_PREMISE",
+        "NOT_FOUND",
+    ],
     root / "thalarch-mode/skills/thalarch-epistemic-guard/SKILL.md": [
         "Runtime proof seal",
-        "cannot** be promoted to `PROVEN` or `SUPPORTED`",
-        "This seal is host-agnostic",
+        "External-state proof seal",
+        "local absence proves only local absence",
+        "CORRECTED_PREMISE",
+        "NOT_FOUND",
+        "host-agnostic",
     ],
     root / "thalarch-mode/skills/thalarch-design-system/SKILL.md": [
         "External design-reference atlas",
@@ -147,6 +158,7 @@ print("THALARCH CROSS-HOST POLICY VALIDATION PASSED")
 print("version: 1.0.0 (fixed)")
 print("runtime_proof_seal: antigravity_codex_claude")
 print("external_state_seal: antigravity_codex_claude")
+print("canonical_external_state_seal: thalarch_mode_epistemic_guard")
 print("verdict_semantics: proposition_level")
 print("design_reference_atlas: awesome-design-md")
 print("visual_policy: canonical_cross_host")
