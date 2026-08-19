@@ -109,6 +109,20 @@ Strong candidates when installed:
 - `imagegen-frontend-web` / `imagegen-frontend-mobile` — generated visual reference work for web
   or mobile when appropriate.
 
+Design-reference atlas: `VoltAgent/awesome-design-md`.
+
+This is not a skill bundle to install. It is a curated collection of real-product `DESIGN.md`
+analyses that can improve design reasoning for image generation, branding, and frontend art
+direction. When the task is visually consequential and the user/project has not already locked the
+direction, use one well-matched entry (at most one secondary entry) to extract a compact reference
+capsule: atmosphere, hierarchy, palette roles, typography character, composition, material/depth,
+imagery treatment, responsive behavior where relevant, and a few do/don't guardrails.
+
+The canonical Thalarch handling rules live in
+`skills/thalarch-design-system/references/awesome-design-md.md`. User/project references outrank this
+atlas. Do not bulk-mix brands, copy logos/proprietary identity, or claim a DESIGN.md was read unless
+it was actually retrieved.
+
 Do not apply marketing/landing-page aesthetics to dashboards, regulated/public-sector products,
 or dense product UI unless the brief supports it. Accessibility, existing brand, and repository
 constraints outrank aesthetic novelty.
