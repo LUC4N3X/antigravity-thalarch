@@ -12,6 +12,7 @@ Thalarch is built first for **Gemini inside Google Antigravity**: it reduces cod
 
 <br/><br/>
 
+[![Version](https://img.shields.io/badge/Version-1.0.0-4F6B5F?style=flat-square)](#permanent-version-policy)
 [![Focus](https://img.shields.io/badge/Focus-Anti--hallucination-8B6F47?style=flat-square)](#why-thalarch)
 [![License: MIT](https://img.shields.io/badge/License-MIT-2F6B66?style=flat-square)](LICENSE)
 [![Hosts](https://img.shields.io/badge/Hosts-Antigravity%20%C2%B7%20Codex%20%C2%B7%20Claude-5D6B8A?style=flat-square)](#one-core-three-hosts)
@@ -29,9 +30,9 @@ Thalarch is built first for **Gemini inside Google Antigravity**: it reduces cod
 
 ## Why Thalarch?
 
-**Gemini on Antigravity can move very fast. Thalarch is there to stop “fast” becoming “made up”.**
+A coding model can be very capable and still make familiar engineering mistakes: assume the wrong framework version, skip repository rules, patch the symptom instead of the cause, over-edit a project, or declare success without proving the result.
 
-Like any coding model, Gemini can sometimes assume the wrong framework version, invent a project command, skip repository rules, patch the symptom instead of the cause, or declare success without proving the result. Thalarch is designed specifically to reduce those failure modes by putting a stricter engineering process around the model.
+**Thalarch wraps the model in a stricter engineering process.** It does not try to make the underlying model sound smarter. It tries to make the work **more deliberate, more grounded, and easier to trust**.
 
 It pushes the agent to:
 
@@ -42,7 +43,7 @@ It pushes the agent to:
 - **keep diffs narrow and repository-native;**
 - **review independently and finish with evidence** that actually matches the claim.
 
-> **Thalarch is an anti-hallucination engineering layer, not a promise of zero hallucinations.** If the required evidence is unavailable, the correct result is `UNVERIFIED`, not a confident guess.
+> **Confidence is not proof.** If the required evidence is unavailable, Thalarch is expected to say so.
 
 ---
 
@@ -123,7 +124,7 @@ Thalarch keeps **one canonical engineering and design core** and adapts only the
 
 ### Google Antigravity
 
-This is the primary integration: Gemini gets the full orchestrator, skill suite, custom agents, hooks, anti-hallucination evidence gates, and the richest native visual workflow.
+Full orchestrator, skill suite, custom agents, hooks, evidence gates, and the richest native visual workflow.
 
 ### OpenAI Codex
 
