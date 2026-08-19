@@ -311,10 +311,12 @@ merge, publish, deploy or release unless I explicitly requested it.
 Run the repository validators from the project root:
 
 ```bash
-python validate_thalarch.py .
-python validate_hard_gates.py .
-python validate_adapters.py .
+python scripts/validation/validate_thalarch.py .
+python scripts/validation/validate_hard_gates.py .
+python scripts/validation/validate_adapters.py .
 ```
+
+The complete validator set lives in [`scripts/validation/`](scripts/validation/).
 
 They check the parts that are easy to accidentally break, including:
 
