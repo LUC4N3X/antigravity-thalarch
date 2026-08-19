@@ -6,10 +6,21 @@ The Codex adapter reuses the canonical Thalarch skills from `thalarch-mode/skill
 
 - Thalarch skills → Codex Agent Skills under `.agents/skills/` or `~/.agents/skills/`.
 - Persistent reliability rules → repository/global `AGENTS.md`.
+- Independent deep reasoning → native custom agents under `.codex/agents/` or `~/.codex/agents/`.
 - Deterministic anti-hallucination enforcement → Codex `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `SubagentStop`, and `Stop` hooks.
-- Independent/parallel investigation → Codex's native subagent/worktree facilities when the current environment exposes them.
+- Parallel investigation → Codex's native subagent/worktree facilities when useful.
 
-The hook layer grounds selected project commands and requires fresh verification evidence **after the final observed mutation**. It does not claim that regex inspection proves arbitrary program correctness; semantic claims still flow through Thalarch reasoning, review, and verification.
+The installer provides three read-only native Codex agents:
+
+- `thalarch_deliberator` — clean-context challenge/adjudication for difficult decisions;
+- `thalarch_fact_checker` — exact material-claim verification;
+- `thalarch_verifier` — cold acceptance verification after implementation.
+
+They use Codex's native standalone TOML agent format with `sandbox_mode = "read-only"` and high reasoning effort, while leaving the actual model unpinned so the host/account can resolve an available compatible model.
+
+The hook layer grounds selected project commands and requires verification evidence that is **successful and newer than the final observed mutation**. Codex documents that `PostToolUse` also fires after non-zero Bash exits, so Thalarch does not treat the mere presence of a verification command as success: the hook requires the `tool_response` to provide an explicit success signal. A later failed or unproven verification attempt invalidates earlier success for completion purposes.
+
+The hook does not claim that regex inspection proves arbitrary program correctness; semantic claims still flow through Thalarch reasoning, independent review/fact checking, and cold verification.
 
 ## Install
 
