@@ -3,7 +3,7 @@
 
 The installer is intentionally conservative:
 - canonical Thalarch skills are copied from thalarch-mode/skills;
-- only thalarch-* skill/agent directories are replaced, with backups;
+- only thalarch-* skill/agent files are replaced, with backups;
 - existing AGENTS.md / CLAUDE.md / hook settings are never overwritten;
 - when a host config already exists, a THALARCH companion template is written instead.
 """
@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import shutil
 import sys
 from datetime import datetime
@@ -61,6 +60,20 @@ def copy_skills(target: Path) -> tuple[int, list[tuple[Path, Path]]]:
     return count, backups
 
 
+def copy_agent_files(source_dir: Path, target_dir: Path, pattern: str) -> tuple[int, list[tuple[str, str]]]:
+    target_dir.mkdir(parents=True, exist_ok=True)
+    backups: list[tuple[str, str]] = []
+    count = 0
+    for source in sorted(source_dir.glob(pattern)):
+        destination = target_dir / source.name
+        backup = backup_existing(destination)
+        if backup:
+            backups.append((str(destination), str(backup)))
+        shutil.copy2(source, destination)
+        count += 1
+    return count, backups
+
+
 def python_command(script: Path) -> str:
     exe = Path(sys.executable).resolve()
     return f'"{exe}" "{script.resolve()}"'
@@ -89,6 +102,7 @@ def claude_hook_config(script: Path) -> dict:
             "UserPromptSubmit": [{"hooks": [hook]}],
             "PreToolUse": [{"matcher": "Bash|PowerShell", "hooks": [hook]}],
             "PostToolUse": [{"matcher": "Bash|PowerShell|Edit|Write|MultiEdit|NotebookEdit", "hooks": [hook]}],
+            "PostToolUseFailure": [{"matcher": "Bash|PowerShell", "hooks": [hook]}],
             "SubagentStop": [{"hooks": [hook]}],
             "Stop": [{"hooks": [dict(hook, timeout=15)]}],
         }
@@ -118,6 +132,11 @@ def install_codex(base: Path, user_scope: bool) -> dict:
     instruction_primary = (Path.home() / ".codex" / "AGENTS.md") if user_scope else (base / "AGENTS.md")
 
     skill_count, skill_backups = copy_skills(skills_target)
+    agent_count, agent_backups = copy_agent_files(
+        ADAPTERS / "codex" / "agents",
+        codex_root / "agents",
+        "thalarch-*.toml",
+    )
 
     hook_source = ADAPTERS / "codex" / "hooks" / "epistemic_gate.py"
     hook_target = codex_root / "hooks" / "thalarch_epistemic_gate.py"
@@ -144,6 +163,9 @@ def install_codex(base: Path, user_scope: bool) -> dict:
         "skills": skill_count,
         "skills_target": str(skills_target),
         "skill_backups": [(str(dst), str(bak)) for dst, bak in skill_backups],
+        "agents": agent_count,
+        "agents_target": str(codex_root / "agents"),
+        "agent_backups": agent_backups,
         "hook": str(hook_target),
         "hook_backup": str(hook_backup) if hook_backup else None,
         "config": str(config_target),
@@ -166,17 +188,11 @@ def install_claude(base: Path, user_scope: bool) -> dict:
     hook_backup = backup_existing(hook_target)
     shutil.copy2(hook_source, hook_target)
 
-    agents_target = claude_root / "agents"
-    agents_target.mkdir(parents=True, exist_ok=True)
-    agent_backups: list[tuple[str, str]] = []
-    agent_count = 0
-    for source in sorted((ADAPTERS / "claude" / "agents").glob("thalarch-*.md")):
-        destination = agents_target / source.name
-        backup = backup_existing(destination)
-        if backup:
-            agent_backups.append((str(destination), str(backup)))
-        shutil.copy2(source, destination)
-        agent_count += 1
+    agent_count, agent_backups = copy_agent_files(
+        ADAPTERS / "claude" / "agents",
+        claude_root / "agents",
+        "thalarch-*.md",
+    )
 
     config_primary = claude_root / "settings.json"
     config_companion = claude_root / "THALARCH.settings.json"
@@ -198,7 +214,7 @@ def install_claude(base: Path, user_scope: bool) -> dict:
         "skills_target": str(skills_target),
         "skill_backups": [(str(dst), str(bak)) for dst, bak in skill_backups],
         "agents": agent_count,
-        "agents_target": str(agents_target),
+        "agents_target": str(claude_root / "agents"),
         "agent_backups": agent_backups,
         "hook": str(hook_target),
         "hook_backup": str(hook_backup) if hook_backup else None,
@@ -236,8 +252,7 @@ def main() -> None:
 
     print(f"Thalarch {VERSION} adapter installed for {result['host']} ({args.scope} scope).")
     print(f"Skills: {result['skills']} -> {result['skills_target']}")
-    if "agents" in result:
-        print(f"Claude subagents: {result['agents']} -> {result['agents_target']}")
+    print(f"Read-only specialist agents: {result['agents']} -> {result['agents_target']}")
     print(f"Epistemic hook: {result['hook']}")
     print(f"Instructions: {result['instruction']}")
     print(f"Hook config: {result['config']}")
