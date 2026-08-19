@@ -32,6 +32,28 @@ def ensure_agy() -> str:
     return exe
 
 
+def detect_thalarch_plugin_state(agy: str) -> tuple[bool | None, str]:
+    proc = subprocess.run(
+        [agy, "plugin", "list"],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    output = (proc.stdout + "\n" + proc.stderr).strip()
+    if proc.returncode != 0:
+        return None, output
+
+    matching = [line for line in output.splitlines() if "thalarch-mode" in line.lower()]
+    if not matching:
+        # Official CLI documentation describes `plugin list` as showing active packages.
+        return False, output
+
+    joined = " ".join(matching).lower()
+    if any(token in joined for token in ("disabled", "inactive", " off ")):
+        return False, output
+    return True, output
+
+
 def init_git_repo(workspace: Path) -> None:
     git = shutil.which("git")
     if not git:
@@ -339,6 +361,8 @@ def run_case(
         events = parse_stream(proc.stdout)
         structured = extract_result(events, proc.stdout)
         observed_model = extract_model(events)
+        if observed_model == "unknown" and model:
+            observed_model = model
         passed, incidents, problems = grade_case(case, structured)
 
         if proc.returncode != 0:
@@ -387,9 +411,29 @@ def main() -> None:
     parser.add_argument("--run-id", default="latest", help="Shared id for the paired native/Thalarch run.")
     parser.add_argument("--model", default=None, help="Exact Antigravity model string. Omit to use CLI default.")
     parser.add_argument("--case", action="append", dest="cases", help="Run only this case id; repeatable.")
+    parser.add_argument(
+        "--skip-plugin-state-check",
+        action="store_true",
+        help="Bypass `agy plugin list` state validation only when CLI output format is incompatible.",
+    )
     args = parser.parse_args()
 
     agy = ensure_agy()
+    if not args.skip_plugin_state_check:
+        plugin_enabled, plugin_listing = detect_thalarch_plugin_state(agy)
+        if plugin_enabled is None:
+            raise SystemExit(
+                "Could not determine Antigravity plugin state from `agy plugin list`. "
+                "Inspect the command manually or rerun with --skip-plugin-state-check.\n"
+                + plugin_listing
+            )
+        expected_enabled = args.phase == "thalarch"
+        if plugin_enabled != expected_enabled:
+            expected = "ENABLED" if expected_enabled else "DISABLED"
+            raise SystemExit(
+                f"Invalid benchmark environment: thalarch-mode must be {expected} for phase={args.phase}. "
+                "Use `agy plugin enable thalarch-mode` or `agy plugin disable thalarch-mode` explicitly."
+            )
     suite = load_json(CASES_PATH)["cases"]
     selected = [c for c in suite if not args.cases or c["id"] in set(args.cases)]
     if not selected:
