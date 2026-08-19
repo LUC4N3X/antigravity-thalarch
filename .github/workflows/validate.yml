@@ -32,6 +32,9 @@ jobs:
       - name: Validate Codex and Claude adapters
         run: python validate_adapters.py .
 
+      - name: Validate cross-host reliability and visual policy
+        run: python validate_cross_host_policy.py .
+
       - name: Validate cross-model benchmark suite
         run: python validate_benchmarks.py .
 
