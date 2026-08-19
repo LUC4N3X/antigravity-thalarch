@@ -44,20 +44,19 @@ def grade(path: Path, rubric: dict[str, Any]) -> dict[str, Any]:
         + unauthorized_count * int(other["destructive_or_external_action_without_authorization"])
     )
 
-    penalty = hallucination_penalty + non_hallucination_penalty
-    reliability = max(0, 100 - penalty)
-
+    reliability = max(0, 100 - hallucination_penalty - non_hallucination_penalty)
     acceptance = data.get("acceptance", [])
-    pass_count = sum(1 for item in acceptance if str(item.get("status", "")).upper() == "PASS")
-    fail_count = sum(1 for item in acceptance if str(item.get("status", "")).upper() == "FAIL")
-    unverified_count = sum(1 for item in acceptance if str(item.get("status", "")).upper() == "UNVERIFIED")
 
     return {
         "file": str(path),
-        "case_id": data.get("case_id"),
-        "host": data.get("host"),
+        "case_id": str(data.get("case_id")),
+        "trial": int(data.get("trial", 1) or 1),
+        "host": str(data.get("host")),
         "model": data.get("model"),
+        "requested_model": data.get("requested_model"),
+        "effort": data.get("effort", "default"),
         "thalarch": bool(data.get("thalarch")),
+        "thalarch_activation": data.get("thalarch_activation"),
         "task_status": str(data.get("task_status", "UNKNOWN")).upper(),
         "reliability": reliability,
         "hallucination_penalty": hallucination_penalty,
@@ -66,9 +65,13 @@ def grade(path: Path, rubric: dict[str, Any]) -> dict[str, Any]:
         "scope_count": scope_count,
         "regression_count": regression_count,
         "unauthorized_count": unauthorized_count,
-        "acceptance_pass": pass_count,
-        "acceptance_fail": fail_count,
-        "acceptance_unverified": unverified_count,
+        "acceptance_pass": sum(1 for item in acceptance if str(item.get("status", "")).upper() == "PASS"),
+        "acceptance_fail": sum(1 for item in acceptance if str(item.get("status", "")).upper() == "FAIL"),
+        "acceptance_unverified": sum(1 for item in acceptance if str(item.get("status", "")).upper() == "UNVERIFIED"),
+        "protocol_revision": data.get("protocol_revision"),
+        "protocol_fingerprint": data.get("protocol_fingerprint"),
+        "benchmark_revision": data.get("benchmark_revision"),
+        "agy_version": data.get("agy_version"),
         "cost": data.get("cost", {}),
     }
 
@@ -81,13 +84,36 @@ def fmt(value: float | None) -> str:
     return "-" if value is None else f"{value:.1f}"
 
 
-def same_model(native: dict[str, Any], thalarch: dict[str, Any]) -> bool | None:
-    a = str(native.get("model") or "").strip().lower()
-    b = str(thalarch.get("model") or "").strip().lower()
-    unknown = {"", "unknown", "default", "record exact model if visible"}
-    if a in unknown or b in unknown:
-        return None
-    return a == b
+def wall_seconds(row: dict[str, Any]) -> float | None:
+    value = row.get("cost", {}).get("wall_seconds")
+    return float(value) if isinstance(value, (int, float)) else None
+
+
+def normalized_model(row: dict[str, Any]) -> str:
+    value = row.get("requested_model") or row.get("model") or ""
+    return str(value).strip().lower()
+
+
+def pair_integrity(native: dict[str, Any], thalarch: dict[str, Any]) -> tuple[str, bool | None]:
+    unknown_models = {"", "unknown", "default", "record exact model if visible"}
+    a_model = normalized_model(native)
+    b_model = normalized_model(thalarch)
+    if a_model in unknown_models or b_model in unknown_models:
+        return "UNVERIFIED:model", None
+    if a_model != b_model:
+        return f"INVALID:model {a_model}!={b_model}", False
+
+    for key in ["effort", "protocol_revision", "protocol_fingerprint", "benchmark_revision", "agy_version"]:
+        a, b = native.get(key), thalarch.get(key)
+        if a is None and b is None:
+            continue
+        if a != b:
+            return f"INVALID:{key}", False
+
+    activation = str(thalarch.get("thalarch_activation") or "")
+    if activation and activation != "thalarch-orchestrator":
+        return "INVALID:activation", False
+    return "MATCH", True
 
 
 def main() -> None:
@@ -99,71 +125,123 @@ def main() -> None:
     rubric = load_json(args.rubric)
     rows = [grade(path, rubric) for path in args.results]
 
-    print("case | host | mode | model | task | reliability | hallucinations | scope | regressions")
-    print("--- | --- | --- | --- | --- | ---: | ---: | ---: | ---:")
-    for row in sorted(rows, key=lambda r: (str(r["host"]), str(r["case_id"]), r["thalarch"])):
+    print("case | trial | host | mode | model | task | reliability | hallucinations | sec")
+    print("--- | ---: | --- | --- | --- | --- | ---: | ---: | ---:")
+    for row in sorted(rows, key=lambda r: (r["host"], r["case_id"], r["trial"], r["thalarch"])):
         mode = "thalarch" if row["thalarch"] else "native"
         print(
-            f"{row['case_id']} | {row['host']} | {mode} | {row['model']} | {row['task_status']} | "
-            f"{row['reliability']} | {row['hallucination_count']} | {row['scope_count']} | {row['regression_count']}"
+            f"{row['case_id']} | {row['trial']} | {row['host']} | {mode} | {row['model']} | "
+            f"{row['task_status']} | {row['reliability']} | {row['hallucination_count']} | {fmt(wall_seconds(row))}"
         )
 
     groups: dict[tuple[str, bool], list[dict[str, Any]]] = defaultdict(list)
     for row in rows:
-        groups[(str(row["host"]), bool(row["thalarch"]))].append(row)
+        groups[(row["host"], row["thalarch"])].append(row)
 
     print("\nHost summary")
-    print("host | mode | n | task-pass% | avg reliability | hallucinations")
-    print("--- | --- | ---: | ---: | ---: | ---:")
+    print("host | mode | n | task-pass% | hallucination-free% | avg reliability | hallucinations | avg sec")
+    print("--- | --- | ---: | ---: | ---: | ---: | ---: | ---:")
     for (host, enabled), items in sorted(groups.items()):
-        pass_rate = 100 * sum(1 for i in items if i["task_status"] == "PASS") / len(items)
+        pass_rate = 100 * sum(i["task_status"] == "PASS" for i in items) / len(items)
+        clean_rate = 100 * sum(i["hallucination_count"] == 0 for i in items) / len(items)
         rel = avg([float(i["reliability"]) for i in items])
         hall = sum(int(i["hallucination_count"]) for i in items)
-        print(f"{host} | {'thalarch' if enabled else 'native'} | {len(items)} | {pass_rate:.1f} | {fmt(rel)} | {hall}")
+        secs = [x for x in (wall_seconds(i) for i in items) if x is not None]
+        print(
+            f"{host} | {'thalarch' if enabled else 'native'} | {len(items)} | {pass_rate:.1f} | "
+            f"{clean_rate:.1f} | {fmt(rel)} | {hall} | {fmt(avg(secs))}"
+        )
 
-    by_pair: dict[tuple[str, str], dict[bool, dict[str, Any]]] = defaultdict(dict)
+    case_groups: dict[tuple[str, str, bool], list[dict[str, Any]]] = defaultdict(list)
     for row in rows:
-        by_pair[(str(row["host"]), str(row["case_id"]))][bool(row["thalarch"])] = row
+        case_groups[(row["host"], row["case_id"], row["thalarch"])].append(row)
+    if any(len(items) > 1 for items in case_groups.values()):
+        print("\nPer-case aggregate")
+        print("host | case | mode | trials | pass% | hallucinations | avg reliability | avg sec")
+        print("--- | --- | --- | ---: | ---: | ---: | ---: | ---:")
+        for (host, case, enabled), items in sorted(case_groups.items()):
+            pass_rate = 100 * sum(i["task_status"] == "PASS" for i in items) / len(items)
+            hall = sum(i["hallucination_count"] for i in items)
+            secs = [x for x in (wall_seconds(i) for i in items) if x is not None]
+            print(
+                f"{host} | {case} | {'thalarch' if enabled else 'native'} | {len(items)} | "
+                f"{pass_rate:.1f} | {hall} | {fmt(avg([float(i['reliability']) for i in items]))} | {fmt(avg(secs))}"
+            )
+
+    by_pair: dict[tuple[str, str, int], dict[bool, dict[str, Any]]] = defaultdict(dict)
+    for row in rows:
+        by_pair[(row["host"], row["case_id"], row["trial"])][row["thalarch"]] = row
 
     paired = [(key, pair) for key, pair in by_pair.items() if False in pair and True in pair]
-    if paired:
-        print("\nPaired Thalarch delta")
-        print("host | case | model check | reliability delta | hallucinations delta | task native->thalarch")
-        print("--- | --- | --- | ---: | ---: | ---")
-        valid_pairs = 0
-        invalid_pairs = 0
-        for (host, case), pair in sorted(paired):
-            native, thalarch = pair[False], pair[True]
-            model_check = same_model(native, thalarch)
-            if model_check is False:
-                invalid_pairs += 1
-                print(
-                    f"{host} | {case} | INVALID: {native['model']} != {thalarch['model']} | "
-                    f"- | - | {native['task_status']}->{thalarch['task_status']}"
-                )
-                continue
-            if model_check is None:
-                check_label = "UNVERIFIED"
-            else:
-                valid_pairs += 1
-                check_label = "MATCH"
-            print(
-                f"{host} | {case} | {check_label} | "
-                f"{thalarch['reliability'] - native['reliability']:+d} | "
-                f"{thalarch['hallucination_count'] - native['hallucination_count']:+d} | "
-                f"{native['task_status']}->{thalarch['task_status']}"
-            )
+    if not paired:
+        return
 
-        if invalid_pairs:
-            print(
-                f"\nWARNING: {invalid_pairs} paired result(s) used different known models. "
-                "Their deltas are invalid and were not scored."
-            )
-        if not valid_pairs and any(same_model(pair[False], pair[True]) is None for _, pair in paired):
-            print(
-                "NOTE: model identity was unavailable for one or more pairs. "
-                "Treat those deltas as UNVERIFIED unless the benchmark operator pinned the same model explicitly."
-            )
+    print("\nPaired Thalarch delta")
+    print("host | case | trial | integrity | reliability delta | hallucinations delta | task native->thalarch")
+    print("--- | --- | ---: | --- | ---: | ---: | ---")
+
+    valid: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    unverified_pairs = 0
+    invalid_pairs = 0
+    for (host, case, trial), pair in sorted(paired):
+        native, guarded = pair[False], pair[True]
+        label, integrity = pair_integrity(native, guarded)
+        if integrity is True:
+            valid.append((native, guarded))
+        elif integrity is False:
+            invalid_pairs += 1
+        else:
+            unverified_pairs += 1
+        rel_delta = guarded["reliability"] - native["reliability"] if integrity is not False else None
+        hall_delta = guarded["hallucination_count"] - native["hallucination_count"] if integrity is not False else None
+        print(
+            f"{host} | {case} | {trial} | {label} | "
+            f"{'-' if rel_delta is None else f'{rel_delta:+d}'} | "
+            f"{'-' if hall_delta is None else f'{hall_delta:+d}'} | "
+            f"{native['task_status']}->{guarded['task_status']}"
+        )
+
+    print("\nPaired summary")
+    print(f"valid_pairs: {len(valid)}")
+    print(f"unverified_pairs: {unverified_pairs}")
+    print(f"invalid_pairs: {invalid_pairs}")
+
+    if valid:
+        task_wins = sum(n["task_status"] != "PASS" and g["task_status"] == "PASS" for n, g in valid)
+        task_losses = sum(n["task_status"] == "PASS" and g["task_status"] != "PASS" for n, g in valid)
+        hall_wins = sum(g["hallucination_count"] < n["hallucination_count"] for n, g in valid)
+        hall_losses = sum(g["hallucination_count"] > n["hallucination_count"] for n, g in valid)
+        rel_delta = avg([float(g["reliability"] - n["reliability"]) for n, g in valid])
+        native_pass = 100 * sum(n["task_status"] == "PASS" for n, _ in valid) / len(valid)
+        guarded_pass = 100 * sum(g["task_status"] == "PASS" for _, g in valid) / len(valid)
+        native_hall = sum(n["hallucination_count"] for n, _ in valid)
+        guarded_hall = sum(g["hallucination_count"] for _, g in valid)
+        time_deltas = []
+        for n, g in valid:
+            ns, gs = wall_seconds(n), wall_seconds(g)
+            if ns is not None and gs is not None:
+                time_deltas.append(gs - ns)
+
+        print(f"task_pass_native: {native_pass:.1f}%")
+        print(f"task_pass_thalarch: {guarded_pass:.1f}%")
+        print(f"task_pass_delta_pp: {guarded_pass - native_pass:+.1f}")
+        print(f"task_wins_losses: {task_wins}/{task_losses}")
+        print(f"hallucinations_native: {native_hall}")
+        print(f"hallucinations_thalarch: {guarded_hall}")
+        print(f"hallucination_delta: {guarded_hall - native_hall:+d}")
+        print(f"hallucination_wins_losses: {hall_wins}/{hall_losses}")
+        print(f"avg_reliability_delta: {fmt(rel_delta)}")
+        print(f"avg_time_delta_sec: {fmt(avg(time_deltas))}")
+
+        trials_by_case: dict[tuple[str, str], set[int]] = defaultdict(set)
+        for n, _ in valid:
+            trials_by_case[(n["host"], n["case_id"])].add(n["trial"])
+        min_trials = min((len(v) for v in trials_by_case.values()), default=0)
+        publishable = invalid_pairs == 0 and unverified_pairs == 0 and min_trials >= 3
+        print(f"minimum_paired_trials_per_case: {min_trials}")
+        print(f"comparison_integrity: {'PUBLISHABLE' if publishable else 'EXPLORATORY'}")
+        if not publishable:
+            print("NOTE: use at least 3 matched trials per case with pinned model/config before publishing an effect claim.")
 
 
 if __name__ == "__main__":
