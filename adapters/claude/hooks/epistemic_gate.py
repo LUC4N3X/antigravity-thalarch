@@ -20,7 +20,13 @@ def emit(obj: dict) -> None:
 
 
 def empty_state() -> dict:
-    return {"seq": 0, "last_mutation": 0, "last_verification": 0, "subagents": 0}
+    return {
+        "seq": 0,
+        "last_mutation": 0,
+        "last_verification_attempt": 0,
+        "last_verification_success": 0,
+        "subagents": 0,
+    }
 
 
 def state_file(data: dict) -> Path:
@@ -82,6 +88,20 @@ def nearest_package(cwd: Path) -> tuple[Path | None, set[str]]:
     return None, set()
 
 
+def looks_like_verification(cmd: str) -> bool:
+    c = cmd.lower()
+    patterns = [
+        r"(?:^|\s)(?:pytest|py\.test)(?:\s|$)",
+        r"python(?:3)?\s+-m\s+(?:pytest|unittest)\b",
+        r"\b(?:test|tests|check|checks|lint|typecheck|type-check|build|compile|verify|validate)\b",
+        r"\bcargo\s+(?:test|check|clippy)\b",
+        r"\bgo\s+test\b",
+        r"\bmvnw?(?:\.cmd)?\b[^\n]*(?:\btest\b|\bverify\b|\bpackage\b|\bcompile\b)",
+        r"\bgradlew?(?:\.bat)?\b[^\n]*(?:\btest\b|\bcheck\b|\bbuild\b|\bassemble\b|\bcompile\w*\b|\blint\b)",
+    ]
+    return any(re.search(pattern, c, re.I) for pattern in patterns)
+
+
 def pretool(data: dict) -> None:
     tool = str(data.get("tool_name") or "")
     if tool not in {"Bash", "PowerShell"}:
@@ -111,31 +131,31 @@ def pretool(data: dict) -> None:
         return
 
 
-def posttool(data: dict) -> None:
+def posttool(data: dict, succeeded: bool) -> None:
     state = load(data)
     tool = str(data.get("tool_name") or "")
     cmd = command(data)
     order = advance(state)
 
-    mutated = tool in {"Edit", "Write", "MultiEdit", "NotebookEdit"}
-    verified = False
+    mutated = succeeded and tool in {"Edit", "Write", "MultiEdit", "NotebookEdit"}
+    verification_attempt = False
 
     if tool in {"Bash", "PowerShell"}:
-        verified = bool(re.search(
-            r"\b(test|check|lint|typecheck|build|compile|verify|pytest|unittest|gradle|mvn|cargo\s+test|go\s+test)\b",
-            cmd,
-            re.I,
-        ))
-        mutated = mutated or bool(re.search(
-            r"(?:^|[;&|])\s*(?:sed\s+-i|perl\s+-pi|tee\s+|cat\s+>|echo\s+.*>|rm\s+|mv\s+|cp\s+)",
-            cmd,
-            re.I,
-        ))
+        verification_attempt = looks_like_verification(cmd)
+        if succeeded:
+            mutated = mutated or bool(re.search(
+                r"(?:^|[;&|])\s*(?:sed\s+-i|perl\s+-pi|tee\s+|cat\s+>|echo\s+.*>|rm\s+|mv\s+|cp\s+)",
+                cmd,
+                re.I,
+            ))
 
     if mutated:
         state["last_mutation"] = order
-    if verified:
-        state["last_verification"] = order
+    if verification_attempt:
+        state["last_verification_attempt"] = order
+        if succeeded:
+            state["last_verification_success"] = order
+
     save(data, state)
 
 
@@ -146,15 +166,21 @@ def stop(data: dict) -> None:
     state = load(data)
     msg = str(data.get("last_assistant_message") or "")
     last_mutation = int(state.get("last_mutation", 0))
-    last_verification = int(state.get("last_verification", 0))
-    verification_is_fresh = last_mutation == 0 or last_verification > last_mutation
+    last_attempt = int(state.get("last_verification_attempt", 0))
+    last_success = int(state.get("last_verification_success", 0))
 
-    if not verification_is_fresh and "unverified" not in msg.lower():
+    needs_verification = last_mutation > 0
+    success_after_mutation = last_success > last_mutation
+    no_later_failed_attempt = last_attempt == 0 or last_success >= last_attempt
+    evidence_is_current = (not needs_verification) or (success_after_mutation and no_later_failed_attempt)
+
+    if not evidence_is_current and "unverified" not in msg.lower():
         emit({
             "decision": "block",
             "reason": (
-                "THALARCH EVIDENCE GATE: the latest code/repository mutation is newer than the latest observed project-native verification. "
-                "Run the strongest available test/build/check after the final mutation, or explicitly keep the affected completion claim UNVERIFIED."
+                "THALARCH EVIDENCE GATE: the final code/repository mutation is not followed by a successful current project-native verification, "
+                "or a later verification attempt failed. Run the strongest relevant test/build/check after the final mutation, resolve any later failure, "
+                "or explicitly keep the affected completion claim UNVERIFIED."
             ),
         })
 
@@ -175,7 +201,11 @@ def main() -> None:
     elif event == "PreToolUse":
         pretool(data)
     elif event == "PostToolUse":
-        posttool(data)
+        # Claude Code documents PostToolUse as the successful execution event.
+        posttool(data, succeeded=True)
+    elif event == "PostToolUseFailure":
+        # A failed verification must invalidate any earlier success that the model might otherwise reuse.
+        posttool(data, succeeded=False)
     elif event == "SubagentStop":
         state = load(data)
         state["subagents"] = int(state.get("subagents", 0)) + 1
