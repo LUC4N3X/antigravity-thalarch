@@ -20,8 +20,24 @@ SCHEMA_PATH = HERE / "response.schema.json"
 RESULTS_ROOT = BENCH_ROOT / "results" / "quick"
 
 
+class BenchmarkInfraError(RuntimeError):
+    pass
+
+
 def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def run_text(cmd: list[str], *, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        cmd,
+        cwd=cwd,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        capture_output=True,
+        check=False,
+    )
 
 
 def ensure_agy() -> str:
@@ -31,11 +47,10 @@ def ensure_agy() -> str:
 
     local_app_data = os.environ.get("LOCALAPPDATA")
     if local_app_data:
-        candidates = [
+        for candidate in (
             Path(local_app_data) / "agy" / "bin" / "agy.exe",
             Path(local_app_data) / "agy" / "bin" / "agy",
-        ]
-        for candidate in candidates:
+        ):
             if candidate.is_file():
                 return str(candidate)
 
@@ -45,42 +60,25 @@ def ensure_agy() -> str:
     )
 
 
-def detect_thalarch_plugin_state(agy: str) -> tuple[bool | None, str]:
-    proc = subprocess.run(
-        [agy, "plugin", "list"],
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-    output = (proc.stdout + "\n" + proc.stderr).strip()
+def set_thalarch_plugin_state(agy: str, enabled: bool) -> None:
+    action = "enable" if enabled else "disable"
+    proc = run_text([agy, "plugin", action, "thalarch-mode"])
     if proc.returncode != 0:
-        return None, output
-
-    matching = [line for line in output.splitlines() if "thalarch-mode" in line.lower()]
-    if not matching:
-        return False, output
-
-    joined = " ".join(matching).lower()
-    if any(token in joined for token in ("disabled", "inactive", " off ")):
-        return False, output
-    return True, output
+        details = (proc.stderr or proc.stdout or "no CLI diagnostic").strip()
+        raise BenchmarkInfraError(
+            f"Could not {action} thalarch-mode (agy exit {proc.returncode}).\n{details}"
+        )
 
 
 def init_git_repo(workspace: Path) -> None:
     git = shutil.which("git")
     if not git:
         return
-    subprocess.run([git, "init", "-q"], cwd=workspace, check=False, capture_output=True, text=True)
-    subprocess.run([git, "config", "user.email", "benchmark@example.invalid"], cwd=workspace, check=False)
-    subprocess.run([git, "config", "user.name", "Thalarch Benchmark"], cwd=workspace, check=False)
-    subprocess.run([git, "add", "."], cwd=workspace, check=False, capture_output=True, text=True)
-    subprocess.run(
-        [git, "commit", "-q", "-m", "benchmark fixture"],
-        cwd=workspace,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    run_text([git, "init", "-q"], cwd=workspace)
+    run_text([git, "config", "user.email", "benchmark@example.invalid"], cwd=workspace)
+    run_text([git, "config", "user.name", "Thalarch Benchmark"], cwd=workspace)
+    run_text([git, "add", "."], cwd=workspace)
+    run_text([git, "commit", "-q", "-m", "benchmark fixture"], cwd=workspace)
 
 
 def write_fixture(case: dict[str, Any], workspace: Path) -> None:
@@ -117,31 +115,25 @@ def walk(obj: Any):
 
 
 def extract_result(events: list[dict[str, Any]], stdout: str) -> dict[str, Any] | None:
-    candidates: list[Any] = []
     for event in reversed(events):
-        if str(event.get("type", "")).lower() == "result":
-            candidates.append(event)
-        candidates.append(event)
-
-    for candidate in candidates:
-        for obj in walk(candidate):
+        for obj in walk(event):
             if {"case_id", "conclusion", "claims"}.issubset(obj.keys()):
                 return obj
             for key in ("result", "output", "response", "content", "text"):
                 value = obj.get(key)
-                if isinstance(value, str):
-                    try:
-                        parsed = json.loads(value)
-                    except json.JSONDecodeError:
-                        continue
-                    if isinstance(parsed, dict) and {"case_id", "conclusion", "claims"}.issubset(parsed.keys()):
-                        return parsed
+                if not isinstance(value, str):
+                    continue
+                try:
+                    parsed = json.loads(value)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(parsed, dict) and {"case_id", "conclusion", "claims"}.issubset(parsed.keys()):
+                    return parsed
 
     start = stdout.rfind('{"case_id"')
     if start >= 0:
-        tail = stdout[start:]
         try:
-            parsed = json.loads(tail)
+            parsed = json.loads(stdout[start:])
         except json.JSONDecodeError:
             return None
         if isinstance(parsed, dict):
@@ -156,6 +148,11 @@ def extract_model(events: list[dict[str, Any]]) -> str:
                 value = obj.get(key)
                 if isinstance(value, str) and value.strip():
                     return value.strip()
+                if isinstance(value, dict):
+                    for nested in ("id", "name", "display_name", "displayName"):
+                        nested_value = value.get(nested)
+                        if isinstance(nested_value, str) and nested_value.strip():
+                            return nested_value.strip()
     return "unknown"
 
 
@@ -191,15 +188,7 @@ def all_text(result: dict[str, Any]) -> str:
     return "\n".join(chunks)
 
 
-def grade_case(case: dict[str, Any], result: dict[str, Any] | None) -> tuple[bool, list[dict[str, Any]], list[str]]:
-    if result is None:
-        return False, [{
-            "type": "OTHER",
-            "claim": "No parseable structured benchmark result was produced.",
-            "evidence": "Antigravity output did not contain the required response schema.",
-            "corrected_before_final": False,
-        }], ["structured result missing"]
-
+def grade_case(case: dict[str, Any], result: dict[str, Any]) -> tuple[bool, list[dict[str, Any]], list[str]]:
     problems: list[str] = []
     incidents: list[dict[str, Any]] = []
 
@@ -212,7 +201,6 @@ def grade_case(case: dict[str, Any], result: dict[str, Any] | None) -> tuple[boo
         problems.append(f"unexpected conclusion {conclusion!r}; allowed={sorted(allowed)}")
 
     text = all_text(result)
-
     for pattern in case.get("required_text_regex", []):
         if not re.search(pattern, text, flags=re.I | re.S):
             problems.append(f"required evidence/text not found: /{pattern}/")
@@ -230,10 +218,9 @@ def grade_case(case: dict[str, Any], result: dict[str, Any] | None) -> tuple[boo
     for claim in result.get("claims", []):
         if not isinstance(claim, dict):
             continue
-        status = str(claim.get("status", "")).upper()
-        claim_text = str(claim.get("claim", ""))
-        if status not in {"PROVEN", "SUPPORTED"}:
+        if str(claim.get("status", "")).upper() not in {"PROVEN", "SUPPORTED"}:
             continue
+        claim_text = str(claim.get("claim", ""))
         for pattern in case.get("false_claim_regex", []):
             if re.search(pattern, claim_text, flags=re.I | re.S):
                 incidents.append({
@@ -249,7 +236,6 @@ def grade_case(case: dict[str, Any], result: dict[str, Any] | None) -> tuple[boo
     for item in incidents:
         dedup[(item["type"], item["claim"])] = item
     incidents = list(dedup.values())
-
     return not problems and not incidents, incidents, problems
 
 
@@ -259,7 +245,7 @@ def standard_result(
     model: str,
     elapsed: float,
     events: list[dict[str, Any]],
-    result: dict[str, Any] | None,
+    result: dict[str, Any],
     passed: bool,
     incidents: list[dict[str, Any]],
     problems: list[str],
@@ -276,8 +262,7 @@ def standard_result(
                 return value
         return None
 
-    criterion = case["success_signal"]
-    evidence = "structured result + fixture + raw Antigravity stream"
+    evidence = "structured result + deterministic fixture + raw Antigravity stream"
     if problems:
         evidence += "; problems: " + "; ".join(problems)
 
@@ -291,7 +276,7 @@ def standard_result(
         "finished_at": datetime.now(timezone.utc).isoformat(),
         "task_status": "PASS" if passed else "FAIL",
         "acceptance": [{
-            "criterion": criterion,
+            "criterion": case["success_signal"],
             "status": "PASS" if passed else "FAIL",
             "evidence": evidence,
         }],
@@ -301,7 +286,7 @@ def standard_result(
         "unauthorized_external_actions": [],
         "verification": {
             "commands_or_tools": tool_calls,
-            "honest_unverified": result.get("unverified", []) if isinstance(result, dict) else [],
+            "honest_unverified": result.get("unverified", []),
             "proof_substitution_incidents": [],
         },
         "cost": {
@@ -314,7 +299,7 @@ def standard_result(
         },
         "notes": (
             f"Raw stdout: {stdout_path.name}; raw stderr: {stderr_path.name}. "
-            "Quick benchmark grades structured evidence, not model self-praise."
+            "Infrastructure failures are never scored as model hallucinations."
         ),
     }
 
@@ -342,25 +327,23 @@ def run_case(
         if phase == "thalarch":
             prompt = "Use Thalarch. Apply the smallest relevant Thalarch stack.\n\n" + prompt + common
         else:
-            prompt = prompt + common
+            prompt += common
 
+        schema_inline = json.dumps(load_json(SCHEMA_PATH), separators=(",", ":"))
         cmd = [
             agy,
             "-p",
             prompt,
-            "--cwd",
-            str(workspace),
+            f"--cwd={workspace}",
             "--mode=plan",
-            "--output-format",
-            "stream-json",
-            "--json-schema",
-            str(SCHEMA_PATH),
+            "--output-format=stream-json",
+            f"--json-schema={schema_inline}",
         ]
         if model:
-            cmd.extend(["--model", model])
+            cmd.append(f"--model={model}")
 
         started = time.monotonic()
-        proc = subprocess.run(cmd, text=True, capture_output=True, check=False)
+        proc = run_text(cmd)
         elapsed = time.monotonic() - started
 
         raw_dir = run_dir / "raw" / phase
@@ -370,22 +353,27 @@ def run_case(
         stdout_path.write_text(proc.stdout, encoding="utf-8")
         stderr_path.write_text(proc.stderr, encoding="utf-8")
 
+        if proc.returncode != 0:
+            diagnostic = (proc.stderr or proc.stdout or "no CLI diagnostic").strip()
+            raise BenchmarkInfraError(
+                f"{case['id']}: Antigravity CLI failed before a benchmark answer (exit {proc.returncode}).\n"
+                f"stderr/stdout:\n{diagnostic}\n"
+                f"raw stderr: {stderr_path}\nraw stdout: {stdout_path}"
+            )
+
         events = parse_stream(proc.stdout)
         structured = extract_result(events, proc.stdout)
+        if structured is None:
+            raise BenchmarkInfraError(
+                f"{case['id']}: Antigravity exited successfully but no schema-conformant structured result "
+                f"could be parsed. This is an infrastructure/harness failure, not a hallucination.\n"
+                f"raw stderr: {stderr_path}\nraw stdout: {stdout_path}"
+            )
+
         observed_model = extract_model(events)
         if observed_model == "unknown" and model:
             observed_model = model
         passed, incidents, problems = grade_case(case, structured)
-
-        if proc.returncode != 0:
-            passed = False
-            problems.append(f"agy exit code {proc.returncode}")
-            incidents.append({
-                "type": "OTHER",
-                "claim": "Antigravity print-mode run failed.",
-                "evidence": f"agy exit code {proc.returncode}; inspect {stderr_path.name}",
-                "corrected_before_final": False,
-            })
 
         result_dir = run_dir / "results"
         result_dir.mkdir(parents=True, exist_ok=True)
@@ -402,16 +390,17 @@ def run_case(
             stdout_path,
             stderr_path,
         )
-        out_path = result_dir / f"{case['id']}-{phase}.json"
-        out_path.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        (result_dir / f"{case['id']}-{phase}.json").write_text(
+            json.dumps(out, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
 
         print(
             f"{case['id']}: {'PASS' if passed else 'FAIL'} | "
             f"model={observed_model} | {elapsed:.1f}s | hallucinations={len(incidents)}"
         )
-        if problems:
-            for problem in problems:
-                print(f"  - {problem}")
+        for problem in problems:
+            print(f"  - {problem}")
         return out
 
 
@@ -423,46 +412,38 @@ def main() -> None:
     parser.add_argument("--run-id", default="latest", help="Shared id for the paired native/Thalarch run.")
     parser.add_argument("--model", default=None, help="Exact Antigravity model string. Omit to use CLI default.")
     parser.add_argument("--case", action="append", dest="cases", help="Run only this case id; repeatable.")
-    parser.add_argument(
-        "--skip-plugin-state-check",
-        action="store_true",
-        help="Bypass `agy plugin list` state validation only when CLI output format is incompatible.",
-    )
     args = parser.parse_args()
 
     agy = ensure_agy()
-    if not args.skip_plugin_state_check:
-        plugin_enabled, plugin_listing = detect_thalarch_plugin_state(agy)
-        if plugin_enabled is None:
-            raise SystemExit(
-                "Could not determine Antigravity plugin state from `agy plugin list`. "
-                "Inspect the command manually or rerun with --skip-plugin-state-check.\n"
-                + plugin_listing
-            )
-        expected_enabled = args.phase == "thalarch"
-        if plugin_enabled != expected_enabled:
-            expected = "ENABLED" if expected_enabled else "DISABLED"
-            raise SystemExit(
-                f"Invalid benchmark environment: thalarch-mode must be {expected} for phase={args.phase}. "
-                "Use `agy plugin enable thalarch-mode` or `agy plugin disable thalarch-mode` explicitly."
-            )
-    suite = load_json(CASES_PATH)["cases"]
-    selected = [c for c in suite if not args.cases or c["id"] in set(args.cases)]
-    if not selected:
-        raise SystemExit("No benchmark cases selected.")
-
     run_dir = RESULTS_ROOT / args.run_id
     run_dir.mkdir(parents=True, exist_ok=True)
 
+    try:
+        set_thalarch_plugin_state(agy, enabled=args.phase == "thalarch")
+    except BenchmarkInfraError as exc:
+        print("BENCHMARK INFRA_ERROR")
+        print(exc)
+        raise SystemExit(2)
+
+    suite = load_json(CASES_PATH)["cases"]
+    requested = set(args.cases or [])
+    selected = [case for case in suite if not requested or case["id"] in requested]
+    if not selected:
+        raise SystemExit("No benchmark cases selected.")
+
     print(f"Thalarch Quick Benchmark | phase={args.phase} | cases={len(selected)} | run_id={args.run_id}")
-    print("IMPORTANT: this runner does not toggle plugins.")
-    if args.phase == "native":
-        print("Expected environment: `thalarch-mode` DISABLED.")
-    else:
-        print("Expected environment: `thalarch-mode` ENABLED and discoverable.")
+    print(f"Plugin state requested by runner: {'ENABLED' if args.phase == 'thalarch' else 'DISABLED'}")
     print()
 
-    rows = [run_case(agy, case, args.phase, args.model, run_dir) for case in selected]
+    rows: list[dict[str, Any]] = []
+    for case in selected:
+        try:
+            rows.append(run_case(agy, case, args.phase, args.model, run_dir))
+        except BenchmarkInfraError as exc:
+            print("BENCHMARK INFRA_ERROR")
+            print(exc)
+            print("No hallucination score was recorded for this infrastructure failure.")
+            raise SystemExit(2)
 
     models = sorted({str(row.get("model") or "unknown") for row in rows})
     passed = sum(1 for row in rows if row["task_status"] == "PASS")
