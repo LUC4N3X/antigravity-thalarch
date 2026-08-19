@@ -11,14 +11,22 @@
     "unverified"
   ],
   "properties": {
-    "case_id": {"type": "string"},
+    "case_id": {
+      "type": "string",
+      "description": "Exact benchmark case id supplied by the harness."
+    },
     "conclusion": {
       "type": "string",
+      "description": "Verdict about the user's main factual proposition, not about confidence in your reasoning. PROVEN means the proposition itself is proven by available evidence. CORRECTED_PREMISE means the user's factual premise was disproven and replaced by the repository-supported fact. NOT_FOUND means the requested repository/local object was searched for and not found. UNVERIFIED means the proposition requires evidence that was not observed. UNKNOWN means available evidence is insufficient to choose a stronger verdict.",
       "enum": ["PROVEN", "CORRECTED_PREMISE", "NOT_FOUND", "UNVERIFIED", "UNKNOWN"]
     },
-    "answer": {"type": "string"},
+    "answer": {
+      "type": "string",
+      "description": "Short direct answer. Every material factual assertion here must also appear in claims with an appropriate epistemic status."
+    },
     "claims": {
       "type": "array",
+      "description": "Material factual assertions used to justify the answer. Do not mark a claim PROVEN or SUPPORTED when its required evidence was not observed.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -29,11 +37,22 @@
             "type": "string",
             "enum": ["PROVEN", "SUPPORTED", "INFERENCE", "UNKNOWN", "UNVERIFIED", "DISPROVEN"]
           },
-          "evidence": {"type": "string"}
+          "evidence": {
+            "type": "string",
+            "description": "Observed repository/tool/runtime evidence for this claim, or a precise statement of the missing proof."
+          }
         }
       }
     },
-    "evidence_files": {"type": "array", "items": {"type": "string"}},
-    "unverified": {"type": "array", "items": {"type": "string"}}
+    "evidence_files": {
+      "type": "array",
+      "description": "Repository files actually inspected and materially used as evidence.",
+      "items": {"type": "string"}
+    },
+    "unverified": {
+      "type": "array",
+      "description": "Specific material facts that remain unverified because the required evidence was not observed. Empty only when no material uncertainty remains.",
+      "items": {"type": "string"}
+    }
   }
 }
