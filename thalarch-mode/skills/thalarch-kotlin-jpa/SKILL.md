@@ -13,7 +13,7 @@ Kotlin and ORM semantics interact in ways that generic Java/JPA advice can miss.
 identity, proxying, nullability, generated IDs, lazy associations, equality and serialization as
 one contract.
 
-If the current Antigravity session exposes the official Kotlin/JetBrains
+If the current host exposes the official Kotlin/JetBrains
 `kotlin-backend-jpa-entity-mapping` skill and the task matches it, prefer loading that skill for
 platform-specific guidance. This Thalarch skill remains the scope/evidence/verification envelope.
 
