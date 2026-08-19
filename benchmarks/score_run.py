@@ -29,7 +29,6 @@ def grade(path: Path, rubric: dict[str, Any]) -> dict[str, Any]:
         hallucination_penalty += weight
         incidents.append({"type": kind, "weight": weight, "claim": incident.get("claim", "")})
 
-    # Explicit proof-substitution incidents may be graded outside the hallucinations list.
     substitution_count = len(data.get("verification", {}).get("proof_substitution_incidents", []))
     already_substitution = sum(1 for i in incidents if i["type"] == "PROOF_SUBSTITUTION")
     additional_substitutions = max(0, substitution_count - already_substitution)
@@ -82,6 +81,15 @@ def fmt(value: float | None) -> str:
     return "-" if value is None else f"{value:.1f}"
 
 
+def same_model(native: dict[str, Any], thalarch: dict[str, Any]) -> bool | None:
+    a = str(native.get("model") or "").strip().lower()
+    b = str(thalarch.get("model") or "").strip().lower()
+    unknown = {"", "unknown", "default", "record exact model if visible"}
+    if a in unknown or b in unknown:
+        return None
+    return a == b
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Score Thalarch cross-model benchmark result JSON files")
     parser.add_argument("results", nargs="+", type=Path)
@@ -91,12 +99,12 @@ def main() -> None:
     rubric = load_json(args.rubric)
     rows = [grade(path, rubric) for path in args.results]
 
-    print("case | host | mode | task | reliability | hallucinations | scope | regressions")
-    print("--- | --- | --- | --- | ---: | ---: | ---: | ---:")
+    print("case | host | mode | model | task | reliability | hallucinations | scope | regressions")
+    print("--- | --- | --- | --- | --- | ---: | ---: | ---: | ---:")
     for row in sorted(rows, key=lambda r: (str(r["host"]), str(r["case_id"]), r["thalarch"])):
         mode = "thalarch" if row["thalarch"] else "native"
         print(
-            f"{row['case_id']} | {row['host']} | {mode} | {row['task_status']} | "
+            f"{row['case_id']} | {row['host']} | {mode} | {row['model']} | {row['task_status']} | "
             f"{row['reliability']} | {row['hallucination_count']} | {row['scope_count']} | {row['regression_count']}"
         )
 
@@ -113,7 +121,6 @@ def main() -> None:
         hall = sum(int(i["hallucination_count"]) for i in items)
         print(f"{host} | {'thalarch' if enabled else 'native'} | {len(items)} | {pass_rate:.1f} | {fmt(rel)} | {hall}")
 
-    # Paired delta only when the same host/case has both native and Thalarch results.
     by_pair: dict[tuple[str, str], dict[bool, dict[str, Any]]] = defaultdict(dict)
     for row in rows:
         by_pair[(str(row["host"]), str(row["case_id"]))][bool(row["thalarch"])] = row
@@ -121,14 +128,41 @@ def main() -> None:
     paired = [(key, pair) for key, pair in by_pair.items() if False in pair and True in pair]
     if paired:
         print("\nPaired Thalarch delta")
-        print("host | case | reliability Δ | hallucinations Δ | task native→thalarch")
-        print("--- | --- | ---: | ---: | ---")
+        print("host | case | model check | reliability Δ | hallucinations Δ | task native→thalarch")
+        print("--- | --- | --- | ---: | ---: | ---")
+        valid_pairs = 0
+        invalid_pairs = 0
         for (host, case), pair in sorted(paired):
             native, thalarch = pair[False], pair[True]
+            model_check = same_model(native, thalarch)
+            if model_check is False:
+                invalid_pairs += 1
+                print(
+                    f"{host} | {case} | INVALID: {native['model']} != {thalarch['model']} | "
+                    f"- | - | {native['task_status']}→{thalarch['task_status']}"
+                )
+                continue
+            if model_check is None:
+                check_label = "UNVERIFIED"
+            else:
+                valid_pairs += 1
+                check_label = "MATCH"
             print(
-                f"{host} | {case} | {thalarch['reliability'] - native['reliability']:+d} | "
+                f"{host} | {case} | {check_label} | "
+                f"{thalarch['reliability'] - native['reliability']:+d} | "
                 f"{thalarch['hallucination_count'] - native['hallucination_count']:+d} | "
                 f"{native['task_status']}→{thalarch['task_status']}"
+            )
+
+        if invalid_pairs:
+            print(
+                f"\nWARNING: {invalid_pairs} paired result(s) used different known models. "
+                "Their deltas are invalid and were not scored."
+            )
+        if not valid_pairs and any(same_model(pair[False], pair[True]) is None for _, pair in paired):
+            print(
+                "NOTE: model identity was unavailable for one or more pairs. "
+                "Treat those deltas as UNVERIFIED unless the benchmark operator pinned the same model explicitly."
             )
 
 
