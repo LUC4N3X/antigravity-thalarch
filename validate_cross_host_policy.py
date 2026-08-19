@@ -40,7 +40,7 @@ checks = {
     root / "adapters/codex/AGENTS.md": [
         "Visual/design reference contract",
         "VoltAgent/awesome-design-md",
-        "remains `UNVERIFIED`",
+        "remain `UNVERIFIED`",
     ],
     root / "adapters/claude/CLAUDE.md": [
         "Visual/design reference contract",
