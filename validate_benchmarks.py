@@ -118,11 +118,14 @@ if not errors:
         "No hallucination score was recorded for this infrastructure failure.",
         "--output-format=stream-json",
         "--json-schema=",
+        "proc = run_text(cmd, cwd=workspace)",
     ]:
         if term not in runner:
             errors.append(f"quick benchmark runner missing infrastructure guard: {term}")
     if "def detect_thalarch_plugin_state" in runner:
         errors.append("quick benchmark must not infer effective plugin state from plugin list")
+    if "--cwd" in runner:
+        errors.append("Antigravity CLI 1.1.x does not expose --cwd; benchmark must use subprocess cwd")
     if '"type": "OTHER",\n                "claim": "Antigravity print-mode run failed."' in runner:
         errors.append("CLI infrastructure failures must not be recorded as hallucinations")
 
@@ -182,6 +185,7 @@ print("version: 1.0.0 (fixed)")
 print("cross_model_cases: >=20")
 print("quick_antigravity_cases: 8")
 print("quick_structured_output: enforced")
+print("quick_cli_workdir: subprocess_cwd")
 print("quick_infra_errors: separated_from_hallucinations")
 print("hallucination_taxonomy: enforced")
 print("paired_scorer: passed")
