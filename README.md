@@ -356,7 +356,8 @@ Clone/download this repository first, then choose the host.
 ### Google Antigravity — Linux/macOS IDE
 
 ```bash
-chmod +x ./INSTALL.sh IDE
+chmod +x ./INSTALL.sh
+./INSTALL.sh IDE
 ```
 
 IDE installation target:
