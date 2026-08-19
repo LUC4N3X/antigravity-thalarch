@@ -160,6 +160,25 @@ Record command/tool, result, and relevant scope. An exit code without inspecting
 may be insufficient when the tool can succeed partially or produce warnings that invalidate the
 claim.
 
+### Runtime proof seal
+
+When the user's main proposition itself requires runtime/execution evidence — for example "all tests
+pass now", "the build succeeds", "the bug is fixed", "this endpoint works", or "there are no
+regressions" — and that proof was not actually observed:
+
+- the proposition **cannot** be promoted to `PROVEN` or `SUPPORTED` merely from source inspection,
+  configuration, static reasoning, an earlier unrelated run, or the absence of an obvious defect;
+- use `UNVERIFIED` when the required run/tool/CI/device/browser proof was not performed or was
+  unavailable;
+- state the missing proof concretely (for example, "test suite was not executed in this session");
+- preserve the missing proof in any structured `unverified`/verification ledger when the host or
+  task format provides one;
+- do not reinterpret `PROVEN` as "I proved that verification is impossible". Verdict/status labels
+  describe the factual proposition being answered unless the schema explicitly defines otherwise.
+
+This seal is host-agnostic. Antigravity, Codex, Claude Code, and any future adapter must preserve the
+same evidence semantics even when their tool names differ.
+
 ## 7. Source hierarchy
 
 For version-sensitive technical truth, prefer:
