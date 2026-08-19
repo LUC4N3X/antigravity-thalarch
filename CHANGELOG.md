@@ -5,6 +5,33 @@
 Thalarch intentionally keeps the public version fixed at **1.0.0**. Capability changes are tracked
 here and in Git history without semantic-version bumps.
 
+### 2026-08-19 — Context, source grounding, doubt, and observability
+
+- added `thalarch-context` for focused task packets, research isolation, context trust levels,
+  stale-context recovery, and compact handoffs instead of conversation/repository flooding;
+- added `thalarch-source-grounding` so load-bearing framework/library/runtime decisions prove the
+  project's exact version and consult narrow current primary sources before implementation;
+- source grounding treats retrieved documentation as technical evidence rather than instruction
+  authority, preventing fetched-content prompt injection from expanding scope or authorizing tools;
+- added `thalarch-doubt`, a bounded in-flight adversarial challenge for non-trivial D2+ decisions;
+  reviewers receive artifact + contract rather than producer reasoning and findings are reconciled
+  against evidence rather than rubber-stamped;
+- added `thalarch-observability` for production-oriented structured logging, bounded-cardinality
+  metrics, tracing/correlation, retries/queues/external integrations, telemetry privacy, and
+  evidence-based alerting;
+- strengthened `thalarch-code-craft` with vertical, contract-first, behavior-first, and risk-first
+  evidence slices so uncertain multi-file work is falsified early instead of implemented in one
+  large pass;
+- added shortcut/rationalization defenses to the new reliability workflows while keeping them
+  adaptive rather than inheriting universal numeric thresholds or mandatory ceremony;
+- added `addyosmani/agent-skills` to Skill Intelligence's high-value discovery map without bundling
+  or auto-installing the external skill pack;
+- expanded Thalarch evals with source-grounding, fresh-context doubt, stale-context switching, and
+  production observability cases;
+- validator now requires the four new canonical reliability skills and their router/orchestrator
+  wiring;
+- public version remains permanently **1.0.0**.
+
 ### 2026-08-19 — Cross-model reliability benchmark
 
 - added `benchmarks/` with a paired native-vs-Thalarch evaluation protocol for Antigravity/Gemini,
