@@ -5,6 +5,11 @@ description: >
   JPA entities, repositories, relationships, fetch plans, transactions, equality/identity,
   uniqueness constraints, optimistic locking, or when diagnosing N+1/LazyInitialization issues.
   Prefer an installed official Kotlin/JetBrains JPA skill for exact current platform guidance.
+license: Apache-2.0
+metadata:
+  upstream: https://github.com/Kotlin/kotlin-agent-skills/tree/main/skills/kotlin-backend-jpa-entity-mapping
+  upstream-author: JetBrains
+  modification-notice: Modified for Thalarch; see THIRD_PARTY_NOTICES.md.
 ---
 
 # Thalarch Kotlin JPA
