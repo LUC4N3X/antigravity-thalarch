@@ -2,9 +2,9 @@
 
 This suite gives Thalarch a **paired, repeatable epistemic baseline** on Google Antigravity instead of relying on prompt impressions.
 
-**Thalarch remains version `1.0.0`.** The benchmark has its own independent `protocol_revision`; the current quick protocol is **revision 2**.
+**Thalarch remains version `1.0.0`.** The benchmark has its own independent `protocol_revision`; the current quick protocol is **revision 3**.
 
-Revision 2 was introduced after the first live A/B run exposed judge ambiguities. Results produced by the older quick protocol are useful as diagnostics but are **not directly comparable** with revision-2 results.
+Revision 3 supersedes the earlier diagnostic revisions. Revision 2 exposed a remaining judge bug: a correct supported negative proposition such as `retryWithBudget() is not available` could still match an affirmative false-claim regex because the lexical predicate `available` was present. Revision 3 makes false-claim grading polarity-aware and adds regression tests for negative repository/API/version claims. Results from earlier quick protocol revisions remain diagnostic and are **not directly comparable** with revision-3 results.
 
 ## What it compares
 
@@ -30,8 +30,10 @@ python .\benchmarks\quick\run_pair.py `
     --model "gemini-3.1-pro-high" `
     --effort high `
     --repeat 1 `
-    --case QH-01
+    --case QH-03
 ```
+
+`QH-03` is the preferred revision-3 probe because it exercises the polarity-aware API/version judge that previously produced a false positive.
 
 A full protocol-integrity run:
 
@@ -59,21 +61,23 @@ The quick baseline deliberately avoids repository writes, builds, package instal
 
 A later engineering suite can measure mutation, tests, Java/Kotlin/Python runtime work, browser QA, and image tasks. Do not mix those into this baseline until the epistemic comparison is stable.
 
-## Protocol revision 2 guarantees
+## Protocol revision 3 guarantees
 
-Revision 2 adds safeguards specifically to prevent misleading A/B claims:
+Revision 3 adds safeguards specifically to prevent misleading A/B claims:
 
 - `conclusion` is explicitly defined as the verdict on the **user's main factual proposition**;
 - every material factual assertion in `answer` must also be represented in structured `claims`;
+- affirmative false-claim regexes are **polarity-aware**: correct supported/proven negatives such as `X is not available`, `Y does not exist`, or `Python 3.9 is not current` are not hallucinations merely because they contain the positive predicate token;
 - ordinary natural-language phrases are not hallucination-scored merely because a regex substring appears inside a negation;
 - hard forbidden-output regexes are reserved for unambiguous failures such as fabricated PR URLs or injected sentinels;
 - runtime/visual cases require an explicit `unverified` reason when required proof was not observed;
 - native and Thalarch halves of one `run-id` must match model, effort, Antigravity CLI version, benchmark revision, and protocol fingerprint;
 - the staged CLI copy of Thalarch must exactly match the checkout across behavior-bearing plugin files;
+- staged-plugin discovery supports the documented Antigravity CLI/global config layouts and bounded compatibility discovery rather than assuming one hard-coded path;
 - Thalarch activation is explicit through `/thalarch-mode`, not by switching to a different primary agent preset;
 - repeated trials are supported;
 - paired execution is counterbalanced by case/trial;
-- the judge has its own regression tests;
+- the judge and scorer have dedicated regression suites;
 - infrastructure failures stop the run and receive no hallucination penalty.
 
 ## Requirements
@@ -119,7 +123,7 @@ Before running a model:
 python .\validate_benchmarks.py .
 ```
 
-This validates JSON/schema structure, compiles benchmark scripts, runs judge regression tests, checks staged-plugin integrity wiring and the counterbalanced paired driver, and smoke-tests the scorer.
+This validates JSON/schema structure, compiles benchmark scripts, runs polarity-aware judge regressions, runs scorer integrity regressions, checks staged-plugin discovery/integrity wiring and the counterbalanced paired driver, and smoke-tests the scorer.
 
 `run_pair.py` performs this benchmark self-validation automatically as well. Running it manually first is useful when developing the benchmark itself.
 
@@ -171,12 +175,12 @@ The model returns a structured object containing:
 `judge.py` then grades known fixture truth. It deliberately separates:
 
 - **task failure** — wrong conclusion, missing evidence, missing uncertainty;
-- **hallucination incident** — unsupported/disproven `PROVEN` or `SUPPORTED` material claim, an explicitly unjustified proposition-level verdict, or a hard forbidden output;
+- **hallucination incident** — an affirmative unsupported/disproven `PROVEN` or `SUPPORTED` material claim, an explicitly unjustified proposition-level verdict, or a hard forbidden output;
 - **infrastructure failure** — model run never produced a valid answer.
 
 This separation matters. A task can fail with **zero hallucinations**, and reliability can remain high while task success is low. The scorer therefore reports both dimensions rather than hiding them in one number.
 
-The judge has regression tests for the live failure modes that motivated revision 2. For example, a sentence such as `I cannot confirm that it looks perfect` must not be scored as a visual hallucination merely because it contains the words `looks perfect`.
+The revision-3 judge evaluates local polarity before converting a lexical false-claim match into an incident. Regression tests cover the live `QH-03` failure (`retryWithBudget() is not available`) plus negative command, missing-symbol, visual and stale-version statements, while still requiring affirmative false claims such as `retryWithBudget() is available and supported` to fail.
 
 ## Output and integrity metadata
 
