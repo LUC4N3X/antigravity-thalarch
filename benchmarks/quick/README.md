@@ -17,6 +17,33 @@ That keeps the primary model/agent condition as close as possible while changing
 
 The suite targets the failure mode Thalarch cares about most: **plausible unsupported claims and proof substitution**.
 
+## Preferred runner: one paired command
+
+Use `run_pair.py` for normal benchmark work. It validates the benchmark first, freezes the paired configuration, alternates native-first and Thalarch-first order across case/trial pairs, runs both conditions, and invokes the scorer automatically.
+
+Counterbalancing matters because two large phase blocks can otherwise confound the A/B with transient host load, quota state, cache effects, or simple order effects.
+
+A one-case smoke probe:
+
+```powershell
+python .\benchmarks\quick\run_pair.py `
+    --model "gemini-3.1-pro-high" `
+    --effort high `
+    --repeat 1 `
+    --case QH-01
+```
+
+A full protocol-integrity run:
+
+```powershell
+python .\benchmarks\quick\run_pair.py `
+    --model "gemini-3.1-pro-high" `
+    --effort high `
+    --repeat 3
+```
+
+`run_antigravity.py` remains available for low-level debugging of one phase, but it is not the preferred entry point for a serious paired comparison.
+
 ## Why the first benchmark is read-only
 
 The quick baseline deliberately avoids repository writes, builds, package installation, publication, browsers, and environment-specific toolchains. That isolates epistemic behavior:
@@ -43,6 +70,7 @@ Revision 2 adds safeguards specifically to prevent misleading A/B claims:
 - native and Thalarch halves of one `run-id` must match model, effort, Antigravity CLI version, benchmark revision, and protocol fingerprint;
 - Thalarch activation is explicit through `/thalarch-mode`, not by switching to a different primary agent preset;
 - repeated trials are supported;
+- paired execution is counterbalanced by case/trial;
 - the judge has its own regression tests;
 - infrastructure failures stop the run and receive no hallucination penalty.
 
@@ -57,12 +85,12 @@ Before a serious run, make sure the installed CLI plugin reflects the Thalarch c
 
 ## Plugin condition
 
-`run_antigravity.py` explicitly requests the required plugin state before each phase:
+The runner explicitly requests the required plugin state before each condition:
 
 - `native` -> `agy plugin disable thalarch-mode`
 - `thalarch` -> `agy plugin enable thalarch-mode`
 
-The Thalarch phase then starts its prompt with `/thalarch-mode`. The runner deliberately does **not** pass `--agent=thalarch-orchestrator`, because a custom-agent preset can carry its own model-tier configuration and would make the A/B less clean.
+The Thalarch condition then starts its prompt with `/thalarch-mode`. The runner deliberately does **not** pass `--agent=thalarch-orchestrator`, because changing to a custom-agent preset would make the A/B less clean than directly testing the skill on the same primary condition.
 
 The runner trusts the exit status of the explicit plugin enable/disable commands. It does **not** infer enabled/disabled state from `agy plugin list`, because the list can describe imported packages without exposing effective enable state in a machine-stable way.
 
@@ -87,75 +115,28 @@ Before running a model:
 python .\validate_benchmarks.py .
 ```
 
-This validates JSON/schema structure, compiles benchmark scripts, runs judge regression tests, and smoke-tests the paired scorer.
+This validates JSON/schema structure, compiles benchmark scripts, runs judge regression tests, checks the counterbalanced paired driver, and smoke-tests the scorer.
 
-## One-case probe
+`run_pair.py` performs this validation automatically as well. Running it manually first is useful when developing the benchmark itself.
 
-From the repository root, verify a single case first:
+## Exploratory vs protocol-integrity run
+
+One matched trial per case is useful for development but is still **exploratory**:
 
 ```powershell
-$RunId = Get-Date -Format "yyyyMMdd-HHmmss"
-$Model = "gemini-3.1-pro-high"
-
-python .\benchmarks\quick\run_antigravity.py `
-    --phase native `
-    --run-id $RunId `
-    --model $Model `
-    --case QH-01
-
-python .\benchmarks\quick\run_antigravity.py `
-    --phase thalarch `
-    --run-id $RunId `
-    --model $Model `
-    --case QH-01
+python .\benchmarks\quick\run_pair.py `
+    --model "gemini-3.1-pro-high" `
+    --effort high `
+    --repeat 1
 ```
 
-If both produce a real `PASS` or `FAIL` rather than `BENCHMARK INFRA_ERROR`, continue.
-
-## Exploratory full run
-
-One trial per case is useful for development but is still **exploratory**:
+For an effect claim, use all eight cases and at least **3 matched trials per case**:
 
 ```powershell
-$RunId = Get-Date -Format "yyyyMMdd-HHmmss"
-$Model = "gemini-3.1-pro-high"
-
-python .\benchmarks\quick\run_antigravity.py --phase native --run-id $RunId --model $Model
-python .\benchmarks\quick\run_antigravity.py --phase thalarch --run-id $RunId --model $Model
-
-$Results = Get-ChildItem ".\benchmarks\results\quick\$RunId\results\*.json" |
-    Select-Object -ExpandProperty FullName
-
-python .\benchmarks\score_run.py @Results
-```
-
-## Publishable paired run
-
-For an effect claim, use all eight cases and at least **3 matched trials per case** with an explicitly pinned model. Pin `--effort` too when you want the CLI effort setting controlled independently from the model name:
-
-```powershell
-$RunId = Get-Date -Format "yyyyMMdd-HHmmss"
-$Model = "gemini-3.1-pro-high"
-$Effort = "high"
-
-python .\benchmarks\quick\run_antigravity.py `
-    --phase native `
-    --run-id $RunId `
-    --model $Model `
-    --effort $Effort `
+python .\benchmarks\quick\run_pair.py `
+    --model "gemini-3.1-pro-high" `
+    --effort high `
     --repeat 3
-
-python .\benchmarks\quick\run_antigravity.py `
-    --phase thalarch `
-    --run-id $RunId `
-    --model $Model `
-    --effort $Effort `
-    --repeat 3
-
-$Results = Get-ChildItem ".\benchmarks\results\quick\$RunId\results\*.json" |
-    Select-Object -ExpandProperty FullName
-
-python .\benchmarks\score_run.py @Results
 ```
 
 The scorer labels the quick comparison `PUBLISHABLE` only when all eight cases are present, every case has at least 3 matched trials, integrity metadata matches, and there are zero invalid/unverified/orphan pairs. Otherwise it remains `EXPLORATORY`.
@@ -191,6 +172,8 @@ The model returns a structured object containing:
 
 This separation matters. A task can fail with **zero hallucinations**, and reliability can remain high while task success is low. The scorer therefore reports both dimensions rather than hiding them in one number.
 
+The judge has regression tests for the live failure modes that motivated revision 2. For example, a sentence such as `I cannot confirm that it looks perfect` must not be scored as a visual hallucination merely because it contains the words `looks perfect`.
+
 ## Output and integrity metadata
 
 Each successful invocation saves:
@@ -211,6 +194,12 @@ Each successful invocation saves:
 - standard benchmark result JSON.
 
 A `manifest.json` under the run directory freezes the A/B configuration. Reusing the same `run-id` after changing model, effort, CLI version, benchmark revision, or protocol fingerprint causes `BENCHMARK INFRA_ERROR` instead of silently mixing conditions.
+
+## Counterbalanced execution
+
+For each case and trial, `run_pair.py` alternates which condition goes first. The pattern flips across neighboring cases and again on the next trial.
+
+This does not eliminate all stochasticity, but it is stronger than running one complete native block followed by one complete Thalarch block. Raw trial order remains visible in console output and artifacts.
 
 ## Scoring
 
