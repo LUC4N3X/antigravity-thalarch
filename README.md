@@ -1,298 +1,349 @@
 <div align="center">
 
-![Thalarch Banner](assets/branding/thalarch-banner-final.webp)
+<img src="assets/branding/thalarch-banner-final.webp" alt="Thalarch" width="100%" />
 
 <br/>
 
-**High-rigor multi-agent engineering skill, visual-production system, and reliability layer for AI coding agents.**
+<strong>Engineering discipline for AI coding agents.</strong>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
-[![Hosts: Antigravity · Codex · Claude](https://img.shields.io/badge/Hosts-Antigravity%20%7C%20Codex%20%7C%20Claude-06B6D4.svg?style=flat-square)](#multi-engine-architecture)
-[![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-0EA5E9.svg?style=flat-square)](CHANGELOG.md)
-[![Validation](https://img.shields.io/badge/Validation-Thalarch%20Gate-14B8A6.svg?style=flat-square)](.github/workflows/validate.yml)
+A model-agnostic multi-agent reliability harness for **Google Antigravity**, **OpenAI Codex**, and **Anthropic Claude Code**.
+
+<br/>
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-2F6B66?style=flat-square)](LICENSE)
+[![Hosts](https://img.shields.io/badge/Hosts-Antigravity%20%C2%B7%20Codex%20%C2%B7%20Claude-5D6B8A?style=flat-square)](#one-core-three-hosts)
+[![Validation](https://github.com/LUC4N3X/antigravity-thalarch/actions/workflows/validate.yml/badge.svg)](.github/workflows/validate.yml)
+
+<sub>Built for real repositories: inspect first, route intelligently, verify what matters, and never pretend unproven work is done.</sub>
+
+<br/><br/>
+
+[Why Thalarch?](#why-thalarch) · [How it works](#how-thalarch-works) · [Install](#install) · [Use it](#use-thalarch) · [Skills](#engineering-surface) · [Validate](#validation)
 
 </div>
 
 ---
 
-## What is Thalarch?
+## Why Thalarch?
 
-**Thalarch 1.0.0** is a model-agnostic **multi-agent engineering skill suite and reliability harness** for serious software engineering, web design, visual production, debugging, review, and verification.
+A coding model can be very capable and still make familiar engineering mistakes: assume the wrong framework version, skip repository rules, patch the symptom instead of the cause, over-edit a project, or declare success without proving the result.
 
-It can be installed as a host-native skill collection for **Google Antigravity, OpenAI Codex, and Anthropic Claude Code**, while keeping one shared engineering core. The host adapter supplies the native skill discovery, agents/subagents, instructions, hooks, and tools that are actually available in that environment.
+**Thalarch wraps the model in a stricter engineering process.** It does not try to make the underlying model sound smarter. It tries to make the work **more deliberate, more grounded, and easier to trust**.
 
-It is built around a simple idea: a coding agent should not jump from a request straight into
-editing. It should first understand the project, choose the strongest relevant skills, route work
-to the right specialist, verify version-sensitive APIs, keep scope tight, review independently,
-and prove the final result with evidence appropriate to the claim.
+It pushes the agent to:
 
-Thalarch is intentionally **user-, repository-, language-, framework-, host-, and operating-system
-agnostic**. It does not assume Android, web, Gradle, Node, Python, or any other stack until the
-repository proves it.
+- **understand the repository before editing it;**
+- **choose the smallest useful skill stack** instead of activating everything blindly;
+- **prove version-sensitive facts** against the real project and current primary sources;
+- **route work to the right specialist** for language, architecture, debugging, security, data, performance, or visual tasks;
+- **keep diffs narrow and repository-native;**
+- **review independently and finish with evidence** that actually matches the claim.
 
-> Thalarch improves the engineering process around the underlying model. It does not claim to
-> change a model's intrinsic reasoning capability.
-
-### Permanent version policy
-
-The public version is intentionally fixed at **`1.0.0`**. Capabilities can evolve continuously,
-but Thalarch does not bump the public version number. Git history and this repository's changelog
-record capability changes.
+> **Confidence is not proof.** If the required evidence is unavailable, Thalarch is expected to say so.
 
 ---
 
-## Multi-engine architecture
+## How Thalarch works
 
-Thalarch uses **one canonical skill and capability core** with thin host-native adapters instead of maintaining
-separate prompt forks.
+### 01 · Understand
 
-| Host | Native integration | Reliability layer |
-| --- | --- | --- |
-| Google Antigravity | plugin, skill suite, custom agents, hooks | full orchestrator + hard evidence gates |
-| OpenAI Codex | Agent Skills, `AGENTS.md`, Codex hooks | skill routing + command grounding + completion evidence gate |
-| Anthropic Claude Code | Skills, `CLAUDE.md`, custom subagents, Claude hooks | deliberator + fact checker + cold verifier + evidence gate |
+Read project rules, relevant source, current errors, toolchain versions, tests, and constraints. Build a fresh task context instead of leaning on stale conversation memory.
 
-The canonical engineering/design skills remain in `thalarch-mode/skills/`. Host adapters translate
-only discovery paths, instruction files, lifecycle-hook schemas, and specialist wiring. This keeps
-the actual engineering doctrine synchronized and makes cross-model evaluation meaningful.
+### 02 · Route
 
-See [`adapters/`](adapters/) for host-specific details.
+Classify the task, risk, language, framework, and evidence needs. Select the smallest high-value set of installed skills and specialists.
 
----
+### 03 · Ground
 
-## Anti-hallucination core
+Treat remembered APIs and external facts as hypotheses. Verify the project's actual version first, then check the narrow fact that matters against an authoritative source when necessary.
 
-Thalarch treats epistemic reliability as a first-class engineering requirement.
+### 04 · Build
 
-`thalarch-epistemic-guard` separates material claims into repository facts, version-sensitive
-external facts, runtime facts, visual facts, and derived inferences. When a claim can be cheaply
-inspected, the agent is expected to inspect it instead of filling the gap from model memory.
+Implement in small, reviewable slices. Prefer the existing architecture and conventions. Avoid unrelated cleanup, speculative abstractions, and cosmetic churn.
 
-Important states are explicit:
+### 05 · Challenge
 
-- `PROVEN` — direct appropriate evidence;
-- `SUPPORTED` — strong but not final proof;
-- `INFERENCE` — reasoned from facts;
-- `UNKNOWN` — no reliable evidence;
-- `UNVERIFIED` — required proof could not be obtained;
-- `DISPROVEN` — evidence contradicts the claim.
+For meaningful work, introduce an independent perspective before the implementation hardens: correctness review, security review, performance review, visual review, fact check, or a bounded adversarial challenge.
 
-The hard-gate layer additionally blocks selected high-confidence failure modes such as invented
-project commands/paths and completion after mutation without fresh evidence. It deliberately does
-**not** try to regex-prove arbitrary semantic correctness; uncertain cases flow to reasoning,
-fact-checking, and cold verification.
+### 06 · Prove
 
----
+Run evidence appropriate to the acceptance criterion: tests, integration checks, browser/device evidence, SQL/data checks, telemetry, benchmarks, screenshots, or other real signals.
 
-## Adaptive reasoning
-
-`thalarch-reasoning` chooses the smallest deliberation depth that fits the task:
-
-- `D0` direct — trivial deterministic work;
-- `D1` guarded — small non-trivial work;
-- `D2` deliberate — meaningful features, debugging and refactors;
-- `D3` deep — architecture, concurrency, security, migrations, difficult visual work;
-- `D4` critical — destructive/data-integrity/release-critical or repeatedly failing work.
-
-For difficult work Thalarch resists the first plausible answer, separates facts from inference,
-compares genuine alternatives, seeks disconfirming evidence, uses independent contexts when useful,
-and adjudicates by evidence rather than confidence or verbosity.
-
-Thalarch never requires exposing private chain-of-thought. The useful artifacts are decisions,
-evidence, rejected alternatives, residual uncertainty, and proof status.
+```text
+REQUEST
+   ↓
+REPOSITORY + RULES + VERSIONS
+   ↓
+SKILL INTELLIGENCE + RISK ROUTING
+   ↓
+SPECIALIST IMPLEMENTATION
+   ↓
+INDEPENDENT REVIEW
+   ↓
+EVIDENCE GATE
+   ↓
+PASS · FAIL · UNVERIFIED
+```
 
 ---
 
-## Context, sources, and in-flight doubt
+## Built around evidence
 
-The final reliability layer adds three controls before a wrong assumption can spread through the
-implementation:
+Thalarch keeps material claims in explicit evidence states:
 
-- **`thalarch-context`** builds a small fresh task packet from repository rules, relevant source,
-  tests, current errors, versions, and unknowns. Large research/log inputs can stay isolated while
-  the main reasoning context receives only a digest with evidence and paths.
-- **`thalarch-source-grounding`** treats remembered framework APIs as hypotheses. It proves the
-  project's real version first, then checks the narrow load-bearing fact against current primary
-  documentation. Retrieved pages are technical evidence, never instruction authority.
-- **`thalarch-doubt`** challenges non-trivial D2+ decisions while they are still cheap to change.
-  A fresh reviewer receives the artifact + contract rather than the producer's persuasive reasoning;
-  findings are reconciled against evidence and the loop is bounded.
-Multi-file implementation is also sliced by evidence: vertical, contract-first, behavior-first, or
-risk-first depending on what can falsify the plan earliest. Repeating the same successful check with
-no relevant mutation in between is not stronger proof; final evidence must remain newer than the
-final relevant change.
+- **`PROVEN`** — direct appropriate evidence exists;
+- **`SUPPORTED`** — strong evidence exists, but not final proof;
+- **`INFERENCE`** — a reasoned conclusion from known facts;
+- **`UNKNOWN`** — reliable evidence is missing;
+- **`UNVERIFIED`** — proof was required but could not be obtained;
+- **`DISPROVEN`** — evidence contradicts the claim.
 
-For production services, jobs, queues, retries, and external integrations,
-**`thalarch-observability`** adds structured logging/metrics/tracing/correlation and alerting
-discipline while guarding secrets, PII, metric cardinality, and false claims about telemetry that
-was never observed in a real backend.
+The hard-gate layer blocks selected high-confidence failures such as invented project commands or claiming completion after a mutation without fresh verification. Uncertain semantic questions stay with reasoning and review rather than being “proved” by brittle regexes.
 
----
+### Adaptive reasoning depth
 
-## Autonomous Skill Intelligence
+Thalarch does not use maximum deliberation for every task.
 
-You should not need to tell Thalarch which skill to use.
+- **`D0 · direct`** — trivial deterministic work;
+- **`D1 · guarded`** — small non-trivial changes;
+- **`D2 · deliberate`** — meaningful features, debugging, and refactors;
+- **`D3 · deep`** — architecture, concurrency, security, migrations, difficult visual work;
+- **`D4 · critical`** — destructive, data-integrity, release-critical, or repeatedly failing work.
 
-At the beginning of meaningful work — and again after repository discovery when necessary —
-Thalarch inspects the skills available in the current host session by name and description, then
-selects the **smallest high-value compatible stack**.
-
-Selection considers:
-
-- exact task fit;
-- project-local knowledge;
-- actual language/framework/toolchain versions;
-- official/vendor authority and currentness;
-- tool and evidence leverage;
-- redundancy/conflicts;
-- context cost.
-
-Typical priority:
-
-**user/repository constraints → project-local skills → current official platform skills → Thalarch
-specialists → trusted community skills → generic fallback reasoning.**
-
-Thalarch can also drop a skill after investigation proves it irrelevant. More skills are not
-automatically better.
-
-Known high-value ecosystems are used only as discovery/tie-breaking hints. If the relevant skill is
-not actually installed or does not match the project, Thalarch does not pretend to have loaded it.
+The goal is simple: **spend reasoning where mistakes are expensive, not where the answer is obvious.**
 
 ---
 
-## Polyglot engineering
+## One core, three hosts
 
-Thalarch has dedicated project-aware coding specialists instead of one generic prompt pretending to
-be equally expert in every language.
+Thalarch keeps **one canonical engineering and design core** and adapts only the host-specific wiring.
 
-| Language / stack | Skill | Antigravity specialist |
-| --- | --- | --- |
-| Java / JVM | `thalarch-java` | `thalarch-java-engineer` |
-| Kotlin / JVM / Android / KMP | `thalarch-kotlin` | `thalarch-kotlin-engineer` |
-| Python | `thalarch-python` | `thalarch-python-engineer` |
-| TypeScript / JavaScript | `thalarch-typescript` | `thalarch-typescript-engineer` |
-| Go | `thalarch-go` | `thalarch-go-engineer` |
-| Rust | `thalarch-rust` | `thalarch-rust-engineer` |
+### Google Antigravity
 
-The active language skill must discover the repository's real runtime/compiler, package/build
-system, framework versions, test stack, and conventions before editing. Host adapters may use their
-own native subagent mechanisms around the same canonical skill.
+Full orchestrator, skill suite, custom agents, hooks, evidence gates, and the richest native visual workflow.
 
-### Deep engineering overlays
+### OpenAI Codex
 
-| Skill | Purpose |
-| --- | --- |
-| `thalarch-code-craft` | Minimal, idiomatic, repository-native coding with incremental evidence slices |
-| `thalarch-context` | Focused context packets, research isolation and stale-context recovery |
-| `thalarch-source-grounding` | Project-version + primary-source API/framework grounding |
-| `thalarch-doubt` | Bounded in-flight adversarial challenge before important decisions harden |
-| `thalarch-debug` | Causal root-cause debugging before fixes |
-| `thalarch-spec` | Observable acceptance contract for broad work |
-| `thalarch-codebase-intel` | Bounded project/feature/dependency mapping |
-| `thalarch-architecture` | Evidence-driven architecture decisions, boundaries and ADR-style tradeoffs |
-| `thalarch-refactor` | Behavior-preserving restructuring |
-| `thalarch-performance` | Runtime/build performance with comparable measurement |
-| `thalarch-api` | API compatibility, errors, idempotency, retries and distributed boundaries |
-| `thalarch-data-sql` | SQL, ORM, transactions, migrations and data-safe rollout |
-| `thalarch-dependency` | Dependency/framework/toolchain changes with version verification |
-| `thalarch-observability` | Structured logs, metrics, traces, correlation and production diagnosis |
-| `thalarch-jvm-concurrency` | JVM thread safety, executors, futures, virtual threads and async correctness |
-| `thalarch-kotlin-migration` | Semantics-preserving Java→Kotlin / Kotlin migration workflow |
-| `thalarch-kotlin-jpa` | Kotlin-specific JPA/Hibernate identity, proxy, fetch and transaction correctness |
-| `thalarch-test` | Regression, property, fuzz, concurrency and risk-based mutation testing |
-| `thalarch-security` | Trust boundaries, authorization, dangerous sinks and agent/tool security |
-| `thalarch-ci` | CI/build/release workflow diagnosis |
-| `thalarch-git` | Git/GitHub publication boundaries and verification |
+Agent Skills, `AGENTS.md`, Codex hooks, project-aware routing, command grounding, and completion evidence gates.
+
+### Anthropic Claude Code
+
+Skills, `CLAUDE.md`, custom subagents, Claude hooks, deliberation, fact checking, cold verification, and evidence gates.
+
+Host adapters live in [`adapters/`](adapters/). The shared engineering doctrine stays in `thalarch-mode/skills/`, which avoids maintaining three drifting prompt forks.
 
 ---
 
-## Kotlin and JVM intelligence
+## Engineering surface
 
-When the current session has an exact official Kotlin/JetBrains skill for the proven task, Thalarch
-prefers that specialist for current Kotlin facts rather than duplicating stale platform guidance.
-Examples include Java→Kotlin conversion, JPA entity mapping, AGP/KMP migration and Kotlin/Native
-build performance.
+Thalarch is intentionally **project-agnostic**. It does not assume Android, web, Gradle, Node, Python, databases, or any other stack until the repository proves what is actually there.
 
-For Java/JVM work, Thalarch can add narrow concurrency, JPA, performance or migration expertise only
-when those surfaces actually exist. Version-sensitive modern JVM APIs are verified against the
-project's JDK and current primary documentation before implementation.
+### Languages
 
----
+`Java / JVM` · `Kotlin / Android / KMP` · `Python` · `TypeScript / JavaScript` · `Go` · `Rust`
 
-## Testing that can actually fail
+### Engineering
 
-Thalarch selects tests by what they prove:
+Architecture · codebase intelligence · root-cause debugging · refactoring · API design · SQL/data · dependencies · observability · concurrency · performance · testing · security · CI · Git/GitHub
 
-1. unit/pure;
-2. property/state-machine/model;
-3. component/module;
-4. real integration boundary;
-5. device/browser/end-to-end.
+### Visual & product work
 
-It supports red-green regression proof, meaningful boundary matrices, property/metamorphic tests,
-fuzzing, concurrency tests and **risk-based mutation testing**.
+Design systems · responsive web design · screenshot-to-code · image generation/editing · visual QA · browser QA · anti-template design review
 
-Coverage percentage is not treated as a quality score. Mutation testing is used selectively when
-critical code can have high coverage but weak assertions. Mocks prove local collaboration; they do
-not prove the external integration they replace.
+Thalarch treats visual quality as a real deliverable. It actively resists common AI defaults such as purple glow everywhere, generic centered heroes, endless card grids, random pills, empty marketing copy, and motion with no purpose.
 
----
-## Architecture and performance
+<details>
+<summary><strong>See the deeper skill map</strong></summary>
 
-Architecture decisions start from existing modules, dependency direction, data ownership, runtime
-boundaries and quality attributes — not from fashionable patterns. Thalarch compares plausible
-alternatives, including the simplest one, and prefers reversible evolutionary migration over
-unnecessary big-bang rewrites.
+<br/>
 
-Performance work starts by defining a comparable scenario. Build-performance investigations, for
-example, distinguish **local vs CI**, **debug vs release**, **cold vs warm/incremental/no-op**, and
-the exact phase/task dominating the user's real command. A faster local loop must not silently
-remove required release behavior from CI.
+**Core engineering overlays**
 
-Unmeasured performance claims remain `UNVERIFIED`.
+- `thalarch-code-craft` — minimal, idiomatic, repository-native implementation;
+- `thalarch-context` — focused task packets and stale-context recovery;
+- `thalarch-source-grounding` — project-version + primary-source grounding;
+- `thalarch-doubt` — bounded in-flight adversarial challenge;
+- `thalarch-debug` — causal root-cause debugging;
+- `thalarch-spec` — observable acceptance contracts;
+- `thalarch-codebase-intel` — bounded project and dependency mapping;
+- `thalarch-architecture` — evidence-driven boundaries and tradeoffs;
+- `thalarch-refactor` — behavior-preserving restructuring;
+- `thalarch-performance` — comparable runtime/build measurement;
+- `thalarch-api` — compatibility, idempotency, retries, distributed boundaries;
+- `thalarch-data-sql` — SQL, ORM, transactions, migrations, safe rollout;
+- `thalarch-dependency` — dependency and toolchain changes with version verification;
+- `thalarch-observability` — logs, metrics, traces, correlation, diagnosis;
+- `thalarch-jvm-concurrency` — JVM concurrency and async correctness;
+- `thalarch-kotlin-migration` — semantics-preserving Kotlin migration;
+- `thalarch-kotlin-jpa` — Kotlin-specific JPA/Hibernate correctness;
+- `thalarch-test` — regression, property, fuzz, concurrency, mutation testing;
+- `thalarch-security` — trust boundaries, authorization, dangerous sinks, agent/tool security;
+- `thalarch-ci` — CI/build/release workflow diagnosis;
+- `thalarch-git` — Git/GitHub publication boundaries and verification.
 
----
+**Creative stack**
 
-## Creative engineering
-
-Thalarch treats visual quality as a real deliverable, not decoration.
-
-Its visual stack includes:
-
-- `thalarch-design-system` — extracts or creates one semantic visual system;
-- `thalarch-web-design` — brief inference, art direction, responsive production UI and anti-template discipline;
-- `thalarch-image-to-code` — screenshot/mockup/reference → measurable visual contract → real frontend;
-- `thalarch-image` — routes inspect/generate/edit/vector/capture/compare/annotate/optimize tasks;
+- `thalarch-design-system` — extract or create one semantic visual system;
+- `thalarch-web-design` — art direction, responsive production UI, anti-template discipline;
+- `thalarch-image-to-code` — reference image → measurable visual contract → frontend;
+- `thalarch-image` — inspect/generate/edit/vector/capture/compare/annotate/optimize routing;
 - `thalarch-imagegen` — disciplined native image generation/editing;
-- `thalarch-visual-qa` — final asset metadata/fidelity/drift checks;
-- `thalarch-browser-qa` — real browser interaction/screenshot/network/console evidence;
-- independent web-design and vision reviewers where the host exposes suitable tools.
+- `thalarch-visual-qa` — asset fidelity and drift checks;
+- `thalarch-browser-qa` — real browser interaction, screenshots, network, and console evidence.
 
-The Antigravity visual director owns native image generation while the orchestrator deliberately
-does **not** have direct image-generation authority. Other hosts use the strongest compatible image
-or browser tool actually available instead of pretending the capability exists.
+</details>
 
 ---
 
-## Design intelligence
+## Review without theatre
 
-Before designing, Thalarch creates a compact **Design Read** from the page kind, audience, brand,
-references, trust requirements and the user's vibe words.
+Thalarch uses independent review to reduce self-review blind spots, but it **does not force reviewers to invent findings**.
 
-It calibrates three qualitative dimensions — **variance**, **motion**, and **density** — instead of
-blindly using one house aesthetic for every site.
+A useful finding needs a concrete failure path and evidence. Repeating the same speculation across multiple agents does not turn it into a fact. A clean review is a valid outcome.
 
-It actively resists common AI defaults such as purple glow everywhere, centered hero + three equal
-cards, nested card shells, random pills, generic copy and motion on every element. Existing brand,
-accessibility, regulated/public-sector constraints and project design systems outrank novelty.
-
-When visual fidelity to a screenshot/mockup is central, `thalarch-image-to-code` extracts the actual
-layout/type/spacing/color/crop contract before implementation and uses real browser screenshots as
-final evidence. One unreadable giant design board is not considered a precise reference.
+For multi-file work, implementation can be sliced vertically, contract-first, behavior-first, or risk-first depending on what can falsify the plan earliest. Re-running the same successful check without a relevant mutation is not treated as stronger evidence.
 
 ---
 
-## Multi-agent architecture
+## Install
+
+Clone or download this repository first, then choose the host you actually use.
+
+<details open>
+<summary><strong>Google Antigravity</strong></summary>
+
+### Windows IDE
+
+```powershell
+.\INSTALL.ps1 -Target IDE
+```
+
+### Linux / macOS IDE
+
+```bash
+chmod +x ./INSTALL.sh
+./INSTALL.sh IDE
+```
+
+IDE target:
+
+```text
+~/.gemini/config/plugins/thalarch-mode
+```
+
+### Antigravity CLI
+
+```text
+agy plugin install ./thalarch-mode
+```
+
+</details>
+
+<details>
+<summary><strong>OpenAI Codex</strong></summary>
+
+### User scope
+
+```bash
+python installers/install_adapter.py codex --scope user
+```
+
+### One repository
+
+```bash
+python installers/install_adapter.py codex --scope repo --repo /path/to/project
+```
+
+</details>
+
+<details>
+<summary><strong>Anthropic Claude Code</strong></summary>
+
+### User scope
+
+```bash
+python installers/install_adapter.py claude --scope user
+```
+
+### One repository
+
+```bash
+python installers/install_adapter.py claude --scope repo --repo /path/to/project
+```
+
+</details>
+
+> **Conservative by design:** the adapter installer backs up existing `thalarch-*` skills and agents, but never overwrites an existing `AGENTS.md`, `CLAUDE.md`, Codex `hooks.json`, or Claude `settings.json`. When those files already exist, it writes a `THALARCH.*` companion template for review instead.
+
+Restart or reload the selected host after installation. Codex may also require explicit review/trust of non-managed hooks before they execute.
+
+---
+
+## Use Thalarch
+
+For most work, you should not need a giant ritual prompt.
+
+### Short prompt
+
+```text
+Use Thalarch for this task.
+Inspect the repository and its rules first, choose the strongest minimal skill stack,
+keep the change narrow, verify version-sensitive facts, and prove the final result.
+Do not push, merge, publish, deploy, or release unless I explicitly ask you to.
+```
+
+<details>
+<summary><strong>Full strict prompt</strong></summary>
+
+```text
+Use Thalarch.
+
+Work end-to-end. Automatically inspect the skills available in this session and choose the strongest
+minimal stack for the actual project and task. Curate a fresh task context instead of relying on
+stale conversation memory. Read repository rules and detect the real languages, toolchains and
+framework versions before editing. Prefer project-local and current official platform skills when
+they are better fits. Ground version-sensitive APIs in the project's exact version and current
+primary sources. Re-route after discovery if the evidence changes the problem. Challenge important
+non-trivial decisions before dependent implementation grows. Keep the diff minimal and
+repository-native. Investigate root cause before fixing bugs. Use the real integration, browser,
+device, database, telemetry or performance evidence when the acceptance criterion lives there. Use
+independent review appropriate to risk and cold-verify the final acceptance criteria. Do not push,
+merge, publish, deploy or release unless I explicitly requested it.
+```
+
+</details>
+
+---
+
+## Validation
+
+Run the repository validators from the project root:
+
+```bash
+python validate_thalarch.py .
+python validate_hard_gates.py .
+python validate_adapters.py .
+```
+
+They check the parts that are easy to accidentally break, including:
+
+- skill and agent structure;
+- autonomous skill-intelligence wiring;
+- reasoning, epistemic guard, fact-checker, and verifier wiring;
+- context hygiene, source grounding, doubt, and observability;
+- creative/image delegation;
+- deterministic anti-hallucination hard gates;
+- Codex and Claude adapter syntax;
+- conservative installation behavior;
+- portable paths and stale branding;
+- the permanent public version policy.
+
+---
+
+## Architecture
+
+<details>
+<summary><strong>Open the multi-agent flow</strong></summary>
 
 ```mermaid
 graph TD
@@ -322,145 +373,56 @@ graph TD
     V --> E([PASS / FAIL / UNVERIFIED])
 ```
 
-Antigravity uses the full custom orchestrator/agent graph. Codex and Claude adapters map the same
-reliability contract onto their native skill, hook, instruction, and subagent facilities.
+Antigravity uses the full custom orchestrator/agent graph. Codex and Claude map the same reliability contract onto their native skill, hook, instruction, and subagent facilities.
+
+</details>
 
 ---
 
-## Evidence-first review
+## A few design principles
 
-Thalarch uses independent review and deliberate perspective shifts to reduce self-review blind
-spots: contract-before-body, caller/consumer view, failure-first analysis, bottom-up inspection for
-tricky diffs, and “what breaks if this change disappears?”.
+**Repository reality beats model memory.**  
+If the project can answer a question, inspect the project.
 
-Unlike adversarial review systems that force every reviewer to find a problem, Thalarch allows a
-**clean review**. A finding must have a concrete failure path and evidence; repeated speculation does
-not become true because multiple agents repeated it.
+**Current primary sources beat remembered APIs.**  
+Especially when versions matter.
 
-The included `change_probe.py` can deterministically flag changed surfaces that may deserve
-security, API, data, concurrency, build or visual review. Its output is routing evidence, not a
-list of defects.
+**Small diffs beat clever rewrites.**  
+Unless the evidence says the architecture itself is the problem.
 
----
+**Real integration evidence beats mocked confidence.**  
+Mocks prove local collaboration; they do not prove the external system they replace.
 
-## Installation
+**Useful review beats performative review.**  
+A reviewer is allowed to say “clean”.
 
-Clone/download this repository first, then choose the host.
-
-### Google Antigravity — Windows IDE
-
-```powershell
-.\INSTALL.ps1 -Target IDE
-```
-
-### Google Antigravity — Linux/macOS IDE
-
-```bash
-chmod +x ./INSTALL.sh
-./INSTALL.sh IDE
-```
-
-IDE installation target:
-
-```text
-~/.gemini/config/plugins/thalarch-mode
-```
-
-### Google Antigravity CLI
-
-```text
-agy plugin install ./thalarch-mode
-```
-
-### OpenAI Codex — user scope
-
-```bash
-python installers/install_adapter.py codex --scope user
-```
-
-### OpenAI Codex — one repository
-
-```bash
-python installers/install_adapter.py codex --scope repo --repo /path/to/project
-```
-
-### Claude Code — user scope
-
-```bash
-python installers/install_adapter.py claude --scope user
-```
-
-### Claude Code — one repository
-
-```bash
-python installers/install_adapter.py claude --scope repo --repo /path/to/project
-```
-
-The adapter installer is deliberately conservative. It backs up existing `thalarch-*` skills and
-agents, but **never overwrites existing `AGENTS.md`, `CLAUDE.md`, Codex `hooks.json`, or Claude
-`settings.json`**. When those files already exist it writes a `THALARCH.*` companion template for
-review/merge instead.
-
-Restart/reload the selected host after installation. Codex may also require explicit review/trust
-of non-managed hooks before they execute.
+**No private chain-of-thought required.**  
+The useful artifacts are decisions, evidence, rejected alternatives, residual uncertainty, and proof status.
 
 ---
 
-## Recommended prompt
+<details>
+<summary><strong>Permanent version policy</strong></summary>
 
-```text
-Use Thalarch.
+The public version is intentionally fixed at **`1.0.0`**. Capabilities can evolve continuously, but Thalarch does not bump the public version number. Git history and [`CHANGELOG.md`](CHANGELOG.md) record capability changes.
 
-Work end-to-end. Automatically inspect the skills available in this session and choose the strongest
-minimal stack for the actual project and task. Curate a fresh task context instead of relying on
-stale conversation memory. Read repository rules and detect the real languages, toolchains and
-framework versions before editing. Prefer project-local and current official platform skills when
-they are better fits. Ground version-sensitive APIs in the project's exact version and current
-primary sources. Re-route after discovery if the evidence changes the problem. Challenge important
-non-trivial decisions before dependent implementation grows. Keep the diff minimal and
-repository-native. Investigate root cause before fixing bugs. Use the real integration, browser,
-device, database, telemetry or performance evidence when the acceptance criterion lives there. Use
-independent review appropriate to risk and cold-verify the final acceptance criteria. Do not push,
-merge, publish, deploy or release unless I explicitly requested it.
-```
+</details>
+
+<details>
+<summary><strong>Design heritage</strong></summary>
+
+Thalarch is an original multi-engine implementation. Its engineering and creative workflows are informed by strong public patterns from projects such as Fable Mode, Superpowers, GitHub Spec Kit / Awesome Copilot, official Kotlin agent skills, Addy Osmani's Agent Skills, community JVM skill sets, Taste Skill, and broad engineering skill libraries.
+
+The goal is selective synthesis: keep the ideas that generalize, reject rigid rules that do not, and avoid copying an external skill pack wholesale.
+
+</details>
 
 ---
 
-## Validation
+<div align="center">
 
-```bash
-python validate_thalarch.py .
-python validate_hard_gates.py .
-python validate_adapters.py .
-```
-
-The validators check, among other things:
-
-- skill/agent structure and frontmatter;
-- language specialists and autonomous skill-intelligence wiring;
-- adaptive reasoning, epistemic guard and independent fact-checker/verifier wiring;
-- context hygiene, source grounding, in-flight doubt and observability wiring;
-- incremental evidence-slice discipline in the universal coding layer;
-- creative/image tool delegation;
-- deterministic anti-hallucination hard gates;
-- Codex/Claude adapter JSON and Python syntax;
-- conservative adapter installation without overwriting host/project instructions or settings;
-- portable paths and stale branding;
-- the permanent **`1.0.0`** version policy.
-
----
-
-## Design heritage
-
-Thalarch is an original multi-engine implementation. Its engineering and creative workflows are
-informed by strong public patterns from projects such as Fable Mode, Superpowers, GitHub Spec Kit /
-Awesome Copilot, official Kotlin agent skills, Addy Osmani's Agent Skills, community JVM skill sets,
-Taste Skill, and broad engineering skill libraries. Thalarch selectively synthesizes those ideas
-instead of copying an entire external skill pack or inheriting rigid rules that do not generalize
-across projects.
-
----
-
-## License
+### Built to make AI engineering more trustworthy — not more magical.
 
 Released under the [MIT License](LICENSE).
+
+</div>
