@@ -6,6 +6,7 @@ import os
 import re
 import tempfile
 from pathlib import Path
+from typing import Any
 
 
 def read_input() -> dict:
@@ -20,7 +21,13 @@ def emit(obj: dict) -> None:
 
 
 def empty_state() -> dict:
-    return {"seq": 0, "last_mutation": 0, "last_verification": 0, "subagents": 0}
+    return {
+        "seq": 0,
+        "last_mutation": 0,
+        "last_verification_attempt": 0,
+        "last_verification_success": 0,
+        "subagents": 0,
+    }
 
 
 def state_path(payload: dict) -> Path:
@@ -82,6 +89,66 @@ def package_scripts(cwd: Path) -> tuple[Path | None, set[str]]:
     return None, set()
 
 
+def looks_like_verification(command: str) -> bool:
+    c = command.lower()
+    patterns = [
+        r"(?:^|\s)(?:pytest|py\.test)(?:\s|$)",
+        r"python(?:3)?\s+-m\s+(?:pytest|unittest)\b",
+        r"\b(?:test|tests|check|checks|lint|typecheck|type-check|build|compile|verify|validate)\b",
+        r"\bcargo\s+(?:test|check|clippy)\b",
+        r"\bgo\s+test\b",
+        r"\bmvnw?(?:\.cmd)?\b[^\n]*(?:\btest\b|\bverify\b|\bpackage\b|\bcompile\b)",
+        r"\bgradlew?(?:\.bat)?\b[^\n]*(?:\btest\b|\bcheck\b|\bbuild\b|\bassemble\b|\bcompile\w*\b|\blint\b)",
+    ]
+    return any(re.search(pattern, c, re.I) for pattern in patterns)
+
+
+def explicit_success_from_response(response: Any) -> bool:
+    """Fail closed: only return True when the Codex tool response explicitly proves success."""
+    if isinstance(response, dict):
+        for key in ("success", "ok"):
+            value = response.get(key)
+            if isinstance(value, bool):
+                return value
+        for key in ("exit_code", "exitCode", "exit_status", "exitStatus", "returncode", "return_code"):
+            if key in response:
+                try:
+                    return int(response[key]) == 0
+                except Exception:
+                    return False
+        status = response.get("status")
+        if isinstance(status, str):
+            lowered = status.strip().lower()
+            if lowered in {"success", "succeeded", "completed", "ok"}:
+                return True
+            if lowered in {"failed", "failure", "error", "errored", "cancelled", "canceled"}:
+                return False
+        # Inspect nested, commonly model-facing result fields without assuming one schema.
+        for key in ("result", "output", "content", "message"):
+            if key in response and explicit_success_from_response(response[key]):
+                return True
+        return False
+
+    if isinstance(response, list):
+        return any(explicit_success_from_response(item) for item in response)
+
+    if isinstance(response, str):
+        text = response.strip()
+        exit_match = re.search(
+            r"(?:process\s+exited\s+with\s+code|exit\s+(?:code|status))\s*[:=]?\s*(-?\d+)",
+            text,
+            re.I,
+        )
+        if exit_match:
+            return int(exit_match.group(1)) == 0
+        # Some model-facing shell outputs use an explicit success status instead of an exit-code line.
+        if re.search(r"\b(?:status|result)\s*[:=]\s*(?:success|succeeded|ok|completed)\b", text, re.I):
+            return True
+        return False
+
+    return False
+
+
 def pretool(payload: dict) -> None:
     if str(payload.get("tool_name") or "") != "Bash":
         emit({})
@@ -122,14 +189,16 @@ def posttool(payload: dict) -> None:
     order = advance(state)
 
     mutated = tool == "apply_patch"
-    verified = False
+    verification_attempt = False
+    verification_success = False
 
     if tool == "Bash":
-        verified = bool(re.search(
-            r"\b(test|check|lint|typecheck|build|compile|verify|pytest|unittest|gradle|mvn|cargo\s+test|go\s+test)\b",
-            command,
-            re.I,
-        ))
+        verification_attempt = looks_like_verification(command)
+        if verification_attempt:
+            # Codex PostToolUse also fires for non-zero Bash exits. Only explicit tool_response
+            # success is accepted as completion evidence.
+            verification_success = explicit_success_from_response(payload.get("tool_response"))
+
         mutated = mutated or bool(re.search(
             r"(?:^|[;&|])\s*(?:sed\s+-i|perl\s+-pi|tee\s+|cat\s+>|echo\s+.*>|rm\s+|mv\s+|cp\s+)",
             command,
@@ -138,8 +207,10 @@ def posttool(payload: dict) -> None:
 
     if mutated:
         state["last_mutation"] = order
-    if verified:
-        state["last_verification"] = order
+    if verification_attempt:
+        state["last_verification_attempt"] = order
+    if verification_success:
+        state["last_verification_success"] = order
 
     save_state(payload, state)
     emit({})
@@ -160,15 +231,21 @@ def stop(payload: dict) -> None:
     state = load_state(payload)
     message = str(payload.get("last_assistant_message") or "")
     last_mutation = int(state.get("last_mutation", 0))
-    last_verification = int(state.get("last_verification", 0))
+    last_attempt = int(state.get("last_verification_attempt", 0))
+    last_success = int(state.get("last_verification_success", 0))
 
-    verification_is_fresh = last_mutation == 0 or last_verification > last_mutation
-    if not verification_is_fresh and "unverified" not in message.lower():
+    needs_verification = last_mutation > 0
+    success_after_mutation = last_success > last_mutation
+    no_later_failed_or_unproven_attempt = last_attempt == 0 or last_success >= last_attempt
+    evidence_is_current = (not needs_verification) or (success_after_mutation and no_later_failed_or_unproven_attempt)
+
+    if not evidence_is_current and "unverified" not in message.lower():
         emit({
             "decision": "block",
             "reason": (
-                "THALARCH EVIDENCE GATE: the latest repository mutation is newer than the latest observed test/build/check evidence. "
-                "Run the strongest project-native verification available after the final mutation, or explicitly report the affected completion claims as UNVERIFIED."
+                "THALARCH EVIDENCE GATE: the final repository mutation is not followed by a clearly successful, current project-native verification result, "
+                "or a later verification attempt failed/could not be proven successful. Run the strongest relevant check after the final mutation and inspect its result, "
+                "or explicitly report the affected completion claims as UNVERIFIED."
             ),
         })
         return
