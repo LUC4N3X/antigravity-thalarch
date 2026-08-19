@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "case_id",
+    "conclusion",
+    "answer",
+    "claims",
+    "evidence_files",
+    "unverified"
+  ],
+  "properties": {
+    "case_id": {"type": "string"},
+    "conclusion": {
+      "type": "string",
+      "enum": ["PROVEN", "CORRECTED_PREMISE", "NOT_FOUND", "UNVERIFIED", "UNKNOWN"]
+    },
+    "answer": {"type": "string"},
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["claim", "status", "evidence"],
+        "properties": {
+          "claim": {"type": "string"},
+          "status": {
+            "type": "string",
+            "enum": ["PROVEN", "SUPPORTED", "INFERENCE", "UNKNOWN", "UNVERIFIED", "DISPROVEN"]
+          },
+          "evidence": {"type": "string"}
+        }
+      }
+    },
+    "evidence_files": {"type": "array", "items": {"type": "string"}},
+    "unverified": {"type": "array", "items": {"type": "string"}}
+  }
+}
