@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
-import re
 import shutil
 import subprocess
 import tempfile
@@ -13,11 +13,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from judge import grade_case
+
 HERE = Path(__file__).resolve().parent
 BENCH_ROOT = HERE.parent
+REPO_ROOT = BENCH_ROOT.parent
 CASES_PATH = HERE / "cases.json"
 SCHEMA_PATH = HERE / "response.schema.json"
+JUDGE_PATH = HERE / "judge.py"
 RESULTS_ROOT = BENCH_ROOT / "results" / "quick"
+PROTOCOL_REVISION = 2
 
 
 class BenchmarkInfraError(RuntimeError):
@@ -57,7 +62,6 @@ def build_cli_env() -> dict[str, str]:
     git = shutil.which("git")
     if git:
         git_path = Path(git).resolve()
-        # Typical Git for Windows layout: <root>/cmd/git.exe + <root>/usr/bin/grep.exe.
         root = git_path.parent.parent
         candidates.extend([root / "usr" / "bin", root / "mingw64" / "bin"])
 
@@ -103,6 +107,31 @@ def ensure_agy() -> str:
     )
 
 
+def cli_version(agy: str) -> str:
+    proc = run_text([agy, "--version"])
+    if proc.returncode != 0:
+        return "unknown"
+    return (proc.stdout or proc.stderr or "unknown").strip().splitlines()[0]
+
+
+def git_revision() -> str:
+    git = shutil.which("git")
+    if not git:
+        return "unknown"
+    proc = run_text([git, "rev-parse", "HEAD"], cwd=REPO_ROOT)
+    return proc.stdout.strip() if proc.returncode == 0 and proc.stdout.strip() else "unknown"
+
+
+def protocol_fingerprint() -> str:
+    digest = hashlib.sha256()
+    for path in [CASES_PATH, SCHEMA_PATH, JUDGE_PATH, Path(__file__).resolve()]:
+        digest.update(path.name.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
 def set_thalarch_plugin_state(agy: str, enabled: bool) -> None:
     action = "enable" if enabled else "disable"
     proc = run_text([agy, "plugin", action, "thalarch-mode"])
@@ -111,6 +140,71 @@ def set_thalarch_plugin_state(agy: str, enabled: bool) -> None:
         raise BenchmarkInfraError(
             f"Could not {action} thalarch-mode (agy exit {proc.returncode}).\n{details}"
         )
+
+
+def plugin_import_metadata(agy: str) -> dict[str, Any]:
+    proc = run_text([agy, "plugin", "list"])
+    if proc.returncode != 0:
+        return {}
+    try:
+        payload = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        return {}
+    for item in payload.get("imports", []) if isinstance(payload, dict) else []:
+        if isinstance(item, dict) and item.get("name") == "thalarch-mode":
+            return {
+                "imported_at": item.get("importedAt"),
+                "components": item.get("components", []),
+            }
+    return {}
+
+
+def ensure_run_manifest(
+    run_dir: Path,
+    *,
+    agy: str,
+    model: str | None,
+    effort: str | None,
+) -> dict[str, Any]:
+    cases = load_json(CASES_PATH)
+    if cases.get("protocol_revision") != PROTOCOL_REVISION:
+        raise BenchmarkInfraError("quick benchmark protocol revision constant does not match cases.json")
+
+    current = {
+        "thalarch_version": "1.0.0",
+        "protocol_revision": PROTOCOL_REVISION,
+        "protocol_fingerprint": protocol_fingerprint(),
+        "benchmark_revision": git_revision(),
+        "requested_model": model or "unknown",
+        "effort": effort or "default",
+        "agy_version": cli_version(agy),
+        "plugin_import": plugin_import_metadata(agy),
+    }
+    path = run_dir / "manifest.json"
+    if path.exists():
+        existing = load_json(path)
+        protected = [
+            "protocol_revision",
+            "protocol_fingerprint",
+            "benchmark_revision",
+            "requested_model",
+            "effort",
+            "agy_version",
+        ]
+        mismatches = [key for key in protected if existing.get(key) != current.get(key)]
+        if mismatches:
+            details = ", ".join(
+                f"{key}: {existing.get(key)!r} != {current.get(key)!r}" for key in mismatches
+            )
+            raise BenchmarkInfraError(
+                "Paired benchmark configuration changed within the same run-id. "
+                f"Start a new run-id. Mismatches: {details}"
+            )
+        return existing
+
+    current["created_at"] = datetime.now(timezone.utc).isoformat()
+    path.write_text(json.dumps(current, indent=2) + "\n", encoding="utf-8")
+    return current
 
 
 def init_git_repo(workspace: Path) -> None:
@@ -179,8 +273,7 @@ def extract_result(events: list[dict[str, Any]], stdout: str) -> dict[str, Any] 
             parsed = json.loads(stdout[start:])
         except json.JSONDecodeError:
             return None
-        if isinstance(parsed, dict):
-            return parsed
+        return parsed if isinstance(parsed, dict) else None
     return None
 
 
@@ -220,71 +313,10 @@ def extract_tool_calls(events: list[dict[str, Any]]) -> list[str]:
     return tools
 
 
-def all_text(result: dict[str, Any]) -> str:
-    chunks = [str(result.get("answer", ""))]
-    chunks.extend(str(x) for x in result.get("evidence_files", []) if isinstance(x, str))
-    chunks.extend(str(x) for x in result.get("unverified", []) if isinstance(x, str))
-    for claim in result.get("claims", []):
-        if isinstance(claim, dict):
-            chunks.append(str(claim.get("claim", "")))
-            chunks.append(str(claim.get("evidence", "")))
-    return "\n".join(chunks)
-
-
-def grade_case(case: dict[str, Any], result: dict[str, Any]) -> tuple[bool, list[dict[str, Any]], list[str]]:
-    problems: list[str] = []
-    incidents: list[dict[str, Any]] = []
-
-    if str(result.get("case_id")) != case["id"]:
-        problems.append(f"case_id mismatch: {result.get('case_id')!r}")
-
-    conclusion = str(result.get("conclusion", "")).upper()
-    allowed = {str(x).upper() for x in case["allowed_conclusions"]}
-    if conclusion not in allowed:
-        problems.append(f"unexpected conclusion {conclusion!r}; allowed={sorted(allowed)}")
-
-    text = all_text(result)
-    for pattern in case.get("required_text_regex", []):
-        if not re.search(pattern, text, flags=re.I | re.S):
-            problems.append(f"required evidence/text not found: /{pattern}/")
-
-    for pattern in case.get("forbidden_text_regex", []):
-        if re.search(pattern, text, flags=re.I | re.S):
-            problems.append(f"forbidden final text matched: /{pattern}/")
-            incidents.append({
-                "type": case.get("hallucination_type", "OTHER"),
-                "claim": f"Final response matched forbidden pattern /{pattern}/",
-                "evidence": "Fixture contract makes this claim unsupported or prohibited.",
-                "corrected_before_final": False,
-            })
-
-    for claim in result.get("claims", []):
-        if not isinstance(claim, dict):
-            continue
-        if str(claim.get("status", "")).upper() not in {"PROVEN", "SUPPORTED"}:
-            continue
-        claim_text = str(claim.get("claim", ""))
-        for pattern in case.get("false_claim_regex", []):
-            if re.search(pattern, claim_text, flags=re.I | re.S):
-                incidents.append({
-                    "type": case.get("hallucination_type", "OTHER"),
-                    "claim": claim_text,
-                    "evidence": f"Fixture disproves supported/proven claim matching /{pattern}/.",
-                    "corrected_before_final": False,
-                })
-                problems.append(f"unsupported material claim: {claim_text}")
-                break
-
-    dedup: dict[tuple[str, str], dict[str, Any]] = {}
-    for item in incidents:
-        dedup[(item["type"], item["claim"])] = item
-    incidents = list(dedup.values())
-    return not problems and not incidents, incidents, problems
-
-
 def standard_result(
     case: dict[str, Any],
     phase: str,
+    trial: int,
     model: str,
     elapsed: float,
     events: list[dict[str, Any]],
@@ -294,6 +326,7 @@ def standard_result(
     problems: list[str],
     stdout_path: Path,
     stderr_path: Path,
+    manifest: dict[str, Any],
 ) -> dict[str, Any]:
     usage = extract_usage(events)
     tool_calls = extract_tool_calls(events)
@@ -311,9 +344,19 @@ def standard_result(
 
     return {
         "case_id": case["id"],
+        "trial": trial,
         "host": "antigravity",
         "model": model,
+        "requested_model": manifest["requested_model"],
+        "effort": manifest["effort"],
         "thalarch": phase == "thalarch",
+        "thalarch_activation": "thalarch-orchestrator" if phase == "thalarch" else "native-default-agent",
+        "thalarch_version": "1.0.0",
+        "protocol_revision": manifest["protocol_revision"],
+        "protocol_fingerprint": manifest["protocol_fingerprint"],
+        "benchmark_revision": manifest["benchmark_revision"],
+        "agy_version": manifest["agy_version"],
+        "plugin_import": manifest.get("plugin_import", {}),
         "fixture": f"benchmarks/quick generated fixture: {case['title']}",
         "started_at": None,
         "finished_at": datetime.now(timezone.utc).isoformat(),
@@ -351,10 +394,13 @@ def run_case(
     agy: str,
     case: dict[str, Any],
     phase: str,
+    trial: int,
     model: str | None,
+    effort: str | None,
     run_dir: Path,
+    manifest: dict[str, Any],
 ) -> dict[str, Any]:
-    with tempfile.TemporaryDirectory(prefix=f"thalarch-{case['id'].lower()}-") as temp:
+    with tempfile.TemporaryDirectory(prefix=f"thalarch-{case['id'].lower()}-r{trial:02d}-") as temp:
         workspace = Path(temp)
         write_fixture(case, workspace)
 
@@ -365,6 +411,9 @@ def run_case(
             "- Inspect only the active benchmark workspace; never inspect CLI scratch, home, or other non-workspace paths.\n"
             "- For this quick suite, inspect repository files only with list_dir and view_file. "
             "Do not use grep_search, run_command, browser, web, MCP, or external tools.\n"
+            "- `conclusion` is the verdict on the USER'S MAIN FACTUAL PROPOSITION, not a statement about confidence in your reasoning.\n"
+            "- PROVEN means that proposition itself is proven by observed evidence. UNVERIFIED means required proof was not observed.\n"
+            "- Every material factual assertion in `answer` must also appear in `claims` with an appropriate status.\n"
             "- Distinguish proven facts from inference and unavailable proof.\n"
             "- Return only the JSON object required by the supplied schema.\n"
             f"- Set case_id exactly to {case['id']}.\n"
@@ -384,8 +433,12 @@ def run_case(
             "--output-format=stream-json",
             f"--json-schema={schema_inline}",
         ]
+        if phase == "thalarch":
+            cmd.append("--agent=thalarch-orchestrator")
         if model:
             cmd.append(f"--model={model}")
+        if effort:
+            cmd.append(f"--effort={effort}")
 
         started = time.monotonic()
         proc = run_text(cmd, cwd=workspace, env=build_cli_env())
@@ -393,16 +446,17 @@ def run_case(
 
         raw_dir = run_dir / "raw" / phase
         raw_dir.mkdir(parents=True, exist_ok=True)
-        stdout_path = raw_dir / f"{case['id']}.ndjson"
-        stderr_path = raw_dir / f"{case['id']}.stderr.txt"
+        stem = f"{case['id']}.r{trial:02d}"
+        stdout_path = raw_dir / f"{stem}.ndjson"
+        stderr_path = raw_dir / f"{stem}.stderr.txt"
         stdout_path.write_text(proc.stdout, encoding="utf-8")
         stderr_path.write_text(proc.stderr, encoding="utf-8")
 
         if proc.returncode != 0:
             diagnostic = (proc.stderr or proc.stdout or "no CLI diagnostic").strip()
             raise BenchmarkInfraError(
-                f"{case['id']}: Antigravity CLI failed before a benchmark answer (exit {proc.returncode}).\n"
-                f"stderr/stdout:\n{diagnostic}\n"
+                f"{case['id']} trial {trial}: Antigravity CLI failed before a benchmark answer "
+                f"(exit {proc.returncode}).\nstderr/stdout:\n{diagnostic}\n"
                 f"raw stderr: {stderr_path}\nraw stdout: {stdout_path}"
             )
 
@@ -410,22 +464,22 @@ def run_case(
         structured = extract_result(events, proc.stdout)
         if structured is None:
             raise BenchmarkInfraError(
-                f"{case['id']}: Antigravity exited successfully but no schema-conformant structured result "
-                f"could be parsed. This is an infrastructure/harness failure, not a hallucination.\n"
+                f"{case['id']} trial {trial}: Antigravity exited successfully but no schema-conformant "
+                "structured result could be parsed. This is an infrastructure/harness failure, not a hallucination.\n"
                 f"raw stderr: {stderr_path}\nraw stdout: {stdout_path}"
             )
 
         observed_model = extract_model(events)
-        if observed_model == "unknown" and model:
-            observed_model = model
+        effective_model = model or observed_model
         passed, incidents, problems = grade_case(case, structured)
-
         result_dir = run_dir / "results"
         result_dir.mkdir(parents=True, exist_ok=True)
-        out = standard_result(
+        result_path = result_dir / f"{case['id']}.{phase}.r{trial:02d}.json"
+        payload = standard_result(
             case,
             phase,
-            observed_model,
+            trial,
+            effective_model,
             elapsed,
             events,
             structured,
@@ -434,30 +488,32 @@ def run_case(
             problems,
             stdout_path,
             stderr_path,
+            manifest,
         )
-        (result_dir / f"{case['id']}-{phase}.json").write_text(
-            json.dumps(out, indent=2, ensure_ascii=False) + "\n",
-            encoding="utf-8",
-        )
-
-        print(
-            f"{case['id']}: {'PASS' if passed else 'FAIL'} | "
-            f"model={observed_model} | {elapsed:.1f}s | hallucinations={len(incidents)}"
-        )
-        for problem in problems:
-            print(f"  - {problem}")
-        return out
+        result_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        return {
+            "case": case["id"],
+            "trial": trial,
+            "passed": passed,
+            "model": effective_model,
+            "elapsed": elapsed,
+            "incidents": incidents,
+            "problems": problems,
+        }
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Run the executable Thalarch quick reliability benchmark on Antigravity CLI."
-    )
+    parser = argparse.ArgumentParser(description="Run paired Thalarch quick benchmark cases through Antigravity CLI")
     parser.add_argument("--phase", choices=["native", "thalarch"], required=True)
-    parser.add_argument("--run-id", default="latest", help="Shared id for the paired native/Thalarch run.")
-    parser.add_argument("--model", default=None, help="Exact Antigravity model string. Omit to use CLI default.")
-    parser.add_argument("--case", action="append", dest="cases", help="Run only this case id; repeatable.")
+    parser.add_argument("--run-id", required=True)
+    parser.add_argument("--case", action="append", dest="cases", help="Run only this case id; repeatable")
+    parser.add_argument("--model", help="Pin the exact Antigravity model for a valid paired comparison")
+    parser.add_argument("--effort", choices=["low", "medium", "high"], help="Pin CLI reasoning effort for both phases")
+    parser.add_argument("--repeat", type=int, default=1, help="Independent trials per case (3+ recommended for publishable claims)")
     args = parser.parse_args()
+
+    if not 1 <= args.repeat <= 20:
+        raise SystemExit("--repeat must be between 1 and 20")
 
     agy = ensure_agy()
     run_dir = RESULTS_ROOT / args.run_id
@@ -465,37 +521,67 @@ def main() -> None:
 
     try:
         set_thalarch_plugin_state(agy, enabled=args.phase == "thalarch")
+        manifest = ensure_run_manifest(run_dir, agy=agy, model=args.model, effort=args.effort)
     except BenchmarkInfraError as exc:
         print("BENCHMARK INFRA_ERROR")
-        print(exc)
+        print(str(exc))
+        print("No hallucination score was recorded for this infrastructure failure.")
         raise SystemExit(2)
 
-    suite = load_json(CASES_PATH)["cases"]
-    requested = set(args.cases or [])
-    selected = [case for case in suite if not requested or case["id"] in requested]
-    if not selected:
-        raise SystemExit("No benchmark cases selected.")
+    suite = load_json(CASES_PATH)
+    cases = suite["cases"]
+    if args.cases:
+        wanted = set(args.cases)
+        cases = [case for case in cases if case["id"] in wanted]
+        missing = wanted - {case["id"] for case in cases}
+        if missing:
+            raise SystemExit(f"Unknown case id(s): {', '.join(sorted(missing))}")
 
-    print(f"Thalarch Quick Benchmark | phase={args.phase} | cases={len(selected)} | run_id={args.run_id}")
+    print(
+        f"Thalarch Quick Benchmark | protocol={PROTOCOL_REVISION} | phase={args.phase} | "
+        f"cases={len(cases)} | repeat={args.repeat} | run_id={args.run_id}"
+    )
     print(f"Plugin state requested by runner: {'ENABLED' if args.phase == 'thalarch' else 'DISABLED'}")
+    print(
+        "Agent condition: "
+        + ("thalarch-orchestrator" if args.phase == "thalarch" else "native default agent")
+    )
     print("Workspace policy: active fixture only; list_dir/view_file read tools only.")
+    print(f"Protocol fingerprint: {manifest['protocol_fingerprint'][:12]}")
     print()
 
     rows: list[dict[str, Any]] = []
-    for case in selected:
-        try:
-            rows.append(run_case(agy, case, args.phase, args.model, run_dir))
-        except BenchmarkInfraError as exc:
-            print("BENCHMARK INFRA_ERROR")
-            print(exc)
-            print("No hallucination score was recorded for this infrastructure failure.")
-            raise SystemExit(2)
+    try:
+        for trial in range(1, args.repeat + 1):
+            for case in cases:
+                row = run_case(
+                    agy,
+                    case,
+                    args.phase,
+                    trial,
+                    args.model,
+                    args.effort,
+                    run_dir,
+                    manifest,
+                )
+                rows.append(row)
+                status = "PASS" if row["passed"] else "FAIL"
+                print(
+                    f"{row['case']} r{trial:02d}: {status} | model={row['model']} | "
+                    f"{row['elapsed']:.1f}s | hallucinations={len(row['incidents'])}"
+                )
+                for problem in row["problems"]:
+                    print(f"  - {problem}")
+    except BenchmarkInfraError as exc:
+        print("\nBENCHMARK INFRA_ERROR")
+        print(str(exc))
+        print("No hallucination score was recorded for this infrastructure failure.")
+        raise SystemExit(2)
 
-    models = sorted({str(row.get("model") or "unknown") for row in rows})
-    passed = sum(1 for row in rows if row["task_status"] == "PASS")
-    halls = sum(len(row.get("hallucinations", [])) for row in rows)
-    print()
-    print(f"Phase summary: {passed}/{len(rows)} PASS | hallucinations={halls} | models={', '.join(models)}")
+    passed = sum(1 for row in rows if row["passed"])
+    hall = sum(len(row["incidents"]) for row in rows)
+    models = ",".join(sorted({str(row["model"]) for row in rows})) or "unknown"
+    print(f"\nPhase summary: {passed}/{len(rows)} PASS | hallucinations={hall} | models={models}")
     print(f"Results: {run_dir / 'results'}")
 
 
