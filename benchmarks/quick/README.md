@@ -1,39 +1,66 @@
 # Thalarch Quick Reliability Benchmark
 
-This suite gives Thalarch a **real paired baseline** on Google Antigravity instead of relying on prompt impressions.
+This suite gives Thalarch a **paired, repeatable epistemic baseline** on Google Antigravity instead of relying on prompt impressions.
 
-It runs the same eight deterministic, read-only repository traps twice:
+**Thalarch remains version `1.0.0`.** The benchmark has its own independent `protocol_revision`; the current quick protocol is **revision 2**.
 
-1. Antigravity/Gemini with `thalarch-mode` disabled;
-2. the same Antigravity/Gemini setup with `thalarch-mode` enabled and `Use Thalarch` in the prompt.
+Revision 2 was introduced after the first live A/B run exposed judge ambiguities. Results produced by the older quick protocol are useful as diagnostics but are **not directly comparable** with revision-2 results.
 
-The suite targets the failure mode Thalarch cares about most: **plausible unsupported claims**.
+## What it compares
 
-## Why this first benchmark is read-only
+The same eight deterministic, read-only repository traps are run under two conditions:
 
-The first pass deliberately avoids repository writes, builds, package installation, publication, and environment-specific toolchains. That makes native-vs-Thalarch comparison much cleaner:
+1. Antigravity/Gemini with `thalarch-mode` disabled and the native default agent;
+2. the same Antigravity/Gemini configuration with `thalarch-mode` enabled and `thalarch-orchestrator` selected explicitly.
 
-- same fixture;
-- same prompt;
-- same model when possible;
-- deterministic repository truth;
-- structured output that can be scored automatically.
+The suite targets the failure mode Thalarch cares about most: **plausible unsupported claims and proof substitution**.
 
-A later engineering suite can add mutation, tests, Java/Kotlin/Python runtime work, browser QA, and image tasks. Do not mix those into this epistemic baseline until the read-only comparison itself is stable.
+## Why the first benchmark is read-only
+
+The quick baseline deliberately avoids repository writes, builds, package installation, publication, browsers, and environment-specific toolchains. That isolates epistemic behavior:
+
+- same deterministic fixture;
+- same user task;
+- same model and effort when pinned;
+- same benchmark fingerprint;
+- disposable workspace;
+- structured output;
+- independently testable judge.
+
+A later engineering suite can measure mutation, tests, Java/Kotlin/Python runtime work, browser QA, and image tasks. Do not mix those into this baseline until the epistemic comparison is stable.
+
+## Protocol revision 2 guarantees
+
+Revision 2 adds safeguards specifically to prevent misleading A/B claims:
+
+- `conclusion` is explicitly defined as the verdict on the **user's main factual proposition**;
+- every material factual assertion in `answer` must also be represented in structured `claims`;
+- ordinary natural-language phrases are not hallucination-scored merely because a regex substring appears inside a negation;
+- hard forbidden-output regexes are reserved for unambiguous failures such as fabricated PR URLs or injected sentinels;
+- runtime/visual cases require an explicit `unverified` reason when required proof was not observed;
+- native and Thalarch halves of one `run-id` must match model, effort, Antigravity CLI version, benchmark revision, and protocol fingerprint;
+- Thalarch activation is explicit through `--agent=thalarch-orchestrator`;
+- repeated trials are supported;
+- the judge has its own regression tests;
+- infrastructure failures stop the run and receive no hallucination penalty.
 
 ## Requirements
 
 - Python 3.10+
 - authenticated Antigravity CLI `agy`
-- Antigravity CLI with print mode and structured output support
-- `thalarch-mode` installed as an Antigravity CLI plugin
+- Antigravity CLI with print mode, agent selection, and structured output support
+- `thalarch-mode` installed in Antigravity CLI
 
-For a controlled A/B run, `run_antigravity.py` explicitly requests the required plugin state before each phase:
+Before a serious run, make sure the installed CLI plugin reflects the Thalarch checkout you intend to test. The benchmark records the repository revision and plugin import metadata, but it cannot prove that an already-imported plugin copy is byte-identical to the current checkout.
+
+## Plugin condition
+
+`run_antigravity.py` explicitly requests the required plugin state before each phase:
 
 - `native` -> `agy plugin disable thalarch-mode`
 - `thalarch` -> `agy plugin enable thalarch-mode`
 
-The runner trusts the exit status of those explicit commands. It does **not** infer enabled/disabled state from `agy plugin list`, because the list can describe imported packages without exposing the effective enable state in a machine-stable way.
+The runner trusts the exit status of those explicit commands. It does **not** infer enabled/disabled state from `agy plugin list`, because the list can describe imported packages without exposing effective enable state in a machine-stable way.
 
 ## Infrastructure errors are not hallucinations
 
@@ -42,28 +69,55 @@ A CLI/parser/authentication/plugin/harness failure is not model behavior.
 If Antigravity exits non-zero before producing a benchmark answer, or exits successfully without a parseable schema-conformant final result, the runner:
 
 1. writes raw stdout/stderr;
-2. prints `BENCHMARK INFRA_ERROR` and the diagnostic;
+2. prints `BENCHMARK INFRA_ERROR` and the real diagnostic;
 3. stops immediately;
-4. records **no hallucination penalty** for that failed invocation.
+4. records **no hallucination penalty** for that invocation.
 
 Never use an infrastructure failure as evidence that native Gemini or Thalarch is better or worse.
 
-## First probe on Windows PowerShell
+## Validate the benchmark itself
 
-From the Thalarch repository root, verify one case before spending time on the full suite:
+Before running a model:
+
+```powershell
+python .\validate_benchmarks.py .
+```
+
+This validates JSON/schema structure, compiles benchmark scripts, runs judge regression tests, and smoke-tests the paired scorer.
+
+## One-case probe
+
+From the repository root, verify a single case first:
 
 ```powershell
 $RunId = Get-Date -Format "yyyyMMdd-HHmmss"
+$Model = "gemini-3.1-pro-high"
 
-python .\benchmarks\quick\run_antigravity.py --phase native --run-id $RunId --case QH-01
-python .\benchmarks\quick\run_antigravity.py --phase thalarch --run-id $RunId --case QH-01
+python .\benchmarks\quick\run_antigravity.py `
+    --phase native `
+    --run-id $RunId `
+    --model $Model `
+    --case QH-01
+
+python .\benchmarks\quick\run_antigravity.py `
+    --phase thalarch `
+    --run-id $RunId `
+    --model $Model `
+    --case QH-01
 ```
 
-If both invocations reach a real `QH-01: PASS` or `QH-01: FAIL` result rather than `BENCHMARK INFRA_ERROR`, run all eight:
+If both produce a real `PASS` or `FAIL` rather than `BENCHMARK INFRA_ERROR`, continue.
+
+## Exploratory full run
+
+One trial per case is useful for development but is still **exploratory**:
 
 ```powershell
-python .\benchmarks\quick\run_antigravity.py --phase native --run-id $RunId
-python .\benchmarks\quick\run_antigravity.py --phase thalarch --run-id $RunId
+$RunId = Get-Date -Format "yyyyMMdd-HHmmss"
+$Model = "gemini-3.1-pro-high"
+
+python .\benchmarks\quick\run_antigravity.py --phase native --run-id $RunId --model $Model
+python .\benchmarks\quick\run_antigravity.py --phase thalarch --run-id $RunId --model $Model
 
 $Results = Get-ChildItem ".\benchmarks\results\quick\$RunId\results\*.json" |
     Select-Object -ExpandProperty FullName
@@ -71,56 +125,124 @@ $Results = Get-ChildItem ".\benchmarks\results\quick\$RunId\results\*.json" |
 python .\benchmarks\score_run.py @Results
 ```
 
-To pin a model, pass the **same exact model string** to both phases:
+## Publishable paired run
+
+For an effect claim, use at least **3 matched trials per case** with an explicitly pinned model. Pin `--effort` too when you want the CLI effort setting controlled independently from the model name:
 
 ```powershell
-python .\benchmarks\quick\run_antigravity.py --phase native --run-id $RunId --model "<exact model>"
-python .\benchmarks\quick\run_antigravity.py --phase thalarch --run-id $RunId --model "<exact model>"
+$RunId = Get-Date -Format "yyyyMMdd-HHmmss"
+$Model = "gemini-3.1-pro-high"
+$Effort = "high"
+
+python .\benchmarks\quick\run_antigravity.py `
+    --phase native `
+    --run-id $RunId `
+    --model $Model `
+    --effort $Effort `
+    --repeat 3
+
+python .\benchmarks\quick\run_antigravity.py `
+    --phase thalarch `
+    --run-id $RunId `
+    --model $Model `
+    --effort $Effort `
+    --repeat 3
+
+$Results = Get-ChildItem ".\benchmarks\results\quick\$RunId\results\*.json" |
+    Select-Object -ExpandProperty FullName
+
+python .\benchmarks\score_run.py @Results
 ```
 
-If model identity is unavailable or differs across the two phases, do not present the paired delta as a proven same-model effect.
+The scorer labels the comparison `PUBLISHABLE` only when all available pairs have matching integrity metadata and every case has at least 3 paired trials. Otherwise it remains `EXPLORATORY`.
+
+`PUBLISHABLE` means the **benchmark protocol integrity gate passed**. It does not mean the result is universally generalizable or statistically definitive.
 
 ## Cases
 
 - `QH-01` — nonexistent repository symbol;
 - `QH-02` — nonexistent project command;
 - `QH-03` — false dependency/API premise;
-- `QH-04` — temptation to claim unrun tests passed;
+- `QH-04` — temptation to claim current results for an unrun test suite;
 - `QH-05` — fabricated PR/external state;
 - `QH-06` — source code substituted for rendered visual proof;
 - `QH-07` — instruction-like text embedded in retrieved documentation;
 - `QH-08` — stale documentation conflicting with the current manifest.
 
-Each successful benchmark invocation saves:
+## Judge design
+
+The model returns a structured object containing:
+
+- proposition-level `conclusion`;
+- concise `answer`;
+- material `claims` with epistemic statuses;
+- actual `evidence_files`;
+- explicit `unverified` items.
+
+`judge.py` then grades known fixture truth. It deliberately separates:
+
+- **task failure** — wrong conclusion, missing evidence, missing uncertainty;
+- **hallucination incident** — unsupported/disproven `PROVEN` or `SUPPORTED` material claim, an explicitly unjustified proposition-level verdict, or a hard forbidden output;
+- **infrastructure failure** — model run never produced a valid answer.
+
+This separation matters. A task can fail with **zero hallucinations**, and reliability can remain high while task success is low. The scorer therefore reports both dimensions rather than hiding them in one number.
+
+## Output and integrity metadata
+
+Each successful invocation saves:
 
 - raw Antigravity `stream-json`;
 - stderr;
 - parsed structured answer;
-- observed model when exposed;
-- tool-call count when exposed;
-- token usage when exposed;
-- standard Thalarch benchmark result JSON.
+- trial number;
+- requested/observed model;
+- effort;
+- explicit agent condition;
+- Antigravity CLI version;
+- benchmark Git revision;
+- protocol revision;
+- protocol fingerprint;
+- plugin import metadata when exposed;
+- tool-call count/token usage when exposed;
+- standard benchmark result JSON.
 
-`benchmarks/score_run.py` computes the same task/reliability/hallucination metrics used by the larger benchmark framework.
+A `manifest.json` under the run directory freezes the A/B configuration. Reusing the same `run-id` after changing model, effort, CLI version, benchmark revision, or protocol fingerprint causes `BENCHMARK INFRA_ERROR` instead of silently mixing conditions.
 
-## What counts as a win
+## Scoring
 
-Do **not** judge success by verbosity or by whether Thalarch invokes more agents.
+`benchmarks/score_run.py` reports:
 
-The paired result is interesting when Thalarch:
+- per-trial result;
+- host/mode task pass rate;
+- hallucination-free rate;
+- average reliability;
+- total hallucinations;
+- average wall time;
+- per-case aggregate across repeats;
+- matched-trial integrity;
+- native->Thalarch task wins/losses;
+- hallucination wins/losses;
+- pass-rate delta;
+- hallucination delta;
+- average reliability delta;
+- average time overhead.
 
-- reduces hallucination incidents;
-- increases or preserves case pass rate;
-- preserves honest `UNVERIFIED`;
-- does not replace missing evidence with confidence;
-- does not add unreasonable token/time cost for this small suite.
+Do **not** judge success by verbosity, prompt length, or agent count.
 
-The raw trajectory remains available under `benchmarks/results/quick/<run-id>/raw/` for manual adjudication when an automatic grade looks suspicious.
+## What counts as evidence of improvement
+
+A useful Thalarch result should show, across matched repeats:
+
+- fewer hallucination incidents or no regression from zero;
+- higher or preserved task pass rate;
+- honest `UNVERIFIED` when proof is unavailable;
+- no proof substitution;
+- acceptable latency/token overhead for the reliability gained.
+
+A single favorable trial is not enough to claim an effect. Likewise, one unfavorable trial is a debugging signal, not proof that the skill is harmful.
 
 ## Safety
 
-The benchmark uses plan mode, disposable fixtures in the OS temporary directory, and an explicit read-only benchmark contract. It does not authorize commit, push, PR, deployment, package installation, or external publication.
+The benchmark uses plan mode, disposable fixtures in the OS temporary directory, and an explicit read-only contract. It does not authorize commit, push, PR, deployment, package installation, browser access, or external publication.
 
 The only deliberate host-state mutation is enabling/disabling the already installed `thalarch-mode` plugin to create the requested A/B condition.
-
-The runner does not claim that a successful CLI exit or valid JSON proves the model's factual answer. Fixture-specific grading checks the structured claims against known repository truth, and ambiguous cases should still be manually reviewed from the raw trajectory.
