@@ -28,16 +28,59 @@ def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def run_text(cmd: list[str], *, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+def run_text(
+    cmd: list[str],
+    *,
+    cwd: Path | None = None,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         cmd,
         cwd=cwd,
+        env=env,
         text=True,
         encoding="utf-8",
         errors="replace",
         capture_output=True,
         check=False,
     )
+
+
+def build_cli_env() -> dict[str, str]:
+    """Keep the benchmark self-contained while making Git-for-Windows grep discoverable."""
+    env = os.environ.copy()
+    path_value = env.get("PATH", "")
+    if os.name != "nt" or shutil.which("grep", path=path_value):
+        return env
+
+    candidates: list[Path] = []
+    git = shutil.which("git")
+    if git:
+        git_path = Path(git).resolve()
+        # Typical Git for Windows layout: <root>/cmd/git.exe + <root>/usr/bin/grep.exe.
+        root = git_path.parent.parent
+        candidates.extend([root / "usr" / "bin", root / "mingw64" / "bin"])
+
+    for key in ("ProgramFiles", "ProgramFiles(x86)", "LOCALAPPDATA"):
+        base = env.get(key)
+        if not base:
+            continue
+        base_path = Path(base)
+        candidates.extend([
+            base_path / "Git" / "usr" / "bin",
+            base_path / "Git" / "mingw64" / "bin",
+        ])
+
+    seen: set[str] = set()
+    for candidate in candidates:
+        marker = str(candidate).lower()
+        if marker in seen:
+            continue
+        seen.add(marker)
+        if (candidate / "grep.exe").is_file():
+            env["PATH"] = str(candidate) + os.pathsep + path_value
+            break
+    return env
 
 
 def ensure_agy() -> str:
@@ -319,7 +362,9 @@ def run_case(
         common = (
             "\n\nBENCHMARK CONTRACT:\n"
             "- Work read-only. Do not edit files, run destructive/external actions, create commits, push, or open PRs.\n"
-            "- Inspect the workspace before making exact claims.\n"
+            "- Inspect only the active benchmark workspace; never inspect CLI scratch, home, or other non-workspace paths.\n"
+            "- For this quick suite, inspect repository files only with list_dir and view_file. "
+            "Do not use grep_search, run_command, browser, web, MCP, or external tools.\n"
             "- Distinguish proven facts from inference and unavailable proof.\n"
             "- Return only the JSON object required by the supplied schema.\n"
             f"- Set case_id exactly to {case['id']}.\n"
@@ -334,6 +379,7 @@ def run_case(
             agy,
             "-p",
             prompt,
+            f"--add-dir={workspace}",
             "--mode=plan",
             "--output-format=stream-json",
             f"--json-schema={schema_inline}",
@@ -342,7 +388,7 @@ def run_case(
             cmd.append(f"--model={model}")
 
         started = time.monotonic()
-        proc = run_text(cmd, cwd=workspace)
+        proc = run_text(cmd, cwd=workspace, env=build_cli_env())
         elapsed = time.monotonic() - started
 
         raw_dir = run_dir / "raw" / phase
@@ -432,6 +478,7 @@ def main() -> None:
 
     print(f"Thalarch Quick Benchmark | phase={args.phase} | cases={len(selected)} | run_id={args.run_id}")
     print(f"Plugin state requested by runner: {'ENABLED' if args.phase == 'thalarch' else 'DISABLED'}")
+    print("Workspace policy: active fixture only; list_dir/view_file read tools only.")
     print()
 
     rows: list[dict[str, Any]] = []
