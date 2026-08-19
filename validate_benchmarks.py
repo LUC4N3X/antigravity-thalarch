@@ -9,6 +9,7 @@ from pathlib import Path
 
 root = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
 bench = root / "benchmarks"
+quick = bench / "quick"
 errors: list[str] = []
 
 required = [
@@ -17,12 +18,22 @@ required = [
     bench / "rubric.json",
     bench / "result-template.json",
     bench / "score_run.py",
+    quick / "README.md",
+    quick / "cases.json",
+    quick / "response.schema.json",
+    quick / "run_antigravity.py",
 ]
 for path in required:
     if not path.is_file():
         errors.append(f"missing benchmark file: {path.relative_to(root)}")
 
-for path in [bench / "cases.json", bench / "rubric.json", bench / "result-template.json"]:
+for path in [
+    bench / "cases.json",
+    bench / "rubric.json",
+    bench / "result-template.json",
+    quick / "cases.json",
+    quick / "response.schema.json",
+]:
     if not path.is_file():
         continue
     try:
@@ -30,12 +41,13 @@ for path in [bench / "cases.json", bench / "rubric.json", bench / "result-templa
     except Exception as exc:
         errors.append(f"invalid JSON in {path.relative_to(root)}: {exc}")
 
-score = bench / "score_run.py"
-if score.is_file():
+for script in [bench / "score_run.py", quick / "run_antigravity.py"]:
+    if not script.is_file():
+        continue
     try:
-        compile(score.read_text(encoding="utf-8"), str(score), "exec")
+        compile(script.read_text(encoding="utf-8"), str(script), "exec")
     except SyntaxError as exc:
-        errors.append(f"syntax error in {score.relative_to(root)}: {exc}")
+        errors.append(f"syntax error in {script.relative_to(root)}: {exc}")
 
 if not errors:
     cases = json.loads((bench / "cases.json").read_text(encoding="utf-8"))
@@ -65,7 +77,41 @@ if not errors:
     if not required_types.issubset(set(weights)):
         errors.append("benchmark rubric missing hallucination taxonomy weights")
 
+if not errors:
+    quick_cases = json.loads((quick / "cases.json").read_text(encoding="utf-8"))
+    if quick_cases.get("version") != "1.0.0":
+        errors.append("quick benchmark version must remain 1.0.0")
+    entries = quick_cases.get("cases")
+    if not isinstance(entries, list) or len(entries) != 8:
+        errors.append("quick benchmark must contain exactly 8 deterministic cases")
+    else:
+        ids = [str(case.get("id") or "") for case in entries if isinstance(case, dict)]
+        if len(ids) != len(set(ids)):
+            errors.append("quick benchmark case ids must be unique")
+        expected_ids = {f"QH-{n:02d}" for n in range(1, 9)}
+        if set(ids) != expected_ids:
+            errors.append("quick benchmark ids must be QH-01 through QH-08")
+        for case in entries:
+            if not isinstance(case, dict):
+                errors.append("every quick benchmark case must be an object")
+                continue
+            for key in [
+                "id", "title", "category", "hallucination_type", "prompt", "success_signal",
+                "allowed_conclusions", "required_text_regex", "forbidden_text_regex",
+                "false_claim_regex", "files",
+            ]:
+                if key not in case:
+                    errors.append(f"quick benchmark case {case.get('id', '?')} missing {key}")
+            if not isinstance(case.get("files"), dict) or not case["files"]:
+                errors.append(f"quick benchmark case {case.get('id', '?')} must define fixture files")
+
+    schema = json.loads((quick / "response.schema.json").read_text(encoding="utf-8"))
+    required_schema_fields = {"case_id", "conclusion", "answer", "claims", "evidence_files", "unverified"}
+    if set(schema.get("required", [])) != required_schema_fields:
+        errors.append("quick benchmark response schema required fields changed unexpectedly")
+
 # Scorer smoke test with a paired native/Thalarch result.
+score = bench / "score_run.py"
 if not errors and score.is_file():
     template = json.loads((bench / "result-template.json").read_text(encoding="utf-8"))
     with tempfile.TemporaryDirectory() as temp:
@@ -117,5 +163,7 @@ if errors:
 print("THALARCH BENCHMARK VALIDATION PASSED")
 print("version: 1.0.0 (fixed)")
 print("cross_model_cases: >=20")
+print("quick_antigravity_cases: 8")
+print("quick_structured_output: enforced")
 print("hallucination_taxonomy: enforced")
 print("paired_scorer: passed")
