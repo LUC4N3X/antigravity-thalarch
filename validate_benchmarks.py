@@ -149,7 +149,8 @@ if not errors:
         "proc = run_text(cmd, cwd=workspace, env=build_cli_env())",
         "list_dir and view_file",
         "Do not use grep_search, run_command, browser, web, MCP, or external tools.",
-        "--agent=thalarch-orchestrator",
+        "/thalarch-mode",
+        "slash-skill:thalarch-mode",
         "--repeat",
         "--effort",
         "protocol_fingerprint",
@@ -158,6 +159,8 @@ if not errors:
     ]:
         if term not in runner:
             errors.append(f"quick benchmark runner missing protocol guard: {term}")
+    if "--agent=thalarch-orchestrator" in runner:
+        errors.append("quick benchmark must test the Thalarch skill directly, not switch primary agent presets")
     if "def detect_thalarch_plugin_state" in runner:
         errors.append("quick benchmark must not infer effective plugin state from plugin list")
     if "--cwd" in runner:
@@ -177,7 +180,6 @@ if not errors:
         if term not in judge:
             errors.append(f"quick benchmark judge missing semantic guard: {term}")
 
-# The judge must pass its own regression suite before any model benchmark is trusted.
 if not errors:
     proc = subprocess.run(
         [sys.executable, str(quick / "test_judge.py")],
@@ -191,7 +193,6 @@ if not errors:
     if proc.returncode != 0:
         errors.append(f"quick benchmark judge regression tests failed: {proc.stderr or proc.stdout}")
 
-# Scorer smoke test with a paired native/Thalarch result.
 score = bench / "score_run.py"
 if not errors and score.is_file():
     template = json.loads((bench / "result-template.json").read_text(encoding="utf-8"))
@@ -232,7 +233,7 @@ if not errors and score.is_file():
             "benchmark_revision": "def",
             "agy_version": "1.1.15",
             "thalarch": True,
-            "thalarch_activation": "thalarch-orchestrator",
+            "thalarch_activation": "slash-skill:thalarch-mode",
             "task_status": "PASS",
             "hallucinations": [],
         })
@@ -276,6 +277,6 @@ print("quick_permission_bypass: forbidden")
 print("quick_infra_errors: separated_from_hallucinations")
 print("quick_paired_manifest: model_effort_revision_fingerprint")
 print("quick_repeated_trials: supported")
-print("quick_thalarch_activation: explicit_orchestrator")
+print("quick_thalarch_activation: explicit_skill_slash_command")
 print("hallucination_taxonomy: enforced")
 print("paired_scorer: passed")
