@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import subprocess
 import sys
 import tempfile
+import uuid
 from pathlib import Path
 
 root = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
@@ -71,7 +71,8 @@ for label, hooks in [("Codex", codex_hooks), ("Claude", claude_hooks)]:
             errors.append(f"{label} adapter must wire {event}")
 
 # Claude agent frontmatter stays intentionally small and native.
-for path in (root / "adapters" / "claude" / "agents").glob("thalarch-*.md") if (root / "adapters" / "claude" / "agents").is_dir() else []:
+claude_agents = root / "adapters" / "claude" / "agents"
+for path in claude_agents.glob("thalarch-*.md") if claude_agents.is_dir() else []:
     text = path.read_text(encoding="utf-8")
     for key in ["name:", "description:", "tools:", "model:", "permissionMode:"]:
         if key not in text:
@@ -88,6 +89,59 @@ for base in [root / "adapters", root / "installers"]:
         text = path.read_text(encoding="utf-8", errors="ignore")
         if newer.search(text):
             errors.append(f"Thalarch adapter version must remain 1.0.0: {path.relative_to(root)}")
+
+
+def run_hook(script: Path, data: dict) -> dict:
+    proc = subprocess.run(
+        [sys.executable, str(script)],
+        input=json.dumps(data),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(f"{script.name} exited {proc.returncode}: {proc.stderr or proc.stdout}")
+    output = proc.stdout.strip()
+    return json.loads(output) if output else {}
+
+
+# Hook protocol regression tests: mutation -> verification -> new mutation must require fresh evidence again.
+if not errors:
+    for host in ["codex", "claude"]:
+        hook = root / "adapters" / host / "hooks" / "epistemic_gate.py"
+        session = f"thalarch-adapter-test-{host}-{uuid.uuid4()}"
+        with tempfile.TemporaryDirectory() as temp:
+            cwd = Path(temp)
+            common = {"session_id": session, "cwd": str(cwd)}
+
+            try:
+                if host == "codex":
+                    mutate = {**common, "hook_event_name": "PostToolUse", "tool_name": "apply_patch", "tool_input": {"command": "*** Begin Patch"}}
+                    verify = {**common, "hook_event_name": "PostToolUse", "tool_name": "Bash", "tool_input": {"command": "python -m pytest"}}
+                else:
+                    mutate = {**common, "hook_event_name": "PostToolUse", "tool_name": "Edit", "tool_input": {}}
+                    verify = {**common, "hook_event_name": "PostToolUse", "tool_name": "Bash", "tool_input": {"command": "python -m pytest"}}
+
+                run_hook(hook, mutate)
+                blocked = run_hook(hook, {**common, "hook_event_name": "Stop", "stop_hook_active": False, "last_assistant_message": "Done."})
+                if blocked.get("decision") != "block":
+                    errors.append(f"{host} Stop gate did not block mutation without fresh verification")
+
+                run_hook(hook, verify)
+                cleared = run_hook(hook, {**common, "hook_event_name": "Stop", "stop_hook_active": False, "last_assistant_message": "Done."})
+                if cleared.get("decision") == "block":
+                    errors.append(f"{host} Stop gate did not accept verification after mutation")
+
+                run_hook(hook, mutate)
+                stale = run_hook(hook, {**common, "hook_event_name": "Stop", "stop_hook_active": False, "last_assistant_message": "Done."})
+                if stale.get("decision") != "block":
+                    errors.append(f"{host} Stop gate reused stale verification after a newer mutation")
+
+                honest = run_hook(hook, {**common, "hook_event_name": "Stop", "stop_hook_active": False, "last_assistant_message": "Runtime result remains UNVERIFIED."})
+                if honest.get("decision") == "block":
+                    errors.append(f"{host} Stop gate did not allow an explicit UNVERIFIED completion state")
+            except Exception as exc:
+                errors.append(f"{host} hook protocol regression test failed: {exc}")
 
 # Installer smoke tests: use temporary repositories and prove existing host instructions/config are preserved.
 installer = root / "installers" / "install_adapter.py"
@@ -152,4 +206,5 @@ print("THALARCH ADAPTER VALIDATION PASSED")
 print("version: 1.0.0 (fixed)")
 print("codex: skills + AGENTS + native hooks")
 print("claude: skills + CLAUDE + subagents + native hooks")
+print("fresh-evidence ordering: passed")
 print("conservative installer: passed")
