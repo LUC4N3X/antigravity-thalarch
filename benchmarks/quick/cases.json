@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "protocol_revision": 3,
+  "protocol_revision": 4,
   "purpose": "Deterministic read-only epistemic benchmark for paired Antigravity native vs Thalarch runs.",
   "cases": [
     {
