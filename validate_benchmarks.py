@@ -24,6 +24,7 @@ required = [
     quick / "response.schema.json",
     quick / "judge.py",
     quick / "test_judge.py",
+    quick / "test_structured_output.py",
     quick / "plugin_integrity.py",
     quick / "run_antigravity.py",
     quick / "run_pair.py",
@@ -32,13 +33,14 @@ for path in required:
     if not path.is_file():
         errors.append(f"missing benchmark file: {path.relative_to(root)}")
 
-for path in [
+json_files = [
     bench / "cases.json",
     bench / "rubric.json",
     bench / "result-template.json",
     quick / "cases.json",
     quick / "response.schema.json",
-]:
+]
+for path in json_files:
     if not path.is_file():
         continue
     try:
@@ -46,15 +48,17 @@ for path in [
     except Exception as exc:
         errors.append(f"invalid JSON in {path.relative_to(root)}: {exc}")
 
-for script in [
+scripts = [
     bench / "score_run.py",
     bench / "test_score_run.py",
     quick / "judge.py",
     quick / "test_judge.py",
+    quick / "test_structured_output.py",
     quick / "plugin_integrity.py",
     quick / "run_antigravity.py",
     quick / "run_pair.py",
-]:
+]
+for script in scripts:
     if not script.is_file():
         continue
     try:
@@ -86,8 +90,7 @@ if not errors:
         "REPO_FACT", "API_VERSION", "COMMAND", "RUNTIME_RESULT", "EXTERNAL_STATE",
         "VISUAL_STATE", "PROOF_SUBSTITUTION", "CITATION_SOURCE", "OTHER",
     }
-    weights = rubric.get("hallucination_weights", {})
-    if not required_types.issubset(set(weights)):
+    if not required_types.issubset(set(rubric.get("hallucination_weights", {}))):
         errors.append("benchmark rubric missing hallucination taxonomy weights")
 
 if not errors:
@@ -96,6 +99,7 @@ if not errors:
         errors.append("quick benchmark version must remain 1.0.0")
     if quick_cases.get("protocol_revision") != 3:
         errors.append("quick benchmark protocol revision must be 3")
+
     entries = quick_cases.get("cases")
     if not isinstance(entries, list) or len(entries) != 8:
         errors.append("quick benchmark must contain exactly 8 deterministic cases")
@@ -106,17 +110,19 @@ if not errors:
         expected_ids = {f"QH-{n:02d}" for n in range(1, 9)}
         if set(ids) != expected_ids:
             errors.append("quick benchmark ids must be QH-01 through QH-08")
+
         by_id = {str(case.get("id")): case for case in entries if isinstance(case, dict)}
+        required_case_keys = [
+            "id", "title", "category", "hallucination_type", "prompt", "success_signal",
+            "allowed_conclusions", "hallucination_conclusions", "required_text_regex",
+            "required_evidence_regex", "requires_unverified", "required_unverified_regex",
+            "forbidden_text_regex", "false_claim_regex", "files",
+        ]
         for case in entries:
             if not isinstance(case, dict):
                 errors.append("every quick benchmark case must be an object")
                 continue
-            for key in [
-                "id", "title", "category", "hallucination_type", "prompt", "success_signal",
-                "allowed_conclusions", "hallucination_conclusions", "required_text_regex",
-                "required_evidence_regex", "requires_unverified", "required_unverified_regex",
-                "forbidden_text_regex", "false_claim_regex", "files",
-            ]:
+            for key in required_case_keys:
                 if key not in case:
                     errors.append(f"quick benchmark case {case.get('id', '?')} missing {key}")
             if not isinstance(case.get("files"), dict) or not case["files"]:
@@ -127,6 +133,7 @@ if not errors:
             errors.append("QH-04 must grade unrun-suite honesty semantically, not require README/command prose")
         if qh04.get("requires_unverified") is not True:
             errors.append("QH-04 must require explicit unverified runtime state")
+
         qh06 = by_id.get("QH-06", {})
         if qh06.get("forbidden_text_regex"):
             errors.append("QH-06 must not use raw phrase bans that misclassify negated visual statements")
@@ -145,13 +152,19 @@ if not errors:
         errors.append("quick benchmark answer schema must require material assertions to be represented in claims")
 
     runner = (quick / "run_antigravity.py").read_text(encoding="utf-8")
-    for term in [
+    runner_terms = [
         "PROTOCOL_REVISION = 3",
         "class BenchmarkInfraError",
         "def set_thalarch_plugin_state",
         "def build_cli_env",
         "def protocol_fingerprint",
         "def ensure_run_manifest",
+        "def validate_structured_response",
+        "def extract_result",
+        "RESPONSE_FIELDS",
+        "CONCLUSIONS",
+        "CLAIM_STATUSES",
+        "The echoed JSON Schema is never accepted as a model answer.",
         "BENCHMARK INFRA_ERROR",
         "No hallucination score was recorded for this infrastructure failure.",
         "--add-dir=",
@@ -167,7 +180,8 @@ if not errors:
         "protocol_fingerprint",
         "requested_model",
         "USER'S MAIN FACTUAL PROPOSITION",
-    ]:
+    ]
+    for term in runner_terms:
         if term not in runner:
             errors.append(f"quick benchmark runner missing protocol guard: {term}")
     if "--agent=thalarch-orchestrator" in runner:
@@ -179,39 +193,32 @@ if not errors:
     if "--dangerously-skip-permissions" in runner:
         errors.append("quick benchmark must not bypass all user permissions")
 
+    structured_tests = (quick / "test_structured_output.py").read_text(encoding="utf-8")
+    for term in [
+        "test_schema_properties_are_not_a_response",
+        "test_echoed_schema_before_valid_answer_is_ignored",
+        "test_valid_json_string_is_extracted",
+        "test_wrong_enum_is_rejected",
+        "test_claim_shape_is_enforced",
+    ]:
+        if term not in structured_tests:
+            errors.append(f"quick structured-output regression suite missing case: {term}")
+
     plugin_integrity = (quick / "plugin_integrity.py").read_text(encoding="utf-8")
     for term in [
-        "known_staged_candidates",
-        "discover_staged_candidates",
-        "compare_plugin_trees",
-        "antigravity-cli",
-        "config",
-        "behavior_files",
-        "verify_plugin_tree",
-        "source_fingerprint",
-        "staged_fingerprint",
-        "missing",
-        "extra",
-        "mismatched",
+        "known_staged_candidates", "discover_staged_candidates", "compare_plugin_trees",
+        "antigravity-cli", "config", "behavior_files", "verify_plugin_tree",
+        "source_fingerprint", "staged_fingerprint", "missing", "extra", "mismatched",
     ]:
         if term not in plugin_integrity:
             errors.append(f"quick plugin-integrity checker missing control: {term}")
 
     pair_driver = (quick / "run_pair.py").read_text(encoding="utf-8")
     for term in [
-        "--model",
-        "required=True",
-        "default=3",
-        "counterbalanced per case/trial",
-        "native_first = (trial + case_index) % 2 == 1",
-        "runner.set_thalarch_plugin_state",
-        "runner.run_case",
-        "score_run.py",
-        "run_validator()",
-        "verify_plugin_tree()",
-        "plugin_match_verified",
-        "plugin_source_fingerprint",
-        "plugin_staged_fingerprint",
+        "--model", "required=True", "default=3", "counterbalanced per case/trial",
+        "native_first = (trial + case_index) % 2 == 1", "runner.set_thalarch_plugin_state",
+        "runner.run_case", "score_run.py", "run_validator()", "verify_plugin_tree()",
+        "plugin_match_verified", "plugin_source_fingerprint", "plugin_staged_fingerprint",
         "staged Antigravity CLI copy",
     ]:
         if term not in pair_driver:
@@ -219,14 +226,9 @@ if not errors:
 
     judge = (quick / "judge.py").read_text(encoding="utf-8")
     for term in [
-        "SUPPORTED_STATUSES",
-        "NEGATION_CUE_RE",
-        "_false_match_is_negated",
-        "hallucination_conclusions",
-        "required_evidence_regex",
-        "requires_unverified",
-        "Hard forbidden outputs",
-        "affirmative PROVEN/SUPPORTED",
+        "SUPPORTED_STATUSES", "NEGATION_CUE_RE", "_false_match_is_negated",
+        "hallucination_conclusions", "required_evidence_regex", "requires_unverified",
+        "Hard forbidden outputs", "affirmative PROVEN/SUPPORTED",
     ]:
         if term not in judge:
             errors.append(f"quick benchmark judge missing semantic guard: {term}")
@@ -243,40 +245,39 @@ if not errors:
 
     scorer = (bench / "score_run.py").read_text(encoding="utf-8")
     for term in [
-        "UNVERIFIED:plugin-checkout",
-        "INVALID:plugin-fingerprint",
-        "plugin_match_verified",
-        "plugin_source_fingerprint",
-        "plugin_staged_fingerprint",
+        "UNVERIFIED:plugin-checkout", "INVALID:plugin-fingerprint", "plugin_match_verified",
+        "plugin_source_fingerprint", "plugin_staged_fingerprint",
         "def pair_integrity(native: dict[str, Any], thalarch: dict[str, Any])",
-        'native.get("protocol_revision") == 3',
-        'thalarch.get("protocol_revision") == 3',
+        'native.get("protocol_revision") == 3', 'thalarch.get("protocol_revision") == 3',
     ]:
         if term not in scorer:
             errors.append(f"benchmark scorer missing protocol/integrity control: {term}")
 
+
+def run_regression(name: str, script: Path, cwd: Path) -> None:
+    proc = subprocess.run(
+        [sys.executable, str(script)],
+        cwd=cwd,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        capture_output=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        errors.append(f"quick benchmark {name} regression tests failed: {proc.stderr or proc.stdout}")
+
+
 if not errors:
-    for name, script, cwd in [
-        ("judge", quick / "test_judge.py", quick),
-        ("scorer", bench / "test_score_run.py", bench),
-    ]:
-        proc = subprocess.run(
-            [sys.executable, str(script)],
-            cwd=cwd,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            capture_output=True,
-            check=False,
-        )
-        if proc.returncode != 0:
-            errors.append(f"quick benchmark {name} regression tests failed: {proc.stderr or proc.stdout}")
+    run_regression("judge", quick / "test_judge.py", quick)
+    run_regression("structured-output", quick / "test_structured_output.py", quick)
+    run_regression("scorer", bench / "test_score_run.py", bench)
 
 score = bench / "score_run.py"
 if not errors and score.is_file():
     template = json.loads((bench / "result-template.json").read_text(encoding="utf-8"))
-    with tempfile.TemporaryDirectory() as temp:
-        temp = Path(temp)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp = Path(temp_dir)
         native = dict(template)
         native.update({
             "case_id": "H-01",
@@ -348,8 +349,10 @@ print("cross_model_cases: >=20")
 print("quick_antigravity_cases: 8")
 print("quick_protocol_revision: 3")
 print("quick_structured_verdict_semantics: enforced")
+print("quick_structured_output_isolation: schema_echo_rejected")
 print("quick_polarity_aware_claims: enforced")
 print("quick_judge_regressions: passed")
+print("quick_structured_output_regressions: passed")
 print("quick_scorer_regressions: passed")
 print("quick_cli_workdir: subprocess_cwd")
 print("quick_cli_workspace: add_dir")
