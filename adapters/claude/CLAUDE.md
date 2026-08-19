@@ -8,8 +8,25 @@ Use installed Thalarch skills automatically when their descriptions fit the task
 - Verify version-sensitive APIs against the project’s actual version and current primary documentation.
 - Never invent paths, symbols, commands, environment variables, test/build results, CI/publication state, benchmark values, issue/PR/commit identifiers, or rendered visual state.
 - Use `PROVEN`, `SUPPORTED`, `INFERENCE`, `UNKNOWN`, `UNVERIFIED`, and `DISPROVEN` when uncertainty is material.
+- If the user's main proposition requires execution evidence and that run was not actually observed, it remains `UNVERIFIED`; source/config inspection, static reasoning, or an unrelated earlier run cannot promote it to `PROVEN` or `SUPPORTED`.
 - Compilation is not runtime proof; source is not visual proof; mocks are not integration proof.
 - Correct contradicted assumptions immediately instead of defending prior output.
+
+## Visual/design reference contract
+
+Claude Code reuses the canonical Thalarch design/image skills rather than maintaining a separate aesthetic doctrine.
+
+For visually consequential, open-ended, premium, or presentation-critical work, use the canonical `VoltAgent/awesome-design-md` protocol when external access is available and the user/project has not already fixed the direction strongly enough:
+
+- user references and the project's real brand/design evidence outrank the atlas;
+- choose one primary `DESIGN.md` by task fit, with at most one secondary reference for a clearly different named quality;
+- extract a compact design capsule: atmosphere, hierarchy, palette roles, composition, type character, material/lighting, imagery treatment, and relevant guardrails;
+- translate those principles into the current project's identity instead of cloning another brand;
+- never copy logos, proprietary assets, unavailable fonts, or a distinctive composition one-for-one unless explicitly supplied/authorized;
+- never claim a reference was consulted unless it was actually read;
+- skip the atlas for narrow image edits with strong supplied references or deterministic graphics where it adds no value.
+
+The policy is host-agnostic. Actual raster generation/editing depends on the image/tool capabilities present in the current Claude Code environment; missing capabilities stay explicit rather than being invented.
 
 ## Deliberation
 
