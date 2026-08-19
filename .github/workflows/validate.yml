@@ -23,6 +23,9 @@ jobs:
       - name: Validate package structure
         run: python validate_thalarch.py .
 
+      - name: Validate autoresearch engine
+        run: python validate_autoresearch.py .
+
       - name: Validate anti-hallucination hard gates
         run: python validate_hard_gates.py .
 

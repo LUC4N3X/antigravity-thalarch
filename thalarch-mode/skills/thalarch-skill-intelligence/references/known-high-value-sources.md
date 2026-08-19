@@ -35,6 +35,27 @@ progressive disclosure, and shortcut/rationalization defenses. Thalarch keeps th
 than inheriting universal numeric thresholds or mandatory commits/questions that may conflict with
 the current user/repository contract.
 
+## Autoresearch / bounded experiment loops — community candidates
+
+Discovery index: `webfuse-com/awesome-autoresearch`.
+
+High-value sources for experiment-loop mechanics include:
+
+- `supratikpm/gemini-autoresearch` — Antigravity-compatible iterative research patterns;
+- `junjunjunbong/research-loop` — isolated Git worktrees and explicit keep/revert experiment state;
+- `uditgoenka/autoresearch` — one-change-at-a-time measurement discipline and rollback semantics;
+- `sentient-agi/EvoSkill` — evidence-driven reusable-skill evolution from repeated failure patterns.
+
+Thalarch does **not** vendor or blindly compose these projects. `thalarch-autoresearch` keeps only the
+portable engineering mechanics that fit Thalarch's existing reliability contract: frozen baselines,
+comparable measurement, bounded budgets, correctness-before-score guardrails, deterministic
+KEEP/REVERT/INCONCLUSIVE decisions, isolated candidate work, benchmark-overfitting defenses, and a
+strict boundary against silent self-modification or unauthorized publication.
+
+Use external autoresearch skills only when they add host-native tooling or a task-specific evaluator
+that Thalarch does not already provide. Do not stack multiple autonomous loops around the same mutable
+workspace.
+
 ## Kotlin / JetBrains — official-source preference
 
 Repository family: `Kotlin/kotlin-agent-skills`.
