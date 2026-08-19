@@ -334,7 +334,6 @@ def run_case(
             agy,
             "-p",
             prompt,
-            f"--cwd={workspace}",
             "--mode=plan",
             "--output-format=stream-json",
             f"--json-schema={schema_inline}",
@@ -343,7 +342,7 @@ def run_case(
             cmd.append(f"--model={model}")
 
         started = time.monotonic()
-        proc = run_text(cmd)
+        proc = run_text(cmd, cwd=workspace)
         elapsed = time.monotonic() - started
 
         raw_dir = run_dir / "raw" / phase
