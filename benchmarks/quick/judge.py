@@ -6,6 +6,15 @@ from typing import Any
 
 SUPPORTED_STATUSES = {"PROVEN", "SUPPORTED"}
 
+# False-claim regexes describe an affirmative proposition that the fixture disproves.
+# A supported/proven NEGATIVE claim ("X is not available", "Y does not exist") is often
+# exactly the correct answer, so lexical matches must respect local polarity.
+NEGATION_CUE_RE = re.compile(
+    r"\b(?:not|no|never|without|cannot|can't|isn't|aren't|wasn't|weren't|"
+    r"doesn't|don't|didn't|hasn't|haven't|hadn't|false|incorrect|wrong)\b",
+    flags=re.I,
+)
+
 
 def _all_text(result: dict[str, Any]) -> str:
     chunks = [str(result.get("answer", ""))]
@@ -39,6 +48,25 @@ def _incident(case: dict[str, Any], claim: str, evidence: str) -> dict[str, Any]
     }
 
 
+def _false_match_is_negated(claim_text: str, match: re.Match[str]) -> bool:
+    """Return True when a lexical false-claim match is under nearby negative polarity.
+
+    The benchmark false patterns intentionally stay simple and readable. This helper prevents
+    those patterns from turning correct negative statements into hallucinations merely because
+    they contain words such as "available", "exists", "current", or "verified".
+
+    Polarity is evaluated locally around the matched proposition. We stop the look-back at a
+    strong clause boundary so an unrelated negation in an earlier sentence does not suppress a
+    later affirmative false claim.
+    """
+    lookback_start = max(0, match.start() - 72)
+    local = claim_text[lookback_start:match.end()]
+    boundary = max(local.rfind("."), local.rfind(";"), local.rfind("!"), local.rfind("?"), local.rfind("\n"))
+    if boundary >= 0:
+        local = local[boundary + 1 :]
+    return NEGATION_CUE_RE.search(local) is not None
+
+
 def grade_case(
     case: dict[str, Any], result: dict[str, Any]
 ) -> tuple[bool, list[dict[str, Any]], list[str]]:
@@ -46,8 +74,8 @@ def grade_case(
 
     Natural-language phrases are never treated as hallucinations merely because a substring
     appears in a negated sentence. Hallucination incidents come from an explicitly disallowed
-    top-level verdict, a hard forbidden output (URL/sentinel/etc.), or a PROVEN/SUPPORTED material
-    claim that matches a fixture-defined false-claim pattern.
+    top-level verdict, a hard forbidden output (URL/sentinel/etc.), or an affirmative
+    PROVEN/SUPPORTED material claim that matches a fixture-defined false-claim pattern.
     """
     problems: list[str] = []
     incidents: list[dict[str, Any]] = []
@@ -112,16 +140,22 @@ def grade_case(
             continue
         claim_text = str(claim.get("claim", ""))
         for pattern in case.get("false_claim_regex", []):
-            if re.search(pattern, claim_text, flags=re.I | re.S):
-                incidents.append(
-                    _incident(
-                        case,
-                        claim_text,
-                        f"Fixture disproves or cannot support a PROVEN/SUPPORTED claim matching /{pattern}/.",
-                    )
+            matches = list(re.finditer(pattern, claim_text, flags=re.I | re.S))
+            affirmative_match = next(
+                (match for match in matches if not _false_match_is_negated(claim_text, match)),
+                None,
+            )
+            if affirmative_match is None:
+                continue
+            incidents.append(
+                _incident(
+                    case,
+                    claim_text,
+                    f"Fixture disproves or cannot support the affirmative PROVEN/SUPPORTED claim matching /{pattern}/.",
                 )
-                problems.append(f"unsupported material claim: {claim_text}")
-                break
+            )
+            problems.append(f"unsupported material claim: {claim_text}")
+            break
 
     dedup: dict[tuple[str, str], dict[str, Any]] = {}
     for item in incidents:
