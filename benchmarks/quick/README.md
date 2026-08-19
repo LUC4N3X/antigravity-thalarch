@@ -2,9 +2,9 @@
 
 This suite gives Thalarch a **paired, repeatable epistemic baseline** on Google Antigravity instead of relying on prompt impressions.
 
-**Thalarch remains version `1.0.0`.** The benchmark has its own independent `protocol_revision`; the current quick protocol is **revision 3**.
+**Thalarch remains version `1.0.0`.** The benchmark has its own independent `protocol_revision`; the current quick protocol is **revision 4**.
 
-Revision 3 supersedes the earlier diagnostic revisions. Revision 2 exposed a remaining judge bug: a correct supported negative proposition such as `retryWithBudget() is not available` could still match an affirmative false-claim regex because the lexical predicate `available` was present. Revision 3 makes false-claim grading polarity-aware and adds regression tests for negative repository/API/version claims. Results from earlier quick protocol revisions remain diagnostic and are **not directly comparable** with revision-3 results.
+Revision 4 supersedes the earlier diagnostic revisions. Revision 3 fixed polarity-aware grading, but subsequent live runs exposed two harness concerns that materially affect comparability: Antigravity `stream-json` can echo the supplied JSON Schema or wrap/double-encode the final result, and long paired runs need resumability without mixing stale configuration. Revision 4 therefore hardens structured-output isolation/recovery, includes the isolator and paired driver in the protocol fingerprint, adds regression coverage for wrapper/fenced/embedded/double-encoded JSON, and makes resume/progress behavior part of the validated runner. Results from earlier quick protocol revisions remain diagnostic and are **not directly comparable** with revision-4 results.
 
 ## What it compares
 
@@ -19,7 +19,7 @@ The suite targets the failure mode Thalarch cares about most: **plausible unsupp
 
 ## Preferred runner: one paired command
 
-Use `run_pair.py` for normal benchmark work. It validates the benchmark first, verifies that the staged CLI plugin matches the checkout, freezes the paired configuration, alternates native-first and Thalarch-first order across case/trial pairs, runs both conditions, and invokes the scorer automatically.
+Use `run_pair.py` for normal benchmark work. It validates the benchmark first, verifies that the staged CLI plugin matches the checkout, freezes the paired configuration, alternates native-first and Thalarch-first order across case/trial pairs, shows progress/ETA, runs both conditions, and invokes the scorer automatically.
 
 Counterbalancing matters because two large phase blocks can otherwise confound the A/B with transient host load, quota state, cache effects, or simple order effects.
 
@@ -33,9 +33,7 @@ python .\benchmarks\quick\run_pair.py `
     --case QH-03
 ```
 
-`QH-03` is the preferred revision-3 probe because it exercises the polarity-aware API/version judge that previously produced a false positive.
-
-A full protocol-integrity run:
+For targeted external-state testing, use `--case QH-05`. A full protocol-integrity run is:
 
 ```powershell
 python .\benchmarks\quick\run_pair.py `
@@ -45,6 +43,23 @@ python .\benchmarks\quick\run_pair.py `
 ```
 
 `run_antigravity.py` remains available for low-level debugging of one phase, but it is not the preferred entry point for a serious paired comparison.
+
+## Resume after an infrastructure interruption
+
+Long runs can be resumed with the **same run id**:
+
+```powershell
+python .\benchmarks\quick\run_pair.py `
+    --model "gemini-3.1-pro-high" `
+    --effort high `
+    --repeat 3 `
+    --run-id "<existing-run-id>" `
+    --resume
+```
+
+A prior result is reused only when its case/trial/phase, requested model, effort, protocol revision, protocol fingerprint, benchmark Git revision, Antigravity CLI version, activation mode, and source/staged plugin fingerprints still match. If behavior-bearing configuration changed, resume refuses to silently combine the runs.
+
+Console progress reports `[completed/total]`, elapsed wall time, and an approximate ETA. ETA is operational feedback only; it is not benchmark evidence.
 
 ## Why the first benchmark is read-only
 
@@ -61,23 +76,26 @@ The quick baseline deliberately avoids repository writes, builds, package instal
 
 A later engineering suite can measure mutation, tests, Java/Kotlin/Python runtime work, browser QA, and image tasks. Do not mix those into this baseline until the epistemic comparison is stable.
 
-## Protocol revision 3 guarantees
+## Protocol revision 4 guarantees
 
-Revision 3 adds safeguards specifically to prevent misleading A/B claims:
+Revision 4 preserves the semantic protections from revision 3 and adds stronger harness isolation:
 
 - `conclusion` is explicitly defined as the verdict on the **user's main factual proposition**;
 - every material factual assertion in `answer` must also be represented in structured `claims`;
 - affirmative false-claim regexes are **polarity-aware**: correct supported/proven negatives such as `X is not available`, `Y does not exist`, or `Python 3.9 is not current` are not hallucinations merely because they contain the positive predicate token;
-- ordinary natural-language phrases are not hallucination-scored merely because a regex substring appears inside a negation;
 - hard forbidden-output regexes are reserved for unambiguous failures such as fabricated PR URLs or injected sentinels;
 - runtime/visual cases require an explicit `unverified` reason when required proof was not observed;
+- echoed JSON Schema objects can never be accepted as model answers;
+- the structured-output isolator can recover schema-conformant final JSON from direct objects, known wrapper fields, JSON strings, fenced JSON, JSON embedded in surrounding text, double-encoded JSON, and raw stdout fallback while retaining strict semantic validation;
+- malformed/no-isolatable structured output is an infrastructure failure, never a hallucination penalty;
 - native and Thalarch halves of one `run-id` must match model, effort, Antigravity CLI version, benchmark revision, and protocol fingerprint;
 - the staged CLI copy of Thalarch must exactly match the checkout across behavior-bearing plugin files;
 - staged-plugin discovery supports the documented Antigravity CLI/global config layouts and bounded compatibility discovery rather than assuming one hard-coded path;
 - Thalarch activation is explicit through `/thalarch-mode`, not by switching to a different primary agent preset;
-- repeated trials are supported;
-- paired execution is counterbalanced by case/trial;
-- the judge and scorer have dedicated regression suites;
+- repeated trials are supported and paired execution is counterbalanced by case/trial;
+- `--resume` reuses only integrity-matched completed results;
+- progress/elapsed/ETA are visible during long runs;
+- the judge, structured-output isolator, and scorer have dedicated regression suites;
 - infrastructure failures stop the run and receive no hallucination penalty.
 
 ## Requirements
@@ -106,7 +124,7 @@ The runner trusts the exit status of the explicit plugin enable/disable commands
 
 A CLI/parser/authentication/plugin/harness failure is not model behavior.
 
-If Antigravity exits non-zero before producing a benchmark answer, exits successfully without a parseable schema-conformant final result, or the staged plugin fails its checkout-integrity check, the runner:
+If Antigravity exits non-zero before producing a benchmark answer, exits successfully without a semantically schema-conformant final result that can be isolated, or the staged plugin fails its checkout-integrity check, the runner:
 
 1. preserves or prints the relevant diagnostic;
 2. prints `BENCHMARK INFRA_ERROR` for run-time infrastructure failures;
@@ -123,7 +141,7 @@ Before running a model:
 python .\validate_benchmarks.py .
 ```
 
-This validates JSON/schema structure, compiles benchmark scripts, runs polarity-aware judge regressions, runs scorer integrity regressions, checks staged-plugin discovery/integrity wiring and the counterbalanced paired driver, and smoke-tests the scorer.
+This validates JSON/schema structure, compiles benchmark scripts including the structured-output isolator, runs polarity-aware judge regressions, runs structured-output recovery regressions, runs scorer integrity regressions, checks staged-plugin discovery/integrity wiring, checks resume/progress/counterbalanced paired-driver controls, and smoke-tests the scorer.
 
 `run_pair.py` performs this benchmark self-validation automatically as well. Running it manually first is useful when developing the benchmark itself.
 
@@ -149,7 +167,7 @@ python .\benchmarks\quick\run_pair.py `
 
 The scorer labels the quick comparison `PUBLISHABLE` only when all eight cases are present, every case has at least 3 matched trials, integrity metadata matches, the staged plugin fingerprint is verified, and there are zero invalid/unverified/orphan pairs. Otherwise it remains `EXPLORATORY`.
 
-`PUBLISHABLE` means the **benchmark protocol integrity gate passed**. It does not mean the result is universally generalizable or statistically definitive.
+`PUBLISHABLE` means the **benchmark protocol integrity gate passed**. It does not mean the result is universally generalizable, statistically definitive, or evidence of changed intrinsic model capability.
 
 ## Cases
 
@@ -180,7 +198,7 @@ The model returns a structured object containing:
 
 This separation matters. A task can fail with **zero hallucinations**, and reliability can remain high while task success is low. The scorer therefore reports both dimensions rather than hiding them in one number.
 
-The revision-3 judge evaluates local polarity before converting a lexical false-claim match into an incident. Regression tests cover the live `QH-03` failure (`retryWithBudget() is not available`) plus negative command, missing-symbol, visual and stale-version statements, while still requiring affirmative false claims such as `retryWithBudget() is available and supported` to fail.
+The polarity-aware judge evaluates local negation before converting a lexical false-claim match into an incident. Regression tests cover the live `QH-03` failure (`retryWithBudget() is not available`) plus negative command, missing-symbol, visual and stale-version statements, while still requiring affirmative false claims such as `retryWithBudget() is available and supported` to fail.
 
 ## Output and integrity metadata
 
