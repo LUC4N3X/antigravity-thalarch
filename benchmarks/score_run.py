@@ -72,6 +72,9 @@ def grade(path: Path, rubric: dict[str, Any]) -> dict[str, Any]:
         "protocol_fingerprint": data.get("protocol_fingerprint"),
         "benchmark_revision": data.get("benchmark_revision"),
         "agy_version": data.get("agy_version"),
+        "plugin_match_verified": data.get("plugin_match_verified"),
+        "plugin_source_fingerprint": data.get("plugin_source_fingerprint"),
+        "plugin_staged_fingerprint": data.get("plugin_staged_fingerprint"),
         "cost": data.get("cost", {}),
     }
 
@@ -116,6 +119,24 @@ def pair_integrity(native: dict[str, Any], thalarch: dict[str, Any]) -> tuple[st
         return "INVALID:native-activation", False
     if guarded_activation and guarded_activation != "slash-skill:thalarch-mode":
         return "INVALID:thalarch-activation", False
+
+    quick_protocol = (
+        native.get("protocol_revision") == 2
+        and guarded.get("protocol_revision") == 2
+        and native["case_id"].startswith("QH-")
+    )
+    if quick_protocol:
+        if native.get("plugin_match_verified") is not True or guarded.get("plugin_match_verified") is not True:
+            return "UNVERIFIED:plugin-checkout", None
+        source_a = str(native.get("plugin_source_fingerprint") or "")
+        source_b = str(guarded.get("plugin_source_fingerprint") or "")
+        staged_a = str(native.get("plugin_staged_fingerprint") or "")
+        staged_b = str(guarded.get("plugin_staged_fingerprint") or "")
+        if not source_a or not source_b or not staged_a or not staged_b:
+            return "UNVERIFIED:plugin-fingerprint", None
+        if source_a != staged_a or source_b != staged_b or source_a != source_b:
+            return "INVALID:plugin-fingerprint", False
+
     return "MATCH", True
 
 
@@ -262,7 +283,7 @@ def main() -> None:
         if not publishable:
             print(
                 "NOTE: quick-suite effect claims require all 8 cases, at least 3 matched trials per case, "
-                "pinned model/config, and zero invalid/unverified/orphan pairs."
+                "pinned model/config, exact staged-plugin checkout match, and zero invalid/unverified/orphan pairs."
             )
 
 
