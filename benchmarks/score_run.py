@@ -110,9 +110,12 @@ def pair_integrity(native: dict[str, Any], thalarch: dict[str, Any]) -> tuple[st
         if a != b:
             return f"INVALID:{key}", False
 
-    activation = str(thalarch.get("thalarch_activation") or "")
-    if activation and activation != "thalarch-orchestrator":
-        return "INVALID:activation", False
+    native_activation = str(native.get("thalarch_activation") or "")
+    guarded_activation = str(thalarch.get("thalarch_activation") or "")
+    if native_activation and native_activation != "native-default-agent":
+        return "INVALID:native-activation", False
+    if guarded_activation and guarded_activation != "slash-skill:thalarch-mode":
+        return "INVALID:thalarch-activation", False
     return "MATCH", True
 
 
@@ -172,8 +175,11 @@ def main() -> None:
     for row in rows:
         by_pair[(row["host"], row["case_id"], row["trial"])][row["thalarch"]] = row
 
+    orphan_pairs = sum(1 for pair in by_pair.values() if False not in pair or True not in pair)
     paired = [(key, pair) for key, pair in by_pair.items() if False in pair and True in pair]
     if not paired:
+        if orphan_pairs:
+            print(f"\nPaired summary\norphan_pairs: {orphan_pairs}\ncomparison_integrity: EXPLORATORY")
         return
 
     print("\nPaired Thalarch delta")
@@ -205,6 +211,7 @@ def main() -> None:
     print(f"valid_pairs: {len(valid)}")
     print(f"unverified_pairs: {unverified_pairs}")
     print(f"invalid_pairs: {invalid_pairs}")
+    print(f"orphan_pairs: {orphan_pairs}")
 
     if valid:
         task_wins = sum(n["task_status"] != "PASS" and g["task_status"] == "PASS" for n, g in valid)
@@ -237,11 +244,26 @@ def main() -> None:
         for n, _ in valid:
             trials_by_case[(n["host"], n["case_id"])].add(n["trial"])
         min_trials = min((len(v) for v in trials_by_case.values()), default=0)
-        publishable = invalid_pairs == 0 and unverified_pairs == 0 and min_trials >= 3
+        quick_protocol = any(
+            n.get("protocol_revision") == 2 and n["case_id"].startswith("QH-") for n, _ in valid
+        )
+        required_case_count = 8 if quick_protocol else 1
+        complete_case_set = len(trials_by_case) >= required_case_count
+        publishable = (
+            invalid_pairs == 0
+            and unverified_pairs == 0
+            and orphan_pairs == 0
+            and min_trials >= 3
+            and complete_case_set
+        )
+        print(f"paired_case_count: {len(trials_by_case)}")
         print(f"minimum_paired_trials_per_case: {min_trials}")
         print(f"comparison_integrity: {'PUBLISHABLE' if publishable else 'EXPLORATORY'}")
         if not publishable:
-            print("NOTE: use at least 3 matched trials per case with pinned model/config before publishing an effect claim.")
+            print(
+                "NOTE: quick-suite effect claims require all 8 cases, at least 3 matched trials per case, "
+                "pinned model/config, and zero invalid/unverified/orphan pairs."
+            )
 
 
 if __name__ == "__main__":
