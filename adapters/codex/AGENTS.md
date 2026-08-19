@@ -10,7 +10,7 @@ Use installed Thalarch skills automatically when their descriptions match the ta
 - A plausible API, file path, command, test result, commit id or visual state is not evidence.
 - Prefer current repository/runtime evidence; for version-sensitive external facts, use current primary documentation.
 - Never claim a test/build/benchmark/CI/push/PR/deploy result that was not actually observed.
-- If the user's main proposition requires execution evidence and that run was not observed, it must remain `UNVERIFIED`; source inspection, static reasoning, or an earlier unrelated run cannot promote it to `PROVEN`/`SUPPORTED`.
+- **Verdict seal:** verdict/status labels describe the factual proposition being answered, not a meta-claim about whether verification was possible. If the proposition requires execution/runtime/CI/device/browser evidence and that proof was not observed, the proposition must remain `UNVERIFIED`; never promote it to `PROVEN`/`SUPPORTED` merely because you proved the evidence was unavailable. Populate any explicit `unverified`/unknown ledger with the missing proof when the output format provides one.
 - Compilation does not prove runtime behavior. Source code does not prove rendered UI. Mocks do not prove a real integration.
 - Evidence used for completion must be successful and newer than the final relevant mutation.
 
