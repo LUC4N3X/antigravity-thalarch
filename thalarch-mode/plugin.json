@@ -1,5 +1,5 @@
 {
   "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "thalarch-mode",
-  "description": "High-rigor polyglot engineering and visual-design protocol for Antigravity: project-aware Java/Kotlin/Python/TypeScript/Go/Rust specialists, task routing, staged planning, root-cause debugging, refactoring, performance/API/data engineering, production web design, image generation/editing, independent review, and evidence-based verification."
+  "description": "High-rigor multi-agent engineering skill suite and reliability protocol for Antigravity: autonomous skill routing, context hygiene, source-grounded APIs, adaptive reasoning, in-flight doubt, project-aware Java/Kotlin/Python/TypeScript/Go/Rust engineering, causal debugging, observability, production web/image design, independent review, anti-hallucination evidence gates, and cold verification."
 }
