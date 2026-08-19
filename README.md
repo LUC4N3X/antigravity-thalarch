@@ -4,10 +4,10 @@
 
 <br/>
 
-**High-rigor, project-agnostic engineering + visual-production protocol for Google Antigravity.**
+**High-rigor, project-agnostic engineering + visual-production reliability layer for AI coding agents.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
-[![Antigravity: IDE & CLI](https://img.shields.io/badge/Antigravity-IDE%20%7C%20CLI-06B6D4.svg?style=flat-square)](#installation)
+[![Hosts: Antigravity · Codex · Claude](https://img.shields.io/badge/Hosts-Antigravity%20%7C%20Codex%20%7C%20Claude-06B6D4.svg?style=flat-square)](#multi-engine-architecture)
 [![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-0EA5E9.svg?style=flat-square)](CHANGELOG.md)
 [![Validation](https://img.shields.io/badge/Validation-Thalarch%20Gate-14B8A6.svg?style=flat-square)](.github/workflows/validate.yml)
 
@@ -17,20 +17,20 @@
 
 ## What is Thalarch?
 
-**Thalarch 1.0.0** is an Antigravity-native multi-agent harness for serious software engineering,
-web design, and visual production.
+**Thalarch 1.0.0** is a model-agnostic engineering reliability harness for serious software
+engineering, web design, visual production, debugging, review, and verification.
 
 It is built around a simple idea: a coding agent should not jump from a request straight into
 editing. It should first understand the project, choose the strongest relevant skills, route work
 to the right specialist, verify version-sensitive APIs, keep scope tight, review independently,
 and prove the final result with evidence appropriate to the claim.
 
-Thalarch is intentionally **user-, repository-, language-, framework-, and operating-system
+Thalarch is intentionally **user-, repository-, language-, framework-, host-, and operating-system
 agnostic**. It does not assume Android, web, Gradle, Node, Python, or any other stack until the
 repository proves it.
 
 > Thalarch improves the engineering process around the underlying model. It does not claim to
-> change the model's intrinsic reasoning capability.
+> change a model's intrinsic reasoning capability.
 
 ### Permanent version policy
 
@@ -40,13 +40,75 @@ record capability changes.
 
 ---
 
+## Multi-engine architecture
+
+Thalarch uses **one canonical capability core** and thin host-native adapters instead of maintaining
+separate prompt forks.
+
+| Host | Native integration | Reliability layer |
+| --- | --- | --- |
+| Google Antigravity | plugin, skills, custom agents, hooks | full orchestrator + hard evidence gates |
+| OpenAI Codex | Agent Skills, `AGENTS.md`, Codex hooks | skill routing + command grounding + completion evidence gate |
+| Anthropic Claude Code | skills, `CLAUDE.md`, custom subagents, Claude hooks | deliberator + fact checker + cold verifier + evidence gate |
+
+The canonical engineering/design skills remain in `thalarch-mode/skills/`. Host adapters translate
+only discovery paths, instruction files, lifecycle-hook schemas, and specialist wiring. This keeps
+the actual engineering doctrine synchronized and makes cross-model evaluation meaningful.
+
+See [`adapters/`](adapters/) for host-specific details.
+
+---
+
+## Anti-hallucination core
+
+Thalarch treats epistemic reliability as a first-class engineering requirement.
+
+`thalarch-epistemic-guard` separates material claims into repository facts, version-sensitive
+external facts, runtime facts, visual facts, and derived inferences. When a claim can be cheaply
+inspected, the agent is expected to inspect it instead of filling the gap from model memory.
+
+Important states are explicit:
+
+- `PROVEN` — direct appropriate evidence;
+- `SUPPORTED` — strong but not final proof;
+- `INFERENCE` — reasoned from facts;
+- `UNKNOWN` — no reliable evidence;
+- `UNVERIFIED` — required proof could not be obtained;
+- `DISPROVEN` — evidence contradicts the claim.
+
+The hard-gate layer additionally blocks selected high-confidence failure modes such as invented
+project commands/paths and completion after mutation without fresh evidence. It deliberately does
+**not** try to regex-prove arbitrary semantic correctness; uncertain cases flow to reasoning,
+fact-checking, and cold verification.
+
+---
+
+## Adaptive reasoning
+
+`thalarch-reasoning` chooses the smallest deliberation depth that fits the task:
+
+- `D0` direct — trivial deterministic work;
+- `D1` guarded — small non-trivial work;
+- `D2` deliberate — meaningful features, debugging and refactors;
+- `D3` deep — architecture, concurrency, security, migrations, difficult visual work;
+- `D4` critical — destructive/data-integrity/release-critical or repeatedly failing work.
+
+For difficult work Thalarch resists the first plausible answer, separates facts from inference,
+compares genuine alternatives, seeks disconfirming evidence, uses independent contexts when useful,
+and adjudicates by evidence rather than confidence or verbosity.
+
+Thalarch never requires exposing private chain-of-thought. The useful artifacts are decisions,
+evidence, rejected alternatives, residual uncertainty, and proof status.
+
+---
+
 ## Autonomous Skill Intelligence
 
 You should not need to tell Thalarch which skill to use.
 
 At the beginning of meaningful work — and again after repository discovery when necessary —
-Thalarch inspects the skills available in the current Antigravity session by name and description,
-then selects the **smallest high-value compatible stack**.
+Thalarch inspects the skills available in the current host session by name and description, then
+selects the **smallest high-value compatible stack**.
 
 Selection considers:
 
@@ -76,7 +138,7 @@ not actually installed or does not match the project, Thalarch does not pretend 
 Thalarch has dedicated project-aware coding specialists instead of one generic prompt pretending to
 be equally expert in every language.
 
-| Language / stack | Skill | Specialist agent |
+| Language / stack | Skill | Antigravity specialist |
 | --- | --- | --- |
 | Java / JVM | `thalarch-java` | `thalarch-java-engineer` |
 | Kotlin / JVM / Android / KMP | `thalarch-kotlin` | `thalarch-kotlin-engineer` |
@@ -85,8 +147,9 @@ be equally expert in every language.
 | Go | `thalarch-go` | `thalarch-go-engineer` |
 | Rust | `thalarch-rust` | `thalarch-rust-engineer` |
 
-The language specialist must discover the repository's real runtime/compiler, package/build system,
-framework versions, test stack and conventions before editing.
+The active language skill must discover the repository's real runtime/compiler, package/build
+system, framework versions, test stack, and conventions before editing. Host adapters may use their
+own native subagent mechanisms around the same canonical skill.
 
 ### Deep engineering overlays
 
@@ -173,10 +236,11 @@ Its visual stack includes:
 - `thalarch-imagegen` — disciplined native image generation/editing;
 - `thalarch-visual-qa` — final asset metadata/fidelity/drift checks;
 - `thalarch-browser-qa` — real browser interaction/screenshot/network/console evidence;
-- independent web-design and vision reviewers.
+- independent web-design and vision reviewers where the host exposes suitable tools.
 
-The visual director owns image generation. The orchestrator deliberately does **not** have direct
-image-generation authority.
+The Antigravity visual director owns native image generation while the orchestrator deliberately
+does **not** have direct image-generation authority. Other hosts use the strongest compatible image
+or browser tool actually available instead of pretending the capability exists.
 
 ---
 
@@ -202,31 +266,34 @@ final evidence. One unreadable giant design board is not considered a precise re
 
 ```mermaid
 graph TD
-    U([User]) --> O[Thalarch Orchestrator]
+    U([User]) --> H{Host adapter}
+    H --> O[Thalarch coordination]
     O --> S{Skill Intelligence}
     S --> R{Task + Stack + Risk Router}
 
-    R --> P[Planner / Research / Debug]
+    R --> P[Plan / Research / Deliberate / Debug]
     R --> L[Language Specialist]
     R --> W[Web / Visual Specialist]
 
     L --> C[(Project)]
     W --> C
 
+    C --> F[Fact Check]
     C --> CR[Correctness Review]
     C --> SR[Security Review when needed]
     C --> PR[Performance Review when needed]
     C --> VR[Visual Review when needed]
 
-    CR --> V[Cold Verifier]
+    F --> V[Cold Verifier]
+    CR --> V
     SR --> V
     PR --> V
     VR --> V
     V --> E([PASS / FAIL / UNVERIFIED])
 ```
 
-The orchestrator coordinates but cannot directly edit project files or run shell commands.
-Implementation and executable verification are structurally delegated.
+Antigravity uses the full custom orchestrator/agent graph. Codex and Claude adapters map the same
+reliability contract onto their native skill, hook, instruction, and subagent facilities.
 
 ---
 
@@ -248,13 +315,15 @@ list of defects.
 
 ## Installation
 
-### Windows / Antigravity IDE
+Clone/download this repository first, then choose the host.
+
+### Google Antigravity — Windows IDE
 
 ```powershell
 .\INSTALL.ps1 -Target IDE
 ```
 
-### Linux / macOS / Antigravity IDE
+### Google Antigravity — Linux/macOS IDE
 
 ```bash
 chmod +x ./INSTALL.sh
@@ -267,13 +336,43 @@ IDE installation target:
 ~/.gemini/config/plugins/thalarch-mode
 ```
 
-### Antigravity CLI
+### Google Antigravity CLI
 
 ```text
 agy plugin install ./thalarch-mode
 ```
 
-Restart/reload Antigravity and select **`thalarch-orchestrator`** as the primary agent.
+### OpenAI Codex — user scope
+
+```bash
+python installers/install_adapter.py codex --scope user
+```
+
+### OpenAI Codex — one repository
+
+```bash
+python installers/install_adapter.py codex --scope repo --repo /path/to/project
+```
+
+### Claude Code — user scope
+
+```bash
+python installers/install_adapter.py claude --scope user
+```
+
+### Claude Code — one repository
+
+```bash
+python installers/install_adapter.py claude --scope repo --repo /path/to/project
+```
+
+The adapter installer is deliberately conservative. It backs up existing `thalarch-*` skills and
+agents, but **never overwrites existing `AGENTS.md`, `CLAUDE.md`, Codex `hooks.json`, or Claude
+`settings.json`**. When those files already exist it writes a `THALARCH.*` companion template for
+review/merge instead.
+
+Restart/reload the selected host after installation. Codex may also require explicit review/trust
+of non-managed hooks before they execute.
 
 ---
 
@@ -282,15 +381,15 @@ Restart/reload Antigravity and select **`thalarch-orchestrator`** as the primary
 ```text
 Use Thalarch.
 
-Work end-to-end. Automatically inspect the skills available in this Antigravity session and choose
-the strongest minimal stack for the actual project and task. Read repository rules and detect the
-real languages, toolchains and framework versions before editing. Prefer project-local and current
-official platform skills when they are better fits. Re-route after discovery if the evidence changes
-the problem. Verify version-sensitive APIs instead of guessing them. Keep the diff minimal and
-repository-native. Investigate root cause before fixing bugs. Use the real integration, browser,
-device, database or performance evidence when the acceptance criterion lives there. Use independent
-review appropriate to risk and cold-verify the final acceptance criteria. Do not push, merge,
-publish, deploy or release unless I explicitly requested it.
+Work end-to-end. Automatically inspect the skills available in this session and choose the strongest
+minimal stack for the actual project and task. Read repository rules and detect the real languages,
+toolchains and framework versions before editing. Prefer project-local and current official platform
+skills when they are better fits. Re-route after discovery if the evidence changes the problem.
+Verify version-sensitive APIs instead of guessing them. Keep the diff minimal and repository-native.
+Investigate root cause before fixing bugs. Use the real integration, browser, device, database or
+performance evidence when the acceptance criterion lives there. Use independent review appropriate
+to risk and cold-verify the final acceptance criteria. Do not push, merge, publish, deploy or release
+unless I explicitly requested it.
 ```
 
 ---
@@ -299,15 +398,19 @@ publish, deploy or release unless I explicitly requested it.
 
 ```bash
 python validate_thalarch.py .
+python validate_hard_gates.py .
+python validate_adapters.py .
 ```
 
-The validator checks, among other things:
+The validators check, among other things:
 
 - skill/agent structure and frontmatter;
-- language specialists;
-- autonomous skill-intelligence wiring;
+- language specialists and autonomous skill-intelligence wiring;
+- adaptive reasoning, epistemic guard and independent fact-checker/verifier wiring;
 - creative/image tool delegation;
-- required advanced engineering skills/scripts;
+- deterministic anti-hallucination hard gates;
+- Codex/Claude adapter JSON and Python syntax;
+- conservative adapter installation without overwriting host/project instructions or settings;
 - portable paths and stale branding;
 - the permanent **`1.0.0`** version policy.
 
@@ -315,11 +418,11 @@ The validator checks, among other things:
 
 ## Design heritage
 
-Thalarch is an original Antigravity-native implementation. Its engineering and creative workflows
-are informed by strong public patterns from projects such as Fable Mode, Superpowers, GitHub Spec
-Kit / Awesome Copilot, official Kotlin agent skills, community JVM skill sets, Taste Skill, and
-broad engineering skill libraries. Thalarch selectively synthesizes those ideas instead of copying
-an entire external skill pack or inheriting rigid rules that do not generalize across projects.
+Thalarch is an original multi-engine implementation. Its engineering and creative workflows are
+informed by strong public patterns from projects such as Fable Mode, Superpowers, GitHub Spec Kit /
+Awesome Copilot, official Kotlin agent skills, community JVM skill sets, Taste Skill, and broad
+engineering skill libraries. Thalarch selectively synthesizes those ideas instead of copying an
+entire external skill pack or inheriting rigid rules that do not generalize across projects.
 
 ---
 
