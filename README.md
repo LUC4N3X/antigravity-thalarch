@@ -399,15 +399,6 @@ The public version is intentionally fixed at **`1.0.0`**. Capabilities can evolv
 
 </details>
 
-<details>
-<summary><strong>Design heritage</strong></summary>
-
-Thalarch is an original multi-engine implementation. Its engineering and creative workflows are informed by strong public patterns from projects such as Fable Mode, Superpowers, GitHub Spec Kit / Awesome Copilot, official Kotlin agent skills, Addy Osmani's Agent Skills, community JVM skill sets, Taste Skill, and broad engineering skill libraries.
-
-The goal is selective synthesis: keep the ideas that generalize, reject rigid rules that do not, and avoid copying an external skill pack wholesale.
-
-</details>
-
 ---
 
 <div align="center">
