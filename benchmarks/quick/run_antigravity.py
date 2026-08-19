@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -24,12 +25,24 @@ def load_json(path: Path) -> Any:
 
 
 def ensure_agy() -> str:
-    exe = shutil.which("agy")
-    if not exe:
-        raise SystemExit(
-            "agy not found in PATH. Install/authenticate Antigravity CLI first, then rerun this benchmark."
-        )
-    return exe
+    exe = shutil.which("agy") or shutil.which("agy.exe")
+    if exe:
+        return exe
+
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if local_app_data:
+        candidates = [
+            Path(local_app_data) / "agy" / "bin" / "agy.exe",
+            Path(local_app_data) / "agy" / "bin" / "agy",
+        ]
+        for candidate in candidates:
+            if candidate.is_file():
+                return str(candidate)
+
+    raise SystemExit(
+        "Antigravity CLI (`agy`) was not found in PATH or the standard Windows install directory. "
+        "Install/authenticate Antigravity CLI, open a fresh terminal, then rerun this benchmark."
+    )
 
 
 def detect_thalarch_plugin_state(agy: str) -> tuple[bool | None, str]:
@@ -45,7 +58,6 @@ def detect_thalarch_plugin_state(agy: str) -> tuple[bool | None, str]:
 
     matching = [line for line in output.splitlines() if "thalarch-mode" in line.lower()]
     if not matching:
-        # Official CLI documentation describes `plugin list` as showing active packages.
         return False, output
 
     joined = " ".join(matching).lower()
