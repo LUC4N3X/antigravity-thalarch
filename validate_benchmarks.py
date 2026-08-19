@@ -110,6 +110,22 @@ if not errors:
     if set(schema.get("required", [])) != required_schema_fields:
         errors.append("quick benchmark response schema required fields changed unexpectedly")
 
+    runner = (quick / "run_antigravity.py").read_text(encoding="utf-8")
+    for term in [
+        "class BenchmarkInfraError",
+        "def set_thalarch_plugin_state",
+        "BENCHMARK INFRA_ERROR",
+        "No hallucination score was recorded for this infrastructure failure.",
+        "--output-format=stream-json",
+        "--json-schema=",
+    ]:
+        if term not in runner:
+            errors.append(f"quick benchmark runner missing infrastructure guard: {term}")
+    if "def detect_thalarch_plugin_state" in runner:
+        errors.append("quick benchmark must not infer effective plugin state from plugin list")
+    if '"type": "OTHER",\n                "claim": "Antigravity print-mode run failed."' in runner:
+        errors.append("CLI infrastructure failures must not be recorded as hallucinations")
+
 # Scorer smoke test with a paired native/Thalarch result.
 score = bench / "score_run.py"
 if not errors and score.is_file():
@@ -145,14 +161,15 @@ if not errors and score.is_file():
             [sys.executable, str(score), str(native_path), str(guarded_path)],
             cwd=root,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             capture_output=True,
             check=False,
         )
         if proc.returncode != 0:
             errors.append(f"benchmark scorer smoke test failed: {proc.stderr or proc.stdout}")
-        else:
-            if "Paired Thalarch delta" not in proc.stdout or "test-host | H-01" not in proc.stdout:
-                errors.append("benchmark scorer did not produce paired comparison output")
+        elif "Paired Thalarch delta" not in proc.stdout or "test-host | H-01" not in proc.stdout:
+            errors.append("benchmark scorer did not produce paired comparison output")
 
 if errors:
     print("THALARCH BENCHMARK VALIDATION FAILED")
@@ -165,5 +182,6 @@ print("version: 1.0.0 (fixed)")
 print("cross_model_cases: >=20")
 print("quick_antigravity_cases: 8")
 print("quick_structured_output: enforced")
+print("quick_infra_errors: separated_from_hallucinations")
 print("hallucination_taxonomy: enforced")
 print("paired_scorer: passed")
