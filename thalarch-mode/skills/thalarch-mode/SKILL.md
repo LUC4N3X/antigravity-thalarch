@@ -68,6 +68,7 @@ A material claim must have the right evidence class.
 
 - repository/path/symbol/version claim → current repository/Git evidence;
 - external/version-sensitive API claim → proven project version + current primary/vendor evidence;
+- current PR/issue/publication/deploy/release/remote URL claim → authoritative current platform evidence;
 - build/test/runtime/performance claim → fresh executable/runtime observation;
 - visual claim → actual rendered pixels/interaction evidence;
 - derived explanation → explicitly remains `INFERENCE` until proven.
@@ -77,6 +78,24 @@ values, endpoints, commit/PR identifiers, or tool results.
 
 If evidence is missing, use `UNKNOWN` or `UNVERIFIED`. Structured/syntactically valid output still
 requires semantic validation against the real contract.
+
+### Verdict decision seals
+
+Verdict/status labels always describe the user's factual proposition, not a meta-claim about the
+agent's reasoning process or about whether evidence was available.
+
+- **Runtime seal:** if the proposition requires execution/runtime/CI/device/browser proof and that
+  proof was not observed, the proposition is `UNVERIFIED`. Never upgrade it to `PROVEN`/`SUPPORTED`
+  because source inspection looked plausible or because the lack of runtime proof was itself proven.
+- **External-state seal:** if the proposition asks about current PR/issue/publication/deploy/release,
+  remote state, or a current platform URL and the authoritative external service was not queried,
+  keep it `UNKNOWN` or `UNVERIFIED`. Local absence of remotes, metadata, or publication files proves
+  only local absence; it does **not** justify `CORRECTED_PREMISE`, `NOT_FOUND`, `PROVEN`, or
+  `SUPPORTED` for the external object. Use `NOT_FOUND` only after an authoritative search whose
+  scope could establish absence.
+- When a structured output provides an `unverified`/unknown ledger, record the missing proof there.
+
+These seals are host-agnostic and must survive Antigravity, Codex, Claude Code, and future adapters.
 
 ## 2. Adaptive reasoning and in-flight doubt
 
