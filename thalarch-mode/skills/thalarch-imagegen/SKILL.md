@@ -1,22 +1,40 @@
 ---
 name: thalarch-imagegen
 description: >
-  Creates and edits project images with Antigravity's native generate_image tool
-  using disciplined visual briefs, reference-role labeling, invariants, deliberate
-  iteration, exact-text handling, brand consistency, and post-generation review.
-  Use for raster artwork, photography, mockups, marketing assets, textures,
-  concept visuals, compositing, and semantic image edits.
+  Creates and edits project images through the strongest image-generation/editing capability
+  actually available on the current host. Uses disciplined visual briefs, reference-role
+  labeling, invariants, deliberate iteration, exact-text handling, brand consistency, and
+  post-generation review. Use for raster artwork, photography, mockups, marketing assets,
+  textures, concept visuals, compositing, and semantic image edits.
 ---
 
 # Thalarch Imagegen
 
-Use Antigravity's native `generate_image` tool when raster generation or semantic
-image editing is the correct medium.
+Use a real host-provided image-generation/editing tool when raster generation or semantic image
+editing is the correct medium. Antigravity may expose `generate_image`; other hosts may expose a
+different image tool or none at all.
 
-The goal is not to write the longest prompt. The goal is to make the visual
-intent unambiguous while leaving irrelevant details unconstrained.
+**Never invent a tool call because another host supports it.** If no compatible image capability is
+available, keep generation/editing `UNVERIFIED`/unperformed and use a deterministic alternative only
+when it genuinely satisfies the request.
 
-## 1. Build the generation brief
+The goal is not to write the longest prompt. The goal is to make visual intent unambiguous while
+leaving irrelevant details unconstrained.
+
+## 1. Confirm capability and artifact path
+
+Before generation/editing:
+
+- confirm the current host exposes a compatible image tool;
+- confirm whether it accepts text-only generation, image references, editing, masks, aspect ratio,
+  transparency, or other requested controls;
+- use the tool's **actual current schema**, not remembered parameters from another host;
+- preserve source/reference images unless replacement is explicitly requested.
+
+If the host only supports text generation but not precise edits, do not claim edit invariants can be
+preserved with the same confidence.
+
+## 2. Build the generation brief
 
 Normalize the request into this order:
 
@@ -34,47 +52,48 @@ Normalize the request into this order:
 12. **Forbidden elements**
 13. **Output intent**
 
-Do not add story, objects, colors, or copy the user did not ask for unless the
-request is genuinely open-ended and the addition materially improves the result.
+Do not add story, objects, colors, or copy the user did not request unless the request is genuinely
+open-ended and the addition materially improves the result.
 
-## 2. Generation vs editing
+## 3. Generation vs editing
 
 ### New generation
 
-Use `generate_image` with a concise, structured prompt and a semantic
-`ImageName`.
+Use the current host's actual image-generation capability with a concise structured brief and a
+semantic asset name when naming is supported.
 
 ### Edit
 
-Pass the actual source image path(s) via `ImagePaths`.
+Pass the real source image through the host's supported reference/edit mechanism.
 
 State the mutation first:
 
 `Change only <X>.`
 
-Then restate the invariants:
+Then restate invariants:
 
 `Keep <Y, Z, composition, subject identity, lighting...> unchanged.`
 
-Repeat critical invariants on every edit iteration. Do not rely on the model
-remembering them from a prior turn.
+Repeat critical invariants on every edit iteration. Do not rely on conversational memory to preserve
+them.
 
-## 3. Multi-reference control
+## 4. Multi-reference control
 
-When using multiple inputs, label them inside the prompt:
+When multiple inputs are supported, label them explicitly:
 
 - `Image 1 — edit target`
 - `Image 2 — style reference`
 - `Image 3 — brand/logo reference`
 
-Describe exactly how they interact.
+Describe exactly how they interact. For compositing specify scale, placement, perspective, lighting,
+and which image owns the base framing.
 
-For compositing, specify scale, placement, perspective, lighting, and which image
-owns the base framing.
+If the host cannot distinguish reference roles reliably, reduce the number of references or use a
+more deterministic production path.
 
-## 4. Preserve identity and structure
+## 5. Preserve identity and structure
 
-For identity-sensitive edits, explicitly lock the attributes that must survive:
+For identity-sensitive edits, explicitly lock attributes that must survive:
 
 - facial/character identity;
 - body proportions;
@@ -89,24 +108,23 @@ For identity-sensitive edits, explicitly lock the attributes that must survive:
 
 Do not claim preservation until the rendered output is inspected.
 
-## 5. Text inside images
+## 6. Text inside images
 
 When text must be generated inside a raster image:
 
-- author the final copy first;
+- author final copy first;
 - place literal text in quotes;
 - require verbatim rendering;
 - specify location, hierarchy, alignment, and typographic character;
 - prohibit extra text;
-- inspect the final image and read every visible word back.
+- inspect final image and read every visible word back.
 
-If exact typography, legal copy, dense tables, or perfect spelling is
-mission-critical, prefer deterministic text/vector composition over asking a
-generative model to rasterize it.
+If exact typography, legal copy, dense tables, or perfect spelling is mission-critical, prefer
+deterministic text/vector composition over generative raster text.
 
-## 6. Brand consistency
+## 7. Brand consistency
 
-For brand work, derive a compact brand lock:
+For brand work derive a compact brand lock:
 
 - approved mark/logo;
 - palette;
@@ -116,60 +134,60 @@ For brand work, derive a compact brand lock:
 - photography/illustration treatment;
 - elements that must never change.
 
-Use reference assets when available. Do not invent a new brand system when the
-project already has one.
+Use real reference assets when available. Do not invent a new brand system when the project already
+has one.
 
-## 7. Exploration and convergence
+## 8. Exploration and convergence
 
 ### Exploration
 
-When the direction is genuinely undecided, create a small number of materially
-different concepts. Each concept should explore a real design axis, not trivial
-color swaps.
+When direction is genuinely undecided, create a small number of materially different concepts. Each
+concept explores a real design axis, not trivial color swaps.
 
 ### Convergence
 
 Once a direction is chosen:
-- keep the strongest output as the anchor;
+
+- keep the strongest accepted output as anchor;
 - change one meaningful axis per iteration;
-- re-state invariants;
-- compare against the previous accepted anchor;
-- stop when the acceptance contract is met.
+- restate invariants;
+- compare against previous accepted anchor;
+- stop when acceptance contract is met.
 
 Avoid endless generation loops.
 
-## 8. Transparency and cutouts
+## 9. Transparency and cutouts
 
-If transparency is required, request it explicitly and verify the actual alpha
-channel afterward.
+If transparency is required, request it only when the current image tool supports that property and
+verify the actual alpha channel afterward.
 
-If the generated result is opaque, do not call it transparent merely because the
-prompt asked for transparency.
+If output is opaque, do not call it transparent because the prompt asked for transparency.
 
-For exact cutouts, use a deterministic post-processing path when available and
-inspect edge halos, semi-transparent regions, shadows, glass, hair/fur, and
-despill artifacts.
+For exact cutouts, use deterministic post-processing when available and inspect edge halos,
+semi-transparent regions, shadows, glass, hair/fur, and despill artifacts.
 
-## 9. Logos, icons, diagrams, and UI
+## 10. Logos, icons, diagrams, and UI
 
 Do not use raster generation by default for:
+
 - exact SVG logos;
 - simple icons;
 - architecture diagrams with exact labels;
 - charts driven by real data;
 - production UI layout.
 
-Use vector/code-native construction when determinism, editability, or exact text
-is more important than organic imagery.
+Use vector/code-native construction when determinism, editability, or exact text matters more than
+organic imagery.
 
-Generated mockups are appropriate for visual exploration, not as proof that the
-implemented UI matches the mockup.
+Generated mockups are appropriate for visual exploration, not proof that implemented UI matches.
 
-## 10. Immediate post-generation check
+## 11. Immediate post-generation check
 
-Every generated or edited image must be viewed before acceptance.
+Every generated or edited image must be viewed before acceptance when the host can expose the final
+artifact. If the final pixels cannot be inspected, visual acceptance remains `UNVERIFIED`.
 
 Check:
+
 - composition;
 - subject correctness;
 - unwanted additions;
@@ -182,5 +200,4 @@ Check:
 - logos/watermarks;
 - requested dimensions/export requirements.
 
-If a critical property fails, make a targeted edit rather than rewriting the
-entire creative brief.
+If a critical property fails, make a targeted edit rather than rewriting the whole creative brief.
