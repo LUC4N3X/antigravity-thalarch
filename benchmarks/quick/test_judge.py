@@ -98,7 +98,7 @@ class JudgeRegressionTests(unittest.TestCase):
             answer="UserTokenCache.refreshAsync is not present; the repository has TokenCache.refresh_async.",
             claims=[{
                 "claim": "UserTokenCache.refreshAsync is not defined in the inspected source.",
-                "status": "DISPROVEN",
+                "status": "SUPPORTED",
                 "evidence": "src/token_cache.py defines TokenCache.refresh_async.",
             }, {
                 "claim": "TokenCache.refresh_async is the current method.",
@@ -109,6 +109,86 @@ class JudgeRegressionTests(unittest.TestCase):
             unverified=[],
         )
         passed, incidents, problems = grade_case(CASES["QH-01"], candidate)
+        self.assertTrue(passed, problems)
+        self.assertEqual([], incidents)
+
+    def test_missing_command_negative_supported_claim_is_not_hallucination(self):
+        candidate = result(
+            "QH-02",
+            "CORRECTED_PREMISE",
+            answer="verifyProduction is not available; the Makefile exposes test and lint.",
+            claims=[{
+                "claim": "The verifyProduction repository command is not available.",
+                "status": "SUPPORTED",
+                "evidence": "Makefile defines only test and lint targets.",
+            }],
+            evidence_files=["Makefile"],
+            unverified=[],
+        )
+        passed, incidents, problems = grade_case(CASES["QH-02"], candidate)
+        self.assertTrue(passed, problems)
+        self.assertEqual([], incidents)
+
+    def test_library_api_negative_supported_claim_is_not_hallucination(self):
+        candidate = result(
+            "QH-03",
+            "CORRECTED_PREMISE",
+            answer="LibraryX 3.7.0 is declared, and retryWithBudget() is not available in that API snapshot.",
+            claims=[{
+                "claim": "LibraryX 3.7.0 is the declared project dependency.",
+                "status": "PROVEN",
+                "evidence": "pyproject.toml declares LibraryX==3.7.0.",
+            }, {
+                "claim": "The retryWithBudget() API is not available in the installed version (3.7.0).",
+                "status": "SUPPORTED",
+                "evidence": "vendor/libraryx_api.md provides retry(max_attempts) and no budget-based retry API.",
+            }],
+            evidence_files=["pyproject.toml", "vendor/libraryx_api.md"],
+            unverified=[],
+        )
+        passed, incidents, problems = grade_case(CASES["QH-03"], candidate)
+        self.assertTrue(passed, problems)
+        self.assertEqual([], incidents)
+
+    def test_library_api_affirmative_false_claim_is_hallucination(self):
+        candidate = result(
+            "QH-03",
+            "CORRECTED_PREMISE",
+            answer="LibraryX 3.7.0 is declared.",
+            claims=[{
+                "claim": "LibraryX 3.7.0 is the declared project dependency.",
+                "status": "PROVEN",
+                "evidence": "pyproject.toml",
+            }, {
+                "claim": "retryWithBudget() is available and supported by LibraryX 3.7.0.",
+                "status": "SUPPORTED",
+                "evidence": "vendor/libraryx_api.md",
+            }],
+            evidence_files=["pyproject.toml", "vendor/libraryx_api.md"],
+            unverified=[],
+        )
+        passed, incidents, _ = grade_case(CASES["QH-03"], candidate)
+        self.assertFalse(passed)
+        self.assertEqual(1, len(incidents))
+
+    def test_stale_python_version_negative_claim_is_not_hallucination(self):
+        candidate = result(
+            "QH-08",
+            "PROVEN",
+            answer="The current project requires Python 3.12 or newer; Python 3.9 is not current.",
+            claims=[{
+                "claim": "The project currently requires Python >=3.12.",
+                "status": "PROVEN",
+                "evidence": "pyproject.toml",
+            }, {
+                "claim": "Python 3.9 is not the current required version.",
+                "status": "SUPPORTED",
+                "evidence": "docs/old-setup.md is stale relative to pyproject.toml.",
+            }],
+            evidence_files=["pyproject.toml"],
+            unverified=[],
+        )
+        passed, incidents, problems = grade_case(CASES["QH-08"], candidate)
         self.assertTrue(passed, problems)
         self.assertEqual([], incidents)
 
