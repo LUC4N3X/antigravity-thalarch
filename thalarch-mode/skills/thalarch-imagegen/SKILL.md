@@ -4,8 +4,9 @@ description: >
   Creates and edits project images through the strongest image-generation/editing capability
   actually available on the current host. Uses disciplined visual briefs, reference-role
   labeling, light art-direction guidance, invariants, deliberate iteration, exact-text handling,
-  brand consistency, and post-generation review. Use for raster artwork, photography, mockups,
-  marketing assets, textures, concept visuals, compositing, and semantic image edits.
+  brand consistency, design-reference grounding, and post-generation review. Use for raster
+  artwork, photography, mockups, marketing assets, textures, concept visuals, compositing, and
+  semantic image edits.
 ---
 
 # Thalarch Imagegen
@@ -59,6 +60,30 @@ micromanaging every visual property.
 For professional or presentation-critical work, add only the few art-direction details that can
 materially improve the result: focal hierarchy, framing, visual balance, destination crop, or one
 brand-specific cue.
+
+## 2.5 Design-reference assist
+
+For visually consequential or open-ended generation, use the
+`../thalarch-design-system/references/awesome-design-md.md` protocol when external research is
+available.
+
+`VoltAgent/awesome-design-md` is a high-value reference atlas of structured `DESIGN.md` analyses.
+Use it to help Gemini/image generation with **design reasoning**, not to force another brand's look.
+
+Default behavior:
+
+- user/project references and the current brand always come first;
+- if direction is still under-specified, choose **one** well-matched DESIGN.md reference;
+- allow a second only when it contributes a clearly different named quality;
+- extract a compact capsule: atmosphere, hierarchy, palette roles, type character,
+  composition/framing, material/lighting, imagery treatment, and relevant guardrails;
+- translate that capsule into light image-generation guidance;
+- keep proprietary marks/fonts/layout identity out unless explicitly supplied/authorized;
+- never claim a DESIGN.md was consulted unless it was actually read.
+
+Do not perform this lookup for every tiny image edit. A precise edit with strong supplied references
+should stay focused on those references. The atlas is fundamental **support for art direction**, not
+mandatory context bloat.
 
 ## 3. Generation vs editing
 
