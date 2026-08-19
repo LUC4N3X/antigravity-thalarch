@@ -22,7 +22,7 @@ CASES_PATH = HERE / "cases.json"
 SCHEMA_PATH = HERE / "response.schema.json"
 JUDGE_PATH = HERE / "judge.py"
 RESULTS_ROOT = BENCH_ROOT / "results" / "quick"
-PROTOCOL_REVISION = 3
+PROTOCOL_REVISION = 4
 
 RESPONSE_FIELDS = {"case_id", "conclusion", "answer", "claims", "evidence_files", "unverified"}
 CONCLUSIONS = {"PROVEN", "CORRECTED_PREMISE", "NOT_FOUND", "UNVERIFIED", "UNKNOWN"}
@@ -343,7 +343,6 @@ def extract_result(events: list[dict[str, Any]], stdout: str) -> dict[str, Any] 
         if not validate_structured_response(candidate):
             return candidate
 
-    # Last-resort plain JSON object, for CLI variants that emit only the final object.
     stripped = stdout.strip()
     parsed = _parse_json_string(stripped)
     if parsed is not None and not validate_structured_response(parsed):
