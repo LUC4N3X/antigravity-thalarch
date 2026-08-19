@@ -1,10 +1,6 @@
 ---
 name: thalarch-kotlin-migration
-description: >
-  Semantics-preserving Java→Kotlin and Kotlin/tooling migration workflow. Use for converting Java
-  files/packages to Kotlin, modernizing Kotlin source, moving framework integrations across Kotlin
-  boundaries, or performing staged Kotlin/Gradle migrations where nullability, annotations,
-  interop, serialization, persistence, and public API compatibility must not drift.
+description: "Semantics-preserving Java→Kotlin and Kotlin/tooling migration workflow for staged conversions where behavior, interop, nullability, framework semantics, serialization, persistence, and public API compatibility must not drift."
 license: Apache-2.0
 metadata:
   upstream: https://github.com/Kotlin/kotlin-agent-skills/tree/main/skills/kotlin-tooling-java-to-kotlin
