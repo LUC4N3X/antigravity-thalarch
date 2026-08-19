@@ -19,7 +19,7 @@ def base_pair() -> tuple[dict, dict]:
         "model": "gemini-3.1-pro-high",
         "requested_model": "gemini-3.1-pro-high",
         "effort": "high",
-        "protocol_revision": 2,
+        "protocol_revision": 3,
         "protocol_fingerprint": "protocol-abc",
         "benchmark_revision": "commit-abc",
         "agy_version": "1.1.15",
