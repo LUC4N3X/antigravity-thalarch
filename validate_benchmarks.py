@@ -18,6 +18,7 @@ required = [
     bench / "rubric.json",
     bench / "result-template.json",
     bench / "score_run.py",
+    bench / "test_score_run.py",
     quick / "README.md",
     quick / "cases.json",
     quick / "response.schema.json",
@@ -47,6 +48,7 @@ for path in [
 
 for script in [
     bench / "score_run.py",
+    bench / "test_score_run.py",
     quick / "judge.py",
     quick / "test_judge.py",
     quick / "plugin_integrity.py",
@@ -231,22 +233,27 @@ if not errors:
         "plugin_match_verified",
         "plugin_source_fingerprint",
         "plugin_staged_fingerprint",
+        "def pair_integrity(native: dict[str, Any], thalarch: dict[str, Any])",
     ]:
         if term not in scorer:
             errors.append(f"benchmark scorer missing plugin-integrity control: {term}")
 
 if not errors:
-    proc = subprocess.run(
-        [sys.executable, str(quick / "test_judge.py")],
-        cwd=quick,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        capture_output=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        errors.append(f"quick benchmark judge regression tests failed: {proc.stderr or proc.stdout}")
+    for name, script, cwd in [
+        ("judge", quick / "test_judge.py", quick),
+        ("scorer", bench / "test_score_run.py", bench),
+    ]:
+        proc = subprocess.run(
+            [sys.executable, str(script)],
+            cwd=cwd,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            errors.append(f"quick benchmark {name} regression tests failed: {proc.stderr or proc.stdout}")
 
 score = bench / "score_run.py"
 if not errors and score.is_file():
@@ -275,8 +282,8 @@ if not errors and score.is_file():
                 "corrected_before_final": False,
             }],
         })
-        guarded = dict(template)
-        guarded.update({
+        thalarch = dict(template)
+        thalarch.update({
             "case_id": "H-01",
             "trial": 1,
             "host": "test-host",
@@ -293,11 +300,11 @@ if not errors and score.is_file():
             "hallucinations": [],
         })
         native_path = temp / "native.json"
-        guarded_path = temp / "thalarch.json"
+        thalarch_path = temp / "thalarch.json"
         native_path.write_text(json.dumps(native), encoding="utf-8")
-        guarded_path.write_text(json.dumps(guarded), encoding="utf-8")
+        thalarch_path.write_text(json.dumps(thalarch), encoding="utf-8")
         proc = subprocess.run(
-            [sys.executable, str(score), str(native_path), str(guarded_path)],
+            [sys.executable, str(score), str(native_path), str(thalarch_path)],
             cwd=root,
             text=True,
             encoding="utf-8",
@@ -325,6 +332,7 @@ print("quick_antigravity_cases: 8")
 print("quick_protocol_revision: 2")
 print("quick_structured_verdict_semantics: enforced")
 print("quick_judge_regressions: passed")
+print("quick_scorer_regressions: passed")
 print("quick_cli_workdir: subprocess_cwd")
 print("quick_cli_workspace: add_dir")
 print("quick_read_tools: list_dir_view_file_only")
