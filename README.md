@@ -4,18 +4,20 @@
 
 <br/>
 
-<strong>Engineering discipline for AI coding agents.</strong>
+<strong>Anti-hallucination engineering layer for Gemini on Google Antigravity.</strong>
 
-A model-agnostic multi-agent reliability harness for **Google Antigravity**, **OpenAI Codex**, and **Anthropic Claude Code**.
+Thalarch is built first for **Gemini inside Google Antigravity**: it reduces coding hallucinations by forcing repository inspection, version grounding, specialist routing, independent review, and real evidence before the agent can call the work done.
 
-<br/>
+<sub>Codex and Claude Code adapters are included too — the same reliability core, adapted to each host.</sub>
 
-[![Version](https://img.shields.io/badge/Version-1.0.0-2F6B66?style=flat-square)](#)
+<br/><br/>
+
+[![Focus](https://img.shields.io/badge/Focus-Anti--hallucination-8B6F47?style=flat-square)](#why-thalarch)
 [![License: MIT](https://img.shields.io/badge/License-MIT-2F6B66?style=flat-square)](LICENSE)
 [![Hosts](https://img.shields.io/badge/Hosts-Antigravity%20%C2%B7%20Codex%20%C2%B7%20Claude-5D6B8A?style=flat-square)](#one-core-three-hosts)
 [![Validation](https://github.com/LUC4N3X/antigravity-thalarch/actions/workflows/validate.yml/badge.svg)](.github/workflows/validate.yml)
 
-<sub>Built for real repositories: inspect first, route intelligently, verify what matters, and never pretend unproven work is done.</sub>
+<sub>Inspect first. Verify what matters. Never turn confidence into fake proof.</sub>
 
 <br/><br/>
 
@@ -27,9 +29,9 @@ A model-agnostic multi-agent reliability harness for **Google Antigravity**, **O
 
 ## Why Thalarch?
 
-A coding model can be very capable and still make familiar engineering mistakes: assume the wrong framework version, skip repository rules, patch the symptom instead of the cause, over-edit a project, or declare success without proving the result.
+**Gemini on Antigravity can move very fast. Thalarch is there to stop “fast” becoming “made up”.**
 
-**Thalarch wraps the model in a stricter engineering process.** It does not try to make the underlying model sound smarter. It tries to make the work **more deliberate, more grounded, and easier to trust**.
+Like any coding model, Gemini can sometimes assume the wrong framework version, invent a project command, skip repository rules, patch the symptom instead of the cause, or declare success without proving the result. Thalarch is designed specifically to reduce those failure modes by putting a stricter engineering process around the model.
 
 It pushes the agent to:
 
@@ -40,7 +42,7 @@ It pushes the agent to:
 - **keep diffs narrow and repository-native;**
 - **review independently and finish with evidence** that actually matches the claim.
 
-> **Confidence is not proof.** If the required evidence is unavailable, Thalarch is expected to say so.
+> **Thalarch is an anti-hallucination engineering layer, not a promise of zero hallucinations.** If the required evidence is unavailable, the correct result is `UNVERIFIED`, not a confident guess.
 
 ---
 
@@ -121,7 +123,7 @@ Thalarch keeps **one canonical engineering and design core** and adapts only the
 
 ### Google Antigravity
 
-Full orchestrator, skill suite, custom agents, hooks, evidence gates, and the richest native visual workflow.
+This is the primary integration: Gemini gets the full orchestrator, skill suite, custom agents, hooks, anti-hallucination evidence gates, and the richest native visual workflow.
 
 ### OpenAI Codex
 
