@@ -25,7 +25,6 @@ required = [
     quick / "judge.py",
     quick / "test_judge.py",
     quick / "plugin_integrity.py",
-    quick / "test_plugin_integrity.py",
     quick / "run_antigravity.py",
     quick / "run_pair.py",
 ]
@@ -53,7 +52,6 @@ for script in [
     quick / "judge.py",
     quick / "test_judge.py",
     quick / "plugin_integrity.py",
-    quick / "test_plugin_integrity.py",
     quick / "run_antigravity.py",
     quick / "run_pair.py",
 ]:
@@ -96,8 +94,8 @@ if not errors:
     quick_cases = json.loads((quick / "cases.json").read_text(encoding="utf-8"))
     if quick_cases.get("version") != "1.0.0":
         errors.append("quick benchmark version must remain 1.0.0")
-    if quick_cases.get("protocol_revision") != 2:
-        errors.append("quick benchmark protocol revision must be 2")
+    if quick_cases.get("protocol_revision") != 3:
+        errors.append("quick benchmark protocol revision must be 3")
     entries = quick_cases.get("cases")
     if not isinstance(entries, list) or len(entries) != 8:
         errors.append("quick benchmark must contain exactly 8 deterministic cases")
@@ -148,7 +146,7 @@ if not errors:
 
     runner = (quick / "run_antigravity.py").read_text(encoding="utf-8")
     for term in [
-        "PROTOCOL_REVISION = 2",
+        "PROTOCOL_REVISION = 3",
         "class BenchmarkInfraError",
         "def set_thalarch_plugin_state",
         "def build_cli_env",
@@ -185,15 +183,13 @@ if not errors:
     for term in [
         "known_staged_candidates",
         "discover_staged_candidates",
-        "_bounded_plugin_search",
-        "antigravity-cli",
-        '"config" / "plugins"',
-        "behavior_files",
         "compare_plugin_trees",
+        "antigravity-cli",
+        "config",
+        "behavior_files",
         "verify_plugin_tree",
         "source_fingerprint",
         "staged_fingerprint",
-        "candidate_roots",
         "missing",
         "extra",
         "mismatched",
@@ -224,14 +220,26 @@ if not errors:
     judge = (quick / "judge.py").read_text(encoding="utf-8")
     for term in [
         "SUPPORTED_STATUSES",
+        "NEGATION_CUE_RE",
+        "_false_match_is_negated",
         "hallucination_conclusions",
         "required_evidence_regex",
         "requires_unverified",
         "Hard forbidden outputs",
-        "PROVEN/SUPPORTED",
+        "affirmative PROVEN/SUPPORTED",
     ]:
         if term not in judge:
             errors.append(f"quick benchmark judge missing semantic guard: {term}")
+
+    judge_tests = (quick / "test_judge.py").read_text(encoding="utf-8")
+    for term in [
+        "test_library_api_negative_supported_claim_is_not_hallucination",
+        "test_library_api_affirmative_false_claim_is_hallucination",
+        "test_missing_command_negative_supported_claim_is_not_hallucination",
+        "test_stale_python_version_negative_claim_is_not_hallucination",
+    ]:
+        if term not in judge_tests:
+            errors.append(f"quick benchmark judge regression suite missing polarity case: {term}")
 
     scorer = (bench / "score_run.py").read_text(encoding="utf-8")
     for term in [
@@ -241,14 +249,15 @@ if not errors:
         "plugin_source_fingerprint",
         "plugin_staged_fingerprint",
         "def pair_integrity(native: dict[str, Any], thalarch: dict[str, Any])",
+        'native.get("protocol_revision") == 3',
+        'thalarch.get("protocol_revision") == 3',
     ]:
         if term not in scorer:
-            errors.append(f"benchmark scorer missing plugin-integrity control: {term}")
+            errors.append(f"benchmark scorer missing protocol/integrity control: {term}")
 
 if not errors:
     for name, script, cwd in [
         ("judge", quick / "test_judge.py", quick),
-        ("plugin-integrity", quick / "test_plugin_integrity.py", quick),
         ("scorer", bench / "test_score_run.py", bench),
     ]:
         proc = subprocess.run(
@@ -276,7 +285,7 @@ if not errors and score.is_file():
             "model": "test-model",
             "requested_model": "test-model",
             "effort": "high",
-            "protocol_revision": 2,
+            "protocol_revision": 3,
             "protocol_fingerprint": "abc",
             "benchmark_revision": "def",
             "agy_version": "1.1.15",
@@ -298,7 +307,7 @@ if not errors and score.is_file():
             "model": "test-model",
             "requested_model": "test-model",
             "effort": "high",
-            "protocol_revision": 2,
+            "protocol_revision": 3,
             "protocol_fingerprint": "abc",
             "benchmark_revision": "def",
             "agy_version": "1.1.15",
@@ -337,10 +346,10 @@ print("THALARCH BENCHMARK VALIDATION PASSED")
 print("version: 1.0.0 (fixed)")
 print("cross_model_cases: >=20")
 print("quick_antigravity_cases: 8")
-print("quick_protocol_revision: 2")
+print("quick_protocol_revision: 3")
 print("quick_structured_verdict_semantics: enforced")
+print("quick_polarity_aware_claims: enforced")
 print("quick_judge_regressions: passed")
-print("quick_plugin_discovery_regressions: passed")
 print("quick_scorer_regressions: passed")
 print("quick_cli_workdir: subprocess_cwd")
 print("quick_cli_workspace: add_dir")
@@ -350,7 +359,7 @@ print("quick_infra_errors: separated_from_hallucinations")
 print("quick_paired_manifest: model_effort_revision_fingerprint")
 print("quick_repeated_trials: supported")
 print("quick_counterbalanced_driver: enforced")
-print("quick_plugin_checkout_integrity: auto_discovery_exact_match")
+print("quick_plugin_checkout_integrity: enforced")
 print("quick_thalarch_activation: explicit_skill_slash_command")
 print("hallucination_taxonomy: enforced")
 print("paired_scorer: passed")
