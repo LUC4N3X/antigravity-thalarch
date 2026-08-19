@@ -4,7 +4,7 @@
 
 <br/>
 
-**High-rigor, project-agnostic engineering + visual-production reliability layer for AI coding agents.**
+**High-rigor multi-agent engineering skill, visual-production system, and reliability layer for AI coding agents.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Hosts: Antigravity · Codex · Claude](https://img.shields.io/badge/Hosts-Antigravity%20%7C%20Codex%20%7C%20Claude-06B6D4.svg?style=flat-square)](#multi-engine-architecture)
@@ -17,8 +17,9 @@
 
 ## What is Thalarch?
 
-**Thalarch 1.0.0** is a model-agnostic engineering reliability harness for serious software
-engineering, web design, visual production, debugging, review, and verification.
+**Thalarch 1.0.0** is a model-agnostic **multi-agent engineering skill suite and reliability harness** for serious software engineering, web design, visual production, debugging, review, and verification.
+
+It can be installed as a host-native skill collection for **Google Antigravity, OpenAI Codex, and Anthropic Claude Code**, while keeping one shared engineering core. The host adapter supplies the native skill discovery, agents/subagents, instructions, hooks, and tools that are actually available in that environment.
 
 It is built around a simple idea: a coding agent should not jump from a request straight into
 editing. It should first understand the project, choose the strongest relevant skills, route work
@@ -42,14 +43,14 @@ record capability changes.
 
 ## Multi-engine architecture
 
-Thalarch uses **one canonical capability core** and thin host-native adapters instead of maintaining
+Thalarch uses **one canonical skill and capability core** with thin host-native adapters instead of maintaining
 separate prompt forks.
 
 | Host | Native integration | Reliability layer |
 | --- | --- | --- |
-| Google Antigravity | plugin, skills, custom agents, hooks | full orchestrator + hard evidence gates |
+| Google Antigravity | plugin, skill suite, custom agents, hooks | full orchestrator + hard evidence gates |
 | OpenAI Codex | Agent Skills, `AGENTS.md`, Codex hooks | skill routing + command grounding + completion evidence gate |
-| Anthropic Claude Code | skills, `CLAUDE.md`, custom subagents, Claude hooks | deliberator + fact checker + cold verifier + evidence gate |
+| Anthropic Claude Code | Skills, `CLAUDE.md`, custom subagents, Claude hooks | deliberator + fact checker + cold verifier + evidence gate |
 
 The canonical engineering/design skills remain in `thalarch-mode/skills/`. Host adapters translate
 only discovery paths, instruction files, lifecycle-hook schemas, and specialist wiring. This keeps
