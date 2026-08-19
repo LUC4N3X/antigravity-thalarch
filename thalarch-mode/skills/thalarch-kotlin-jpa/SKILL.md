@@ -1,10 +1,6 @@
 ---
 name: thalarch-kotlin-jpa
-description: >
-  Kotlin-specific JPA/Hibernate persistence engineering. Use when Kotlin code defines or changes
-  JPA entities, repositories, relationships, fetch plans, transactions, equality/identity,
-  uniqueness constraints, optimistic locking, or when diagnosing N+1/LazyInitialization issues.
-  Prefer an installed official Kotlin/JetBrains JPA skill for exact current platform guidance.
+description: "Kotlin-specific JPA/Hibernate persistence engineering for entities, repositories, relationships, fetch plans, transactions, equality/identity, uniqueness constraints, optimistic locking, and N+1 or LazyInitialization diagnostics."
 license: Apache-2.0
 metadata:
   upstream: https://github.com/Kotlin/kotlin-agent-skills/tree/main/skills/kotlin-backend-jpa-entity-mapping
