@@ -37,11 +37,13 @@ checks = {
         "Visual/design reference contract",
         "VoltAgent/awesome-design-md",
         "Verdict seal",
+        "External-state seal",
     ],
     root / "adapters/claude/CLAUDE.md": [
         "Visual/design reference contract",
         "VoltAgent/awesome-design-md",
         "Verdict seal",
+        "External-state seal",
     ],
     root / "adapters/codex/README.md": [
         "Visual parity",
@@ -88,20 +90,27 @@ def require_terms(path: Path, terms: list[str]) -> str:
 for path, terms in checks.items():
     require_terms(path, terms)
 
-# The Antigravity hook is executable policy. Validate the semantic cluster instead of brittle prose.
+# The Antigravity hook is executable policy. Validate semantic clusters instead of brittle prose.
 hook = root / "thalarch-mode/hooks/pre_invocation_epistemic_guard.py"
-hook_text = require_terms(hook, ["VERDICT SEAL", "UNVERIFIED", "PROVEN", "SUPPORTED"])
+hook_text = require_terms(
+    hook,
+    ["VERDICT SEAL", "EXTERNAL-STATE SEAL", "UNVERIFIED", "PROVEN", "SUPPORTED", "CORRECTED_PREMISE", "NOT_FOUND"],
+)
 hook_lower = hook_text.lower()
 for concept in [
     "execution/runtime/ci/device/browser evidence",
     "factual proposition",
     "evidence is unavailable",
     "missing proof",
+    "authoritative external",
+    "local absence",
+    "external-state proposition",
+    "authoritative search",
 ]:
     if concept not in hook_lower:
         errors.append(f"{hook.relative_to(root)} missing verdict-seal concept: {concept}")
 
-# Codex and Claude must preserve the same proposition-level semantics, not merely mention statuses.
+# Codex and Claude must preserve the same proposition/external-state semantics.
 for adapter in [root / "adapters/codex/AGENTS.md", root / "adapters/claude/CLAUDE.md"]:
     if not adapter.is_file():
         continue
@@ -113,6 +122,12 @@ for adapter in [root / "adapters/codex/AGENTS.md", root / "adapters/claude/CLAUD
         "proven",
         "supported",
         "evidence was unavailable",
+        "external-state seal",
+        "authoritative platform evidence",
+        "local absence",
+        "corrected_premise",
+        "not_found",
+        "authoritative search",
     ]:
         if concept not in text:
             errors.append(f"{adapter.relative_to(root)} missing cross-host verdict concept: {concept}")
@@ -131,6 +146,7 @@ if errors:
 print("THALARCH CROSS-HOST POLICY VALIDATION PASSED")
 print("version: 1.0.0 (fixed)")
 print("runtime_proof_seal: antigravity_codex_claude")
+print("external_state_seal: antigravity_codex_claude")
 print("verdict_semantics: proposition_level")
 print("design_reference_atlas: awesome-design-md")
 print("visual_policy: canonical_cross_host")
