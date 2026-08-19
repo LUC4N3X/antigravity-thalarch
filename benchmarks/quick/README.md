@@ -11,13 +11,11 @@ The suite targets the failure mode Thalarch cares about most: **plausible unsupp
 
 ## Why this first benchmark is read-only
 
-The first pass deliberately avoids writes, network side effects, builds, package installation, and environment-specific toolchains. That makes native-vs-Thalarch comparison much cleaner:
+The first pass deliberately avoids repository writes, builds, package installation, publication, and environment-specific toolchains. That makes native-vs-Thalarch comparison much cleaner:
 
 - same fixture;
 - same prompt;
-- same model;
-- no permission-card noise;
-- no dependency/network variance;
+- same model when possible;
 - deterministic repository truth;
 - structured output that can be scored automatically.
 
@@ -26,43 +24,61 @@ A later engineering suite can add mutation, tests, Java/Kotlin/Python runtime wo
 ## Requirements
 
 - Python 3.10+
-- Antigravity CLI `agy`
-- Antigravity CLI new enough to support print mode `-p`, `--output-format stream-json`, and `--json-schema`
-- authenticated Antigravity CLI
-- `thalarch-mode` installed as an Antigravity plugin for the Thalarch phase
+- authenticated Antigravity CLI `agy`
+- Antigravity CLI with print mode and structured output support
+- `thalarch-mode` installed as an Antigravity CLI plugin
 
-The benchmark runner **does not silently enable or disable plugins**. Plugin state is a user-level side effect and is kept explicit.
+For a controlled A/B run, `run_antigravity.py` explicitly requests the required plugin state before each phase:
 
-## Run on Windows PowerShell
+- `native` -> `agy plugin disable thalarch-mode`
+- `thalarch` -> `agy plugin enable thalarch-mode`
 
-From the Thalarch repository root:
+The runner trusts the exit status of those explicit commands. It does **not** infer enabled/disabled state from `agy plugin list`, because the list can describe imported packages without exposing the effective enable state in a machine-stable way.
+
+## Infrastructure errors are not hallucinations
+
+A CLI/parser/authentication/plugin/harness failure is not model behavior.
+
+If Antigravity exits non-zero before producing a benchmark answer, or exits successfully without a parseable schema-conformant final result, the runner:
+
+1. writes raw stdout/stderr;
+2. prints `BENCHMARK INFRA_ERROR` and the diagnostic;
+3. stops immediately;
+4. records **no hallucination penalty** for that failed invocation.
+
+Never use an infrastructure failure as evidence that native Gemini or Thalarch is better or worse.
+
+## First probe on Windows PowerShell
+
+From the Thalarch repository root, verify one case before spending time on the full suite:
 
 ```powershell
 $RunId = Get-Date -Format "yyyyMMdd-HHmmss"
 
-agy plugin disable thalarch-mode
-python .\benchmarks\quick\run_antigravity.py --phase native --run-id $RunId
-
-agy plugin enable thalarch-mode
-python .\benchmarks\quick\run_antigravity.py --phase thalarch --run-id $RunId
-
-python .\benchmarks\score_run.py (Get-ChildItem ".\benchmarks\results\quick\$RunId\results\*.json" | ForEach-Object FullName)
+python .\benchmarks\quick\run_antigravity.py --phase native --run-id $RunId --case QH-01
+python .\benchmarks\quick\run_antigravity.py --phase thalarch --run-id $RunId --case QH-01
 ```
 
-To pin a model, pass the **same exact model string** to both runs:
+If both invocations reach a real `QH-01: PASS` or `QH-01: FAIL` result rather than `BENCHMARK INFRA_ERROR`, run all eight:
+
+```powershell
+python .\benchmarks\quick\run_antigravity.py --phase native --run-id $RunId
+python .\benchmarks\quick\run_antigravity.py --phase thalarch --run-id $RunId
+
+$Results = Get-ChildItem ".\benchmarks\results\quick\$RunId\results\*.json" |
+    Select-Object -ExpandProperty FullName
+
+python .\benchmarks\score_run.py @Results
+```
+
+To pin a model, pass the **same exact model string** to both phases:
 
 ```powershell
 python .\benchmarks\quick\run_antigravity.py --phase native --run-id $RunId --model "<exact model>"
 python .\benchmarks\quick\run_antigravity.py --phase thalarch --run-id $RunId --model "<exact model>"
 ```
 
-If you omit `--model`, the runner records the model reported by Antigravity's structured output. Do not treat a pair as valid if the two phases resolve to different models.
-
-Re-enable Thalarch after any interrupted native run:
-
-```powershell
-agy plugin enable thalarch-mode
-```
+If model identity is unavailable or differs across the two phases, do not present the paired delta as a proven same-model effect.
 
 ## Cases
 
@@ -75,7 +91,7 @@ agy plugin enable thalarch-mode
 - `QH-07` — instruction-like text embedded in retrieved documentation;
 - `QH-08` — stale documentation conflicting with the current manifest.
 
-Each run saves:
+Each successful benchmark invocation saves:
 
 - raw Antigravity `stream-json`;
 - stderr;
@@ -85,7 +101,7 @@ Each run saves:
 - token usage when exposed;
 - standard Thalarch benchmark result JSON.
 
-`benchmarks/score_run.py` then computes the same task/reliability/hallucination metrics used by the larger benchmark framework.
+`benchmarks/score_run.py` computes the same task/reliability/hallucination metrics used by the larger benchmark framework.
 
 ## What counts as a win
 
@@ -99,10 +115,12 @@ The paired result is interesting when Thalarch:
 - does not replace missing evidence with confidence;
 - does not add unreasonable token/time cost for this small suite.
 
-The raw trajectory remains available under `benchmarks/results/quick/<run-id>/raw/` for manual adjudication when an automatic regex grade looks suspicious.
+The raw trajectory remains available under `benchmarks/results/quick/<run-id>/raw/` for manual adjudication when an automatic grade looks suspicious.
 
 ## Safety
 
-The benchmark uses `--mode=plan`, creates disposable fixtures in the OS temporary directory, and instructs the agent to work read-only. It does not authorize commit, push, PR, deployment, package installation, or external mutation.
+The benchmark uses plan mode, disposable fixtures in the OS temporary directory, and an explicit read-only benchmark contract. It does not authorize commit, push, PR, deployment, package installation, or external publication.
 
-The runner does not claim that a CLI exit code or valid JSON proves the model's factual answer. The fixture-specific grader checks the structured claims against known repository truth, and ambiguous cases should still be manually reviewed from the raw trajectory.
+The only deliberate host-state mutation is enabling/disabling the already installed `thalarch-mode` plugin to create the requested A/B condition.
+
+The runner does not claim that a successful CLI exit or valid JSON proves the model's factual answer. Fixture-specific grading checks the structured claims against known repository truth, and ambiguous cases should still be manually reviewed from the raw trajectory.
