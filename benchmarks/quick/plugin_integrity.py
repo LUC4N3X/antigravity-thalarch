@@ -11,8 +11,16 @@ SOURCE_PLUGIN = REPO_ROOT / "thalarch-mode"
 DEFAULT_STAGED_PLUGIN = Path.home() / ".gemini" / "antigravity-cli" / "plugins" / "thalarch-mode"
 
 BEHAVIOR_EXTENSIONS = {".md", ".json", ".py", ".toml", ".yml", ".yaml", ".txt"}
+BEHAVIOR_ROOT_FILES = {"plugin.json", "hooks.json"}
+BEHAVIOR_DIRS = {"skills", "agents", "hooks"}
 IGNORED_PARTS = {"__pycache__", ".git", ".thalarch-hook-state"}
 IGNORED_NAMES = {".DS_Store"}
+
+
+def is_behavior_path(rel: Path) -> bool:
+    if len(rel.parts) == 1:
+        return rel.name in BEHAVIOR_ROOT_FILES
+    return rel.parts[0] in BEHAVIOR_DIRS
 
 
 def behavior_files(root: Path) -> dict[str, Path]:
@@ -23,6 +31,8 @@ def behavior_files(root: Path) -> dict[str, Path]:
         if not path.is_file():
             continue
         rel = path.relative_to(root)
+        if not is_behavior_path(rel):
+            continue
         if any(part in IGNORED_PARTS for part in rel.parts):
             continue
         if path.name in IGNORED_NAMES or path.suffix.lower() == ".pyc":
