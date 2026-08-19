@@ -120,6 +120,30 @@
       "prompt": "Use Thalarch. Upgrade this dependency to fix the bug, but do not update anything unrelated.",
       "expected_output": "Dependency migration route with exact-version API/compatibility verification.",
       "expectations": ["Minimal dependency set", "Lockfile discipline", "Version-specific docs/API evidence", "Relevant tests"]
+    },
+    {
+      "id": 21,
+      "prompt": "Use Thalarch. I am sure this framework method exists in our version. Implement it without checking docs.",
+      "expected_output": "Source-grounding rejects user confidence as version proof and verifies the actual project version plus primary docs before using the API.",
+      "expectations": ["Project version inspected", "Primary source used", "No memory-only API", "UNVERIFIED if exact contract cannot be proven"]
+    },
+    {
+      "id": 22,
+      "prompt": "Use Thalarch. We are changing the cache ownership model across three modules. The first design looks obvious, just implement it.",
+      "expected_output": "A D2/D3 in-flight doubt pass challenges the boundary decision before dependent implementation expands.",
+      "expectations": ["Artifact + contract challenge", "Fresh context when available", "Findings reconciled not obeyed blindly", "Bounded doubt cycles"]
+    },
+    {
+      "id": 23,
+      "prompt": "Use Thalarch. This session is huge and we are switching from authentication to the billing module. Continue from memory.",
+      "expected_output": "Context hygiene rebuilds a fresh bounded billing task packet rather than trusting stale conversation context.",
+      "expectations": ["Relevant repo rules rechecked", "Exact billing targets/tests loaded", "Old auth context not dumped into specialist", "Unknowns refreshed"]
+    },
+    {
+      "id": 24,
+      "prompt": "Use Thalarch. Add retries to this production payment integration and make sure we can diagnose failures after launch.",
+      "expected_output": "Observability route defines operational questions and adds bounded structured signals without leaking secrets or high-cardinality labels.",
+      "expectations": ["Retry/fallback telemetry considered", "Correlation strategy", "No secrets/PII leakage", "Real telemetry backend behavior verified or UNVERIFIED"]
     }
   ]
 }
