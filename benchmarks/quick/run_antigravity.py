@@ -11,7 +11,7 @@ import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 from judge import grade_case
 
@@ -23,6 +23,10 @@ SCHEMA_PATH = HERE / "response.schema.json"
 JUDGE_PATH = HERE / "judge.py"
 RESULTS_ROOT = BENCH_ROOT / "results" / "quick"
 PROTOCOL_REVISION = 3
+
+RESPONSE_FIELDS = {"case_id", "conclusion", "answer", "claims", "evidence_files", "unverified"}
+CONCLUSIONS = {"PROVEN", "CORRECTED_PREMISE", "NOT_FOUND", "UNVERIFIED", "UNKNOWN"}
+CLAIM_STATUSES = {"PROVEN", "SUPPORTED", "INFERENCE", "UNKNOWN", "UNVERIFIED", "DISPROVEN"}
 
 
 class BenchmarkInfraError(RuntimeError):
@@ -251,30 +255,120 @@ def walk(obj: Any):
             yield from walk(value)
 
 
-def extract_result(events: list[dict[str, Any]], stdout: str) -> dict[str, Any] | None:
+def validate_structured_response(obj: Any) -> list[str]:
+    """Validate the response semantics, not merely the presence of schema field names."""
+    errors: list[str] = []
+    if not isinstance(obj, dict):
+        return ["response is not an object"]
+
+    missing = RESPONSE_FIELDS - set(obj)
+    extra = set(obj) - RESPONSE_FIELDS
+    if missing:
+        errors.append("missing fields: " + ", ".join(sorted(missing)))
+    if extra:
+        errors.append("unexpected fields: " + ", ".join(sorted(extra)))
+    if errors:
+        return errors
+
+    case_id = obj.get("case_id")
+    conclusion = obj.get("conclusion")
+    answer = obj.get("answer")
+    claims = obj.get("claims")
+    evidence_files = obj.get("evidence_files")
+    unverified = obj.get("unverified")
+
+    if not isinstance(case_id, str) or not case_id.strip():
+        errors.append("case_id must be a non-empty string")
+    if not isinstance(conclusion, str) or conclusion not in CONCLUSIONS:
+        errors.append("conclusion must be one of the benchmark verdict enums")
+    if not isinstance(answer, str):
+        errors.append("answer must be a string")
+
+    if not isinstance(claims, list):
+        errors.append("claims must be a list")
+    else:
+        for index, claim in enumerate(claims):
+            if not isinstance(claim, dict):
+                errors.append(f"claims[{index}] must be an object")
+                continue
+            if set(claim) != {"claim", "status", "evidence"}:
+                errors.append(f"claims[{index}] fields do not match the schema")
+                continue
+            if not isinstance(claim.get("claim"), str):
+                errors.append(f"claims[{index}].claim must be a string")
+            if not isinstance(claim.get("status"), str) or claim.get("status") not in CLAIM_STATUSES:
+                errors.append(f"claims[{index}].status must be a valid epistemic status")
+            if not isinstance(claim.get("evidence"), str):
+                errors.append(f"claims[{index}].evidence must be a string")
+
+    for name, value in (("evidence_files", evidence_files), ("unverified", unverified)):
+        if not isinstance(value, list):
+            errors.append(f"{name} must be a list")
+        elif not all(isinstance(item, str) for item in value):
+            errors.append(f"{name} must contain only strings")
+
+    return errors
+
+
+def _parse_json_string(value: Any) -> dict[str, Any] | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError:
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
+def _response_candidates(events: list[dict[str, Any]]) -> Iterable[dict[str, Any]]:
+    """Yield possible final answers while tolerating Antigravity stream wrappers."""
     for event in reversed(events):
         for obj in walk(event):
-            if {"case_id", "conclusion", "claims"}.issubset(obj.keys()):
-                return obj
-            for key in ("result", "output", "response", "content", "text"):
-                value = obj.get(key)
-                if not isinstance(value, str):
-                    continue
-                try:
-                    parsed = json.loads(value)
-                except json.JSONDecodeError:
-                    continue
-                if isinstance(parsed, dict) and {"case_id", "conclusion", "claims"}.issubset(parsed.keys()):
-                    return parsed
+            if isinstance(obj, dict):
+                yield obj
+                for key in ("result", "output", "response", "content", "text"):
+                    parsed = _parse_json_string(obj.get(key))
+                    if parsed is not None:
+                        yield parsed
 
-    start = stdout.rfind('{"case_id"')
-    if start >= 0:
-        try:
-            parsed = json.loads(stdout[start:])
-        except json.JSONDecodeError:
-            return None
-        return parsed if isinstance(parsed, dict) else None
+
+def extract_result(events: list[dict[str, Any]], stdout: str) -> dict[str, Any] | None:
+    """Return only a semantically schema-conformant answer.
+
+    Antigravity stream-json can contain the supplied JSON Schema itself. The schema has keys such as
+    case_id/conclusion/claims, so field-name matching alone is unsafe. Every candidate must pass the
+    response type/enumeration contract before it can reach the benchmark judge.
+    """
+    for candidate in _response_candidates(events):
+        if not validate_structured_response(candidate):
+            return candidate
+
+    # Last-resort plain JSON object, for CLI variants that emit only the final object.
+    stripped = stdout.strip()
+    parsed = _parse_json_string(stripped)
+    if parsed is not None and not validate_structured_response(parsed):
+        return parsed
     return None
+
+
+def response_like_diagnostics(events: list[dict[str, Any]]) -> list[str]:
+    """Summarize rejected response-looking objects without mistaking the echoed schema for an answer."""
+    diagnostics: list[str] = []
+    seen: set[str] = set()
+    for candidate in _response_candidates(events):
+        if not isinstance(candidate, dict) or not (set(candidate) & RESPONSE_FIELDS):
+            continue
+        problems = validate_structured_response(candidate)
+        if not problems:
+            continue
+        signature = "; ".join(problems)
+        if signature in seen:
+            continue
+        seen.add(signature)
+        diagnostics.append(signature)
+        if len(diagnostics) >= 3:
+            break
+    return diagnostics
 
 
 def extract_model(events: list[dict[str, Any]]) -> str:
@@ -338,7 +432,7 @@ def standard_result(
                 return value
         return None
 
-    evidence = "structured result + deterministic fixture + raw Antigravity stream"
+    evidence = "validated structured result + deterministic fixture + raw Antigravity stream"
     if problems:
         evidence += "; problems: " + "; ".join(problems)
 
@@ -461,10 +555,16 @@ def run_case(
         events = parse_stream(proc.stdout)
         structured = extract_result(events, proc.stdout)
         if structured is None:
+            rejected = response_like_diagnostics(events)
+            rejected_text = ""
+            if rejected:
+                rejected_text = "\nrejected response-like candidates: " + " | ".join(rejected)
             raise BenchmarkInfraError(
-                f"{case['id']} trial {trial}: Antigravity exited successfully but no schema-conformant "
-                "structured result could be parsed. This is an infrastructure/harness failure, not a hallucination.\n"
-                f"raw stderr: {stderr_path}\nraw stdout: {stdout_path}"
+                f"{case['id']} trial {trial}: Antigravity exited successfully but no semantically "
+                "schema-conformant benchmark answer could be isolated from stream-json. "
+                "The echoed JSON Schema is never accepted as a model answer. "
+                "This is a structured-output/harness failure, not a hallucination."
+                f"{rejected_text}\nraw stderr: {stderr_path}\nraw stdout: {stdout_path}"
             )
 
         observed_model = extract_model(events)
@@ -545,6 +645,7 @@ def main() -> None:
         + ("/thalarch-mode explicit" if args.phase == "thalarch" else "native, no Thalarch skill")
     )
     print("Workspace policy: active fixture only; list_dir/view_file read tools only.")
+    print("Structured output policy: semantic shape validation; echoed JSON Schema rejected.")
     print(f"Protocol fingerprint: {manifest['protocol_fingerprint'][:12]}")
     print()
 
