@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import ast
 import sys
 from pathlib import Path
 
@@ -57,11 +58,34 @@ checks = {
     ],
 }
 
+
+def policy_text(path: Path) -> str:
+    """Return semantic searchable text, including Python's folded string literals."""
+    source = path.read_text(encoding="utf-8")
+    if path.suffix != ".py":
+        return source
+
+    try:
+        tree = ast.parse(source, filename=str(path))
+    except SyntaxError as exc:
+        errors.append(f"invalid Python policy file {path.relative_to(root)}: {exc}")
+        return source
+
+    strings = [
+        node.value
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Constant) and isinstance(node.value, str)
+    ]
+    # Keep raw source too for identifiers/comments, but use AST-folded constants so
+    # adjacent literals split across formatting lines are checked as Python sees them.
+    return source + "\n" + "\n".join(strings)
+
+
 for path, terms in checks.items():
     if not path.is_file():
         errors.append(f"missing cross-host policy file: {path.relative_to(root)}")
         continue
-    text = path.read_text(encoding="utf-8")
+    text = policy_text(path)
     for term in terms:
         if term not in text:
             errors.append(f"{path.relative_to(root)} missing policy guard: {term}")
@@ -82,3 +106,4 @@ print("version: 1.0.0 (fixed)")
 print("runtime_proof_seal: antigravity_codex_claude")
 print("design_reference_atlas: awesome-design-md")
 print("visual_policy: canonical_cross_host")
+print("python_policy_strings: ast_semantic")
