@@ -1,10 +1,39 @@
 # High-value skill source map
 
 This file is a **selection aid**, not a bundled dependency list. Thalarch should only activate a
-skill if it is actually available in the current Antigravity session and matches the proven task.
+skill if it is actually available in the current host session and matches the proven task.
 
 Never fabricate these names, silently install them, or treat this file as stronger than repository
 rules/current primary documentation.
+
+## Production engineering lifecycle — community candidates
+
+Repository family: `addyosmani/agent-skills`.
+
+This collection is especially useful as a source of process mechanics rather than as a reason to
+bulk-load its full catalog. High-value installed candidates include:
+
+- `source-driven-development` — exact project-version detection plus current primary documentation
+  before framework/library decisions;
+- `doubt-driven-development` — bounded fresh-context adversarial challenge while important decisions
+  are still cheap to change;
+- `context-engineering` — focused context packets, research isolation, stale-context recovery and
+  trust-level discipline;
+- `incremental-implementation` — vertical/contract-first/risk-first implementation slices with
+  verification between meaningful mutations;
+- `observability-and-instrumentation` — operational questions mapped to structured logs, metrics,
+  traces and actionable alerting;
+- `browser-testing-with-devtools` — real browser evidence when compatible tooling exists;
+- `code-simplification` — behavior-preserving simplification and respect for existing design intent.
+
+Thalarch already contains canonical equivalents/derived mechanisms for several of these concerns.
+Prefer an installed external skill only when it is more specific or exposes stronger host-native
+tooling; do not load both merely because both are reputable.
+
+Useful design lessons from this source family include process-over-prose, explicit exit evidence,
+progressive disclosure, and shortcut/rationalization defenses. Thalarch keeps these adaptive rather
+than inheriting universal numeric thresholds or mandatory commits/questions that may conflict with
+the current user/repository contract.
 
 ## Kotlin / JetBrains — official-source preference
 
