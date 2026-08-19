@@ -22,7 +22,7 @@ CASES_PATH = HERE / "cases.json"
 SCHEMA_PATH = HERE / "response.schema.json"
 JUDGE_PATH = HERE / "judge.py"
 RESULTS_ROOT = BENCH_ROOT / "results" / "quick"
-PROTOCOL_REVISION = 2
+PROTOCOL_REVISION = 3
 
 
 class BenchmarkInfraError(RuntimeError):
