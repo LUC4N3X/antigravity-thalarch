@@ -2,61 +2,81 @@
 name: thalarch-skill-intelligence
 description: >
   Autonomous skill-selection layer for Thalarch. Use at the start of non-trivial work and again
-  after project discovery when the available skill catalog may contain stronger project-local,
-  official platform, Thalarch, or third-party expertise. Shortlists and activates the smallest
-  high-value skill stack based on task fit, project/toolchain compatibility, authority/currentness,
-  tool leverage, evidence needs, redundancy, conflicts, and context cost.
+  after project discovery when the current host may expose stronger project-local, official
+  platform, Thalarch, or third-party expertise. Shortlists the smallest high-value skill stack
+  based on task fit, project/toolchain compatibility, authority/currentness, tool leverage,
+  evidence needs, redundancy, conflicts, context cost, and actual host availability.
 ---
 
 # Thalarch Skill Intelligence
 
-Antigravity exposes available skills to the agent by name and description. Use that inventory as
-a capability catalog instead of requiring the user to name every useful skill manually.
+Use the **current host's real skill/capability inventory** as a capability catalog instead of
+requiring the user to name every useful specialist manually.
 
 The goal is **best-fit expertise, not maximum skill count**.
+
+Do not assume Antigravity, Codex, Claude Code, or any other host exposes identical skill APIs,
+agent names, tools, or discovery paths. Inspect what this session actually makes available.
 
 ## 1. Automatic discovery pass
 
 For every non-trivial task, before deep exploration or mutation:
 
-1. inspect the available skill names/descriptions exposed by the current Antigravity session;
-2. inspect applicable project-local skills and repository rules;
+1. inspect skill names/descriptions/metadata exposed by the current host when available;
+2. inspect applicable project-local skills and repository rules through host-supported locations;
 3. infer the task phase, language/runtime, framework/platform, risk, and evidence needs;
 4. shortlist only skills whose descriptions materially match one of those dimensions;
-5. read the full instructions only for shortlisted candidates;
-6. choose the smallest compatible stack that covers the task.
+5. read full instructions only for shortlisted candidates;
+6. confirm any specialist agent/tool named by a skill actually exists on this host before relying on it;
+7. choose the smallest compatible stack that covers the task.
 
 Do not wait for the user to say “use skill X” when a clearly relevant installed skill already
 exists.
 
-Do not read every installed `SKILL.md` just because it is available. Discovery metadata exists to
+Do not read every installed `SKILL.md` merely because it is available. Discovery metadata exists to
 avoid context pollution.
 
 When the inventory contains candidate skills from known high-value ecosystems, consult
 `references/known-high-value-sources.md` only as a tie-breaking/source-quality aid. It is not a
 reason to activate a skill that does not fit the task.
 
-## 2. Re-route after evidence
+## 2. Capability-before-name rule
+
+A role described by Thalarch is not proof that a host-specific named agent or tool exists.
+
+Before delegating or invoking:
+
+- confirm the current host exposes that exact agent/tool/capability;
+- if the exact named specialist is unavailable, load the relevant canonical Thalarch skill into a
+  compatible host-native agent/context instead;
+- if no compatible capability exists, perform the strongest safe fallback in the current context;
+- if a required proof depends on a missing browser/device/image/runtime capability, keep that claim
+  `UNVERIFIED` rather than fabricating execution.
+
+Never invent an agent, skill, tool, MCP server, browser integration, image generator, or command
+because another Thalarch host has one.
+
+## 3. Re-route after evidence
 
 Initial routing is provisional.
 
 After repository preflight reveals the actual stack, versions, framework, runtime, or problem
-mechanism, repeat the selection pass when that evidence could change the best skill set.
+mechanism, repeat selection when that evidence could change the best skill set.
 
 Examples:
 
 - generic Kotlin becomes Kotlin + a precise JetBrains/official Android/Kotlin skill after build and
   import evidence proves its exact scope;
 - generic Java becomes Java + concurrency/JPA/Maven specialization only when those surfaces exist;
-- generic frontend becomes framework-specific + Browser/Chrome + design skill after the package
-  graph and visual brief are known;
+- generic frontend becomes framework-specific + an actually available browser/design capability
+  after the package graph and visual brief are known;
 - generic Python becomes Python + API/data/framework skills only after those dependencies are proven;
 - a suspected performance issue may drop the performance skill if root-cause evidence shows the
   problem is actually correctness/configuration.
 
 Skills may be removed as well as added.
 
-## 3. Selection priority
+## 4. Selection priority
 
 Evaluate candidates in this order of authority, while still requiring task fit:
 
@@ -77,7 +97,7 @@ collection is normally preferred over a generic community Kotlin guide when both
 problem. For version-sensitive Java/JVM facts from community skills, confirm against the project's
 actual version and primary documentation before implementation.
 
-## 4. Candidate scoring
+## 5. Candidate scoring
 
 For each serious candidate, reason over these dimensions:
 
@@ -85,7 +105,8 @@ For each serious candidate, reason over these dimensions:
 - **Project specificity** — does it understand this repository/framework/workflow?
 - **Version compatibility** — is its guidance compatible with the runtime/library/toolchain in use?
 - **Authority/currentness** — project-owned or official/current guidance beats stale generic memory.
-- **Tool leverage** — does it unlock a real tool, browser, device, profiler, generator, MCP, or
+- **Host availability** — can this host actually load/use the skill, agent, or tool it depends on?
+- **Tool leverage** — does it unlock a real browser, device, profiler, generator, MCP, or
   deterministic script that improves evidence?
 - **Evidence leverage** — does it improve the ability to prove the acceptance criterion?
 - **Complementarity** — does it add a missing lens rather than duplicate another loaded skill?
@@ -94,7 +115,7 @@ For each serious candidate, reason over these dimensions:
 
 Select the highest-value compatible set, not every candidate with a positive score.
 
-## 5. Skill-stack shape
+## 6. Skill-stack shape
 
 A normal engineering stack should usually contain only:
 
@@ -108,24 +129,27 @@ Complex high-risk work may exceed this when independent concerns genuinely requi
 Avoid “skill soup”. If two skills cover the same concern, choose the more project-specific,
 current, evidence-producing one unless the second adds a distinct capability.
 
-## 6. Official/platform specialization
+## 7. Official/platform specialization
 
 When installed and relevant, prefer current official platform skills for platform-specific facts
-and workflows — for example Kotlin/JetBrains tooling, Android, Chrome/Browser, Firebase,
+and workflows — for example Kotlin/JetBrains tooling, Android, browser tooling, Firebase,
 cloud/vendor SDKs, or other curated integrations.
 
-Thalarch remains the orchestration/quality layer around them. Do not copy their entire guidance
-into the active context when Antigravity can load the official skill directly.
+Thalarch remains the orchestration/quality layer around them. Do not duplicate their entire guidance
+into active context when the **current host** can load the official skill directly.
 
-## 7. Project-local skills
+## 8. Project-local skills
 
-Treat `.agents/skills` (and supported workspace skill locations) as high-value candidates because
+Treat project-local skill locations supported by the current host as high-value candidates because
 they can encode repository-specific build, test, deploy, architecture, or style rules.
 
-Before trusting one blindly, check that its scope still matches the current project state. A stale
-project skill can be less reliable than current repository configuration.
+Examples of host-native locations may include `.agents/skills/`, `.claude/skills/`, or other
+locations documented by the active host. Do not assume a path exists; inspect before using it.
 
-## 8. Deterministic tools beat extra prose
+Before trusting a project skill blindly, check that its scope still matches current repository
+state. A stale project skill can be less reliable than current build/configuration evidence.
+
+## 9. Deterministic tools beat extra prose
 
 When a shortlisted skill ships a relevant read-only analyzer/script and it can run safely in the
 current environment, prefer using that tool to guessing manually from a large codebase.
@@ -136,17 +160,17 @@ visual/browser evidence collection.
 Treat script output as **evidence/leads**, not infallible verdicts. Confirm material findings in the
 actual source/runtime before changing code.
 
-## 9. Missing capability
+## 10. Missing capability
 
 If no installed skill adequately covers a high-value domain:
 
-- use `thalarch-researcher` and current primary documentation to fill the knowledge gap;
-- if research discovers a potentially useful external skill/plugin, report it as an optional
-  capability rather than silently installing it unless the current request authorizes installation
-  or customization changes;
-- never fabricate a skill name or pretend a missing skill was loaded.
+- use the host's available research/web/documentation capability and current primary documentation;
+- when a Thalarch research specialist exists on this host, it may own that bounded research task;
+- if research discovers a potentially useful external skill/plugin, report it as optional rather
+  than silently installing it unless installation/customization is authorized;
+- never fabricate a skill name or pretend a missing skill/tool was loaded.
 
-## 10. Conflict resolution
+## 11. Conflict resolution
 
 When loaded guidance conflicts, resolve in this order:
 
@@ -161,21 +185,21 @@ Do not let a community style skill override a repository's established conventio
 scope constraint.
 
 A skill that requires artificial findings, arbitrary global style thresholds, blanket framework
-migration, or unmeasured optimization must be narrowed to the useful evidence-producing part or
+migration, or unmeasured optimization must be narrowed to its useful evidence-producing part or
 rejected.
 
-## 11. Skill-selection ledger
+## 12. Skill-selection ledger
 
-For non-trivial work keep a compact internal/working record:
+For non-trivial work keep a compact working record:
 
-- `Selected:` skill → why it materially helps;
-- `Rejected:` only close alternatives → why redundant/incompatible/lower-value;
+- `Selected:` skill/capability → why it materially helps;
+- `Rejected:` only close alternatives → why redundant/incompatible/unavailable/lower-value;
 - `Deferred:` skill → condition that would make it relevant later.
 
 Do not spam the user with the full candidate list. Surface the final stack when useful or when the
 user asks how Thalarch routed the task.
 
-## 12. Failure modes
+## 13. Failure modes
 
 Never:
 
@@ -183,6 +207,7 @@ Never:
 - prefer a skill because its name sounds expert;
 - use a language/framework skill before confirming the stack;
 - keep a skill active after evidence shows it is irrelevant;
+- assume another host's agent/tool exists here;
 - duplicate official platform guidance into the main prompt when it can be loaded on demand;
 - install third-party skills without authorization;
 - let a skill's rigid checklist override stronger project evidence;
