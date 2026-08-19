@@ -83,6 +83,11 @@ source code or documentation is redistributed by Thalarch:
 - GitHub Spec Kit / Awesome Copilot and other public engineering references when explicitly cited in
   repository documentation.
 
+Reference-only sources are treated as research material, not as a redistribution grant. If a source
+does not provide permission to redistribute its protected text or code, Thalarch must not incorporate
+that text or code; only independently expressed ideas, facts, interfaces, or general engineering
+principles may be used where legally permitted.
+
 The detailed source-selection map lives at:
 `thalarch-mode/skills/thalarch-skill-intelligence/references/known-high-value-sources.md`.
 
