@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import tomllib
 import uuid
 from pathlib import Path
 
@@ -18,6 +19,9 @@ required = [
     root / "adapters" / "codex" / "AGENTS.md",
     root / "adapters" / "codex" / "hooks" / "epistemic_gate.py",
     root / "adapters" / "codex" / "hooks" / "hooks.json",
+    root / "adapters" / "codex" / "agents" / "thalarch-deliberator.toml",
+    root / "adapters" / "codex" / "agents" / "thalarch-fact-checker.toml",
+    root / "adapters" / "codex" / "agents" / "thalarch-verifier.toml",
     root / "adapters" / "claude" / "README.md",
     root / "adapters" / "claude" / "CLAUDE.md",
     root / "adapters" / "claude" / "hooks" / "epistemic_gate.py",
@@ -69,6 +73,22 @@ for label, hooks in [("Codex", codex_hooks), ("Claude", claude_hooks)]:
     for event in ["UserPromptSubmit", "PreToolUse", "PostToolUse", "SubagentStop", "Stop"]:
         if event not in hooks:
             errors.append(f"{label} adapter must wire {event}")
+if isinstance(claude_hooks, dict) and "PostToolUseFailure" not in claude_hooks:
+    errors.append("Claude adapter must wire PostToolUseFailure so failed verification invalidates stale success")
+
+# Codex custom agents use the native standalone TOML schema.
+codex_agents = root / "adapters" / "codex" / "agents"
+for path in codex_agents.glob("thalarch-*.toml") if codex_agents.is_dir() else []:
+    try:
+        data = tomllib.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        errors.append(f"invalid TOML in {path.relative_to(root)}: {exc}")
+        continue
+    for key in ["name", "description", "developer_instructions"]:
+        if not isinstance(data.get(key), str) or not data[key].strip():
+            errors.append(f"{path.relative_to(root)} missing valid {key}")
+    if data.get("sandbox_mode") != "read-only":
+        errors.append(f"{path.relative_to(root)} must remain read-only")
 
 # Claude agent frontmatter stays intentionally small and native.
 claude_agents = root / "adapters" / "claude" / "agents"
@@ -84,7 +104,7 @@ for base in [root / "adapters", root / "installers"]:
     if not base.exists():
         continue
     for path in base.rglob("*"):
-        if not path.is_file() or path.suffix.lower() not in {".md", ".json", ".py", ".txt"}:
+        if not path.is_file() or path.suffix.lower() not in {".md", ".json", ".py", ".txt", ".toml"}:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
         if newer.search(text):
@@ -105,7 +125,12 @@ def run_hook(script: Path, data: dict) -> dict:
     return json.loads(output) if output else {}
 
 
-# Hook protocol regression tests: mutation -> verification -> new mutation must require fresh evidence again.
+# Hook protocol regression tests:
+# - mutation requires verification;
+# - success after mutation clears the gate;
+# - a newer mutation makes prior evidence stale;
+# - a later failed verification invalidates an earlier success;
+# - explicit UNVERIFIED is a safe escape when proof is unavailable.
 if not errors:
     for host in ["codex", "claude"]:
         hook = root / "adapters" / host / "hooks" / "epistemic_gate.py"
@@ -116,26 +141,70 @@ if not errors:
 
             try:
                 if host == "codex":
-                    mutate = {**common, "hook_event_name": "PostToolUse", "tool_name": "apply_patch", "tool_input": {"command": "*** Begin Patch"}}
-                    verify = {**common, "hook_event_name": "PostToolUse", "tool_name": "Bash", "tool_input": {"command": "python -m pytest"}}
+                    mutate = {
+                        **common,
+                        "hook_event_name": "PostToolUse",
+                        "tool_name": "apply_patch",
+                        "tool_input": {"command": "*** Begin Patch"},
+                        "tool_response": "Done!",
+                    }
+                    verify_success = {
+                        **common,
+                        "hook_event_name": "PostToolUse",
+                        "tool_name": "Bash",
+                        "tool_input": {"command": "python -m pytest"},
+                        "tool_response": "Process exited with code 0\nFinal output:\n12 passed",
+                    }
+                    verify_failure = {
+                        **common,
+                        "hook_event_name": "PostToolUse",
+                        "tool_name": "Bash",
+                        "tool_input": {"command": "python -m pytest"},
+                        "tool_response": "Process exited with code 1\nFinal output:\n1 failed",
+                    }
                 else:
-                    mutate = {**common, "hook_event_name": "PostToolUse", "tool_name": "Edit", "tool_input": {}}
-                    verify = {**common, "hook_event_name": "PostToolUse", "tool_name": "Bash", "tool_input": {"command": "python -m pytest"}}
+                    mutate = {
+                        **common,
+                        "hook_event_name": "PostToolUse",
+                        "tool_name": "Edit",
+                        "tool_input": {},
+                        "tool_response": {"success": True},
+                    }
+                    verify_success = {
+                        **common,
+                        "hook_event_name": "PostToolUse",
+                        "tool_name": "Bash",
+                        "tool_input": {"command": "python -m pytest"},
+                        "tool_response": {"stdout": "12 passed", "stderr": "", "interrupted": False, "isImage": False},
+                    }
+                    verify_failure = {
+                        **common,
+                        "hook_event_name": "PostToolUseFailure",
+                        "tool_name": "Bash",
+                        "tool_input": {"command": "python -m pytest"},
+                        "tool_response": "Exit code 1\n1 failed",
+                    }
 
                 run_hook(hook, mutate)
                 blocked = run_hook(hook, {**common, "hook_event_name": "Stop", "stop_hook_active": False, "last_assistant_message": "Done."})
                 if blocked.get("decision") != "block":
                     errors.append(f"{host} Stop gate did not block mutation without fresh verification")
 
-                run_hook(hook, verify)
+                run_hook(hook, verify_success)
                 cleared = run_hook(hook, {**common, "hook_event_name": "Stop", "stop_hook_active": False, "last_assistant_message": "Done."})
                 if cleared.get("decision") == "block":
-                    errors.append(f"{host} Stop gate did not accept verification after mutation")
+                    errors.append(f"{host} Stop gate did not accept successful verification after mutation")
 
                 run_hook(hook, mutate)
                 stale = run_hook(hook, {**common, "hook_event_name": "Stop", "stop_hook_active": False, "last_assistant_message": "Done."})
                 if stale.get("decision") != "block":
                     errors.append(f"{host} Stop gate reused stale verification after a newer mutation")
+
+                run_hook(hook, verify_success)
+                run_hook(hook, verify_failure)
+                failed_latest = run_hook(hook, {**common, "hook_event_name": "Stop", "stop_hook_active": False, "last_assistant_message": "Done."})
+                if failed_latest.get("decision") != "block":
+                    errors.append(f"{host} Stop gate ignored a later failed verification attempt")
 
                 honest = run_hook(hook, {**common, "hook_event_name": "Stop", "stop_hook_active": False, "last_assistant_message": "Runtime result remains UNVERIFIED."})
                 if honest.get("decision") == "block":
@@ -153,6 +222,12 @@ if installer.is_file() and not errors:
                 existing_instruction = repo / "AGENTS.md"
                 existing_config = repo / ".codex" / "hooks.json"
                 expected_skills = repo / ".agents" / "skills"
+                expected_agents = repo / ".codex" / "agents"
+                expected_agent_names = [
+                    "thalarch-deliberator.toml",
+                    "thalarch-fact-checker.toml",
+                    "thalarch-verifier.toml",
+                ]
                 expected_companion = repo / "THALARCH.codex.md"
                 expected_config_companion = repo / ".codex" / "THALARCH.hooks.json"
                 expected_hook = repo / ".codex" / "hooks" / "thalarch_epistemic_gate.py"
@@ -160,6 +235,12 @@ if installer.is_file() and not errors:
                 existing_instruction = repo / "CLAUDE.md"
                 existing_config = repo / ".claude" / "settings.json"
                 expected_skills = repo / ".claude" / "skills"
+                expected_agents = repo / ".claude" / "agents"
+                expected_agent_names = [
+                    "thalarch-deliberator.md",
+                    "thalarch-fact-checker.md",
+                    "thalarch-verifier.md",
+                ]
                 expected_companion = repo / "THALARCH.claude.md"
                 expected_config_companion = repo / ".claude" / "THALARCH.settings.json"
                 expected_hook = repo / ".claude" / "hooks" / "thalarch_epistemic_gate.py"
@@ -190,11 +271,9 @@ if installer.is_file() and not errors:
                 errors.append(f"{host} installer did not install epistemic hook")
             if not expected_skills.is_dir() or not any(expected_skills.glob("thalarch-*/SKILL.md")):
                 errors.append(f"{host} installer did not install canonical skills")
-            if host == "claude":
-                agents = repo / ".claude" / "agents"
-                for name in ["thalarch-deliberator.md", "thalarch-fact-checker.md", "thalarch-verifier.md"]:
-                    if not (agents / name).is_file():
-                        errors.append(f"Claude installer missing agent: {name}")
+            for name in expected_agent_names:
+                if not (expected_agents / name).is_file():
+                    errors.append(f"{host} installer missing read-only agent: {name}")
 
 if errors:
     print("THALARCH ADAPTER VALIDATION FAILED")
@@ -204,7 +283,8 @@ if errors:
 
 print("THALARCH ADAPTER VALIDATION PASSED")
 print("version: 1.0.0 (fixed)")
-print("codex: skills + AGENTS + native hooks")
-print("claude: skills + CLAUDE + subagents + native hooks")
-print("fresh-evidence ordering: passed")
+print("codex: skills + AGENTS + read-only custom agents + native hooks")
+print("claude: skills + CLAUDE + read-only custom agents + native hooks")
+print("successful-fresh-evidence ordering: passed")
+print("failed-verification invalidation: passed")
 print("conservative installer: passed")
