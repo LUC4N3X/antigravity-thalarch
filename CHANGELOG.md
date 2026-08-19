@@ -5,25 +5,53 @@
 Thalarch intentionally keeps the public version fixed at **1.0.0**. Capability changes are tracked
 here and in Git history without semantic-version bumps.
 
+### 2026-08-19 — Cross-model reliability benchmark
+
+- added `benchmarks/` with a paired native-vs-Thalarch evaluation protocol for Antigravity/Gemini,
+  Codex, and Claude Code;
+- added 20+ adversarial engineering/design cases covering invented repository facts, nonexistent
+  commands, false API/version premises, unrun tests, proof substitution, publication state,
+  debugging, concurrency, Java/Kotlin/Python/TypeScript/Go/Rust, security, architecture, web/image
+  fidelity, and external-action boundaries;
+- added a version-controlled hallucination taxonomy/rubric and a result template that keeps task
+  success separate from reliability;
+- added `benchmarks/score_run.py` for host summaries and paired Thalarch deltas;
+- added `validate_benchmarks.py` and wired benchmark validation/scorer smoke tests into CI;
+- benchmark policy explicitly treats an honest `UNVERIFIED` as preferable to fabricated PASS.
+
 ### 2026-08-19 — Multi-engine adapters
 
 - generalized Thalarch from an Antigravity-only presentation into one canonical model-agnostic
   engineering/reliability core with thin host-native adapters;
-- added an OpenAI Codex adapter using Agent Skills locations, `AGENTS.md` companion guidance and
-  Codex-native `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `SubagentStop` and `Stop` hooks;
-- added a Codex epistemic hook that grounds selected repository commands and blocks completion after
-  observed mutation when no fresh verification evidence exists, unless the claim stays explicit
-  `UNVERIFIED`;
-- added an Anthropic Claude Code adapter using `.claude/skills`, `CLAUDE.md` companion guidance,
-  Claude-native hooks and independent `thalarch-deliberator`, `thalarch-fact-checker` and
-  `thalarch-verifier` custom subagents;
+- refactored canonical skill intelligence, core orchestration, image generation/routing and browser
+  QA to capability-detect the current host instead of assuming Antigravity-only agents/tools;
+- added validator rules that reject known host-specific assumptions from canonical skills copied to
+  every host;
+- added an OpenAI Codex adapter using Agent Skills locations, `AGENTS.md` guidance, Codex-native
+  lifecycle hooks and native custom `thalarch_deliberator`, `thalarch_fact_checker`, and
+  `thalarch_verifier` agents;
+- Codex specialist agents use high reasoning effort and non-editing/read-only sandbox configuration;
+- strengthened the Codex evidence gate so a verification counts only when the tool response provides
+  an explicit success signal; a check older than the final mutation or followed by a failed/unproven
+  check cannot support completion;
+- added an Anthropic Claude Code adapter using `.claude/skills`, `CLAUDE.md` guidance, Claude-native
+  lifecycle hooks and independent deliberator/fact-checker/verifier subagents;
+- Claude specialists use `model: inherit`, `effort: high`, and normal permission mode so the adapter
+  remains portable while allowing real evidence-gathering commands; they are non-editing by
+  instruction rather than unusable `plan`-mode shells;
+- Claude `PostToolUseFailure` is tracked so a later failed verification invalidates earlier success;
+- all host completion gates require verification that is both **successful and newer than the final
+  relevant mutation**;
 - added `installers/install_adapter.py` for cross-platform user/repository installation while
   preserving existing host/project instructions and hook configuration;
 - existing Thalarch skills/agents are backed up before replacement; existing `AGENTS.md`,
   `CLAUDE.md`, Codex `hooks.json` and Claude `settings.json` are never overwritten by the adapter
   installer;
-- added `validate_adapters.py` with syntax/config checks and temporary-repository installer smoke
-  tests, and wired adapter validation into CI;
+- removed stale hand-maintained `MANIFEST.txt`; Git tree plus executable validators are now the
+  source of truth for distributed structure;
+- expanded `validate_adapters.py` with syntax/config/TOML/frontmatter checks, host-neutral-core
+  checks, fresh-successful-evidence ordering regressions, failed-verification invalidation, and
+  temporary-repository installer smoke tests;
 - public version remains permanently **1.0.0** across all hosts.
 
 ### 2026-08-18 — Hard anti-hallucination enforcement
@@ -67,15 +95,16 @@ here and in Git history without semantic-version bumps.
 
 ### 2026-08-18 — Autonomous skill intelligence
 
-- added `thalarch-skill-intelligence` so the orchestrator can inspect available Antigravity skills
-  by name/description and choose the smallest high-value compatible stack automatically;
+- added `thalarch-skill-intelligence` so the orchestrator can inspect available skills by
+  name/description and choose the smallest high-value compatible stack automatically;
 - added authority/currentness, project specificity, version compatibility, tool/evidence leverage,
   redundancy, conflict and context-cost selection criteria;
 - added re-routing after project discovery so irrelevant skills can be dropped and more specific
   ones activated;
 - added a known-high-value source map for official Kotlin/JetBrains skills and selected community
   Java/JVM, design and engineering skill ecosystems;
-- explicitly prevents skill soup, fabricated skill names and silent third-party installation.
+- explicitly prevents skill soup, fabricated skill/agent/tool names and silent third-party
+  installation.
 
 ### 2026-08-18 — Polyglot engineering
 
@@ -124,12 +153,12 @@ here and in Git history without semantic-version bumps.
 
 ### 2026-08-18 — Structural verification
 
-- orchestrator remains unable to directly edit project files, run shell commands or generate
-  images;
+- Antigravity orchestrator remains unable to directly edit project files, run shell commands or
+  generate images;
 - implementation, image generation, specialist review and cold verification remain structurally
-  separated;
-- validator checks specialist wiring, image-tool delegation, portable paths, advanced skill files,
+  separated as far as each host's native capabilities permit;
+- validators check specialist wiring, image-tool delegation, portable paths, advanced skill files,
   autonomous skill intelligence, adaptive reasoning, epistemic guard, independent fact checking,
-  and the permanent 1.0.0 version policy;
-- epistemic hard gates are enabled by default; the separate consequential/destructive-command
-  confirmation hook remains disabled by default.
+  host adapters, and the permanent 1.0.0 version policy;
+- Antigravity epistemic hard gates are enabled by default; the separate consequential/destructive-
+  command confirmation hook remains disabled by default.
