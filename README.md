@@ -1,6 +1,6 @@
 <div align="center">
 
-![Thalarch Banner](assets/branding/thalarch-banner.png)
+![Thalarch Banner](assets/branding/thalarch-banner-v3.jpg)
 
 <br/>
 
