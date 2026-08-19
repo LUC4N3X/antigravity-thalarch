@@ -10,6 +10,7 @@ A model-agnostic multi-agent reliability harness for **Google Antigravity**, **O
 
 <br/>
 
+[![Version](https://img.shields.io/badge/Version-1.0.0-2F6B66?style=flat-square)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-2F6B66?style=flat-square)](LICENSE)
 [![Hosts](https://img.shields.io/badge/Hosts-Antigravity%20%C2%B7%20Codex%20%C2%B7%20Claude-5D6B8A?style=flat-square)](#one-core-three-hosts)
 [![Validation](https://github.com/LUC4N3X/antigravity-thalarch/actions/workflows/validate.yml/badge.svg)](.github/workflows/validate.yml)
