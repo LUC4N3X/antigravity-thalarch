@@ -39,6 +39,7 @@ def annotate_integrity(path: Path, integrity: dict[str, Any]) -> None:
     payload["plugin_match_verified"] = bool(integrity.get("match"))
     payload["plugin_source_fingerprint"] = integrity.get("source_fingerprint")
     payload["plugin_staged_fingerprint"] = integrity.get("staged_fingerprint")
+    payload["plugin_staged_root"] = integrity.get("staged_root")
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
@@ -88,6 +89,7 @@ def main() -> None:
         "plugin_match_verified": True,
         "plugin_source_fingerprint": plugin_integrity.get("source_fingerprint"),
         "plugin_staged_fingerprint": plugin_integrity.get("staged_fingerprint"),
+        "plugin_staged_root": plugin_integrity.get("staged_root"),
         "plugin_behavior_file_count": plugin_integrity.get("source_file_count"),
     })
     (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
@@ -107,6 +109,7 @@ def main() -> None:
     print(f"protocol: {runner.PROTOCOL_REVISION}")
     print(f"fingerprint: {manifest['protocol_fingerprint'][:12]}")
     print(f"plugin fingerprint: {str(plugin_integrity['source_fingerprint'])[:12]} MATCH")
+    print(f"plugin staged path: {plugin_integrity.get('staged_root')}")
     print(f"model: {args.model}")
     print(f"effort: {args.effort or 'default'}")
     print(f"cases: {len(cases)}")
