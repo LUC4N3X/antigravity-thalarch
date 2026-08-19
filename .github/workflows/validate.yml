@@ -26,6 +26,9 @@ jobs:
       - name: Validate anti-hallucination hard gates
         run: python validate_hard_gates.py .
 
+      - name: Validate Codex and Claude adapters
+        run: python validate_adapters.py .
+
       - name: Check shell installer syntax
         run: bash -n INSTALL.sh
 
