@@ -403,8 +403,22 @@ The public version is intentionally fixed at **`1.0.0`**. Capabilities can evolv
 
 <div align="center">
 
-### Built to make AI engineering more trustworthy — not more magical.
+<a href="https://github.com/LUC4N3X">
+  <img src="https://avatars.githubusercontent.com/u/241364318?v=4" width="88" height="88" alt="LUC4N3X" />
+</a>
 
-Released under the [MIT License](LICENSE).
+### Built by [LUC4N3X](https://github.com/LUC4N3X)
+
+**Engineering AI you can verify — not just believe.**
+
+<sub>Independent open-source project · Built with care, tested with evidence.</sub>
+
+<br/><br/>
+
+<sub><strong>Disclaimer.</strong> Thalarch is provided “AS IS”, without warranties of any kind. You are solely responsible for reviewing, testing, securing, and validating its use and any AI-generated output before relying on it. To the maximum extent permitted by applicable law, the maintainer and copyright holder accept no liability for claims, losses, damages, data loss, outages, security incidents, compliance issues, or other consequences arising from the software, its use, or its outputs. Nothing in this project constitutes professional advice.</sub>
+
+<br/>
+
+<sub><a href="DISCLAIMER.md"><strong>Full disclaimer</strong></a> · <a href="LICENSE">MIT License</a> · <a href="THIRD_PARTY_NOTICES.md">Third-party notices</a></sub>
 
 </div>
