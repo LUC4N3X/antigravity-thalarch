@@ -25,6 +25,7 @@ required = [
     quick / "judge.py",
     quick / "test_judge.py",
     quick / "plugin_integrity.py",
+    quick / "test_plugin_integrity.py",
     quick / "run_antigravity.py",
     quick / "run_pair.py",
 ]
@@ -52,6 +53,7 @@ for script in [
     quick / "judge.py",
     quick / "test_judge.py",
     quick / "plugin_integrity.py",
+    quick / "test_plugin_integrity.py",
     quick / "run_antigravity.py",
     quick / "run_pair.py",
 ]:
@@ -181,12 +183,17 @@ if not errors:
 
     plugin_integrity = (quick / "plugin_integrity.py").read_text(encoding="utf-8")
     for term in [
-        "DEFAULT_STAGED_PLUGIN",
+        "known_staged_candidates",
+        "discover_staged_candidates",
+        "_bounded_plugin_search",
         "antigravity-cli",
+        '"config" / "plugins"',
         "behavior_files",
+        "compare_plugin_trees",
         "verify_plugin_tree",
         "source_fingerprint",
         "staged_fingerprint",
+        "candidate_roots",
         "missing",
         "extra",
         "mismatched",
@@ -241,6 +248,7 @@ if not errors:
 if not errors:
     for name, script, cwd in [
         ("judge", quick / "test_judge.py", quick),
+        ("plugin-integrity", quick / "test_plugin_integrity.py", quick),
         ("scorer", bench / "test_score_run.py", bench),
     ]:
         proc = subprocess.run(
@@ -332,6 +340,7 @@ print("quick_antigravity_cases: 8")
 print("quick_protocol_revision: 2")
 print("quick_structured_verdict_semantics: enforced")
 print("quick_judge_regressions: passed")
+print("quick_plugin_discovery_regressions: passed")
 print("quick_scorer_regressions: passed")
 print("quick_cli_workdir: subprocess_cwd")
 print("quick_cli_workspace: add_dir")
@@ -341,7 +350,7 @@ print("quick_infra_errors: separated_from_hallucinations")
 print("quick_paired_manifest: model_effort_revision_fingerprint")
 print("quick_repeated_trials: supported")
 print("quick_counterbalanced_driver: enforced")
-print("quick_plugin_checkout_integrity: enforced")
+print("quick_plugin_checkout_integrity: auto_discovery_exact_match")
 print("quick_thalarch_activation: explicit_skill_slash_command")
 print("hallucination_taxonomy: enforced")
 print("paired_scorer: passed")
