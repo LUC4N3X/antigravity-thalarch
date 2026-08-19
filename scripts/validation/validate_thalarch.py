@@ -34,10 +34,16 @@ for skill_md in skill_files:
     fm_lines = m.group(1).splitlines()
     for idx, line in enumerate(fm_lines):
         if line == "description: >":
+            block_lines = []
             for continuation in fm_lines[idx + 1:]:
-                if continuation and not continuation.startswith("  "):
-                    errors.append(f"{skill_md.relative_to(root)}: description continuation must be indented")
-                    break
+                if not continuation:
+                    continue
+                if continuation.startswith("  "):
+                    block_lines.append(continuation)
+                    continue
+                break
+            if not block_lines:
+                errors.append(f"{skill_md.relative_to(root)}: description block must contain indented text")
             break
 
 agent_files = sorted((plugin / "agents").glob("*/agent.md"))
@@ -116,9 +122,11 @@ required = [
     root / "LICENSE",
     root / "INSTALL.ps1",
     root / "INSTALL.sh",
-    root / "TEST-PROMPTS.md",
     root / "CHANGELOG.md",
-    root / "DESIGN-NOTES.md",
+    root / "docs" / "README.md",
+    root / "docs" / "TEST-PROMPTS.md",
+    root / "docs" / "DESIGN-NOTES.md",
+    root / "docs" / "HARD-GATES.md",
     plugin / "hooks.json",
     plugin / "skills" / "thalarch-reasoning" / "SKILL.md",
     plugin / "skills" / "thalarch-epistemic-guard" / "SKILL.md",

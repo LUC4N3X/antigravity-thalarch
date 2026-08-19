@@ -19,7 +19,7 @@ claim to Thalarch's fact-checker/verifier rather than inventing a block.
 
 ## 1. Pre-invocation epistemic contract
 
-`hooks/pre_invocation_epistemic_guard.py`
+`thalarch-mode/hooks/pre_invocation_epistemic_guard.py`
 
 Before every model call, Antigravity injects a compact transient contract:
 
@@ -35,7 +35,7 @@ This message is intentionally compact so reliability does not require a large pe
 
 ## 2. Exact read-target gate
 
-`hooks/read_target_gate.py`
+`thalarch-mode/hooks/read_target_gate.py`
 
 Before an exact `view_file` / `read_file` request, Thalarch checks that the requested local target
 exists in the mounted workspace.
@@ -55,7 +55,7 @@ Wildcard/discovery reads and unknown future Antigravity payload shapes are not b
 
 ## 3. Project-command grounding gate
 
-`hooks/command_grounding_gate.py`
+`thalarch-mode/hooks/command_grounding_gate.py`
 
 Before `run_command`, Thalarch checks high-confidence project facts such as:
 
@@ -71,7 +71,7 @@ allowed to execute and their real result becomes the evidence.
 
 ## 4. Stop evidence gate
 
-`hooks/stop_evidence_gate.py`
+`thalarch-mode/hooks/stop_evidence_gate.py`
 
 This is the strongest gate.
 
@@ -122,16 +122,16 @@ and cold verification.
 
 ## Validation
 
-Run:
+Run from the repository root:
 
 ```bash
-python validate_thalarch.py .
-python validate_hard_gates.py .
+python scripts/validation/validate_thalarch.py .
+python scripts/validation/validate_hard_gates.py .
 ```
 
-`validate_hard_gates.py` checks the hook wiring, compiles every hard-gate script, and runs synthetic
-regression tests for invented paths, invented package scripts, missing local scripts, unsupported
-completion, visual-review ordering, and the explicit `UNVERIFIED` escape path.
+`scripts/validation/validate_hard_gates.py` checks the hook wiring, compiles every hard-gate script,
+and runs synthetic regression tests for invented paths, invented package scripts, missing local
+scripts, unsupported completion, visual-review ordering, and the explicit `UNVERIFIED` escape path.
 
 ## Disabling the hard gates
 
