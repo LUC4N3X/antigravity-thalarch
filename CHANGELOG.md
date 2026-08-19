@@ -5,6 +5,27 @@
 Thalarch intentionally keeps the public version fixed at **1.0.0**. Capability changes are tracked
 here and in Git history without semantic-version bumps.
 
+### 2026-08-19 — Multi-engine adapters
+
+- generalized Thalarch from an Antigravity-only presentation into one canonical model-agnostic
+  engineering/reliability core with thin host-native adapters;
+- added an OpenAI Codex adapter using Agent Skills locations, `AGENTS.md` companion guidance and
+  Codex-native `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `SubagentStop` and `Stop` hooks;
+- added a Codex epistemic hook that grounds selected repository commands and blocks completion after
+  observed mutation when no fresh verification evidence exists, unless the claim stays explicit
+  `UNVERIFIED`;
+- added an Anthropic Claude Code adapter using `.claude/skills`, `CLAUDE.md` companion guidance,
+  Claude-native hooks and independent `thalarch-deliberator`, `thalarch-fact-checker` and
+  `thalarch-verifier` custom subagents;
+- added `installers/install_adapter.py` for cross-platform user/repository installation while
+  preserving existing host/project instructions and hook configuration;
+- existing Thalarch skills/agents are backed up before replacement; existing `AGENTS.md`,
+  `CLAUDE.md`, Codex `hooks.json` and Claude `settings.json` are never overwritten by the adapter
+  installer;
+- added `validate_adapters.py` with syntax/config checks and temporary-repository installer smoke
+  tests, and wired adapter validation into CI;
+- public version remains permanently **1.0.0** across all hosts.
+
 ### 2026-08-18 — Hard anti-hallucination enforcement
 
 - enabled a default `thalarch-epistemic-hard-gates` hook group using Antigravity `PreInvocation`,
