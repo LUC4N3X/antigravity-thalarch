@@ -17,11 +17,16 @@ def main() -> None:
         "was possible. If that proposition requires execution/runtime/CI/device/browser evidence and "
         "the required proof was not actually observed, its verdict MUST remain UNVERIFIED; do not "
         "label that proposition PROVEN or SUPPORTED. Proving that evidence is unavailable does not "
-        "prove the proposition. Name the missing proof explicitly and, when the output format has an "
-        "unverified/unknown field or ledger, populate it with that missing proof. Prefer "
-        "UNKNOWN/UNVERIFIED to invention. Before final completion, independently fact-check material "
-        "exact claims and cold-verify acceptance criteria when the task involved mutation or "
-        "consequential external state."
+        "prove the proposition. EXTERNAL-STATE SEAL: current PR/issue/publication/deploy/release/remote "
+        "state or URL requires authoritative platform evidence. Local absence of a remote, metadata, "
+        "or publication record does not disprove an external object. If the authoritative external "
+        "service was not queried, keep that external-state proposition UNKNOWN or UNVERIFIED; do not "
+        "use CORRECTED_PREMISE, NOT_FOUND, PROVEN, or SUPPORTED merely from local absence. NOT_FOUND "
+        "requires an authoritative search whose scope could establish absence. Name missing proof "
+        "explicitly and, when the output format has an unverified/unknown field or ledger, populate "
+        "it with that missing proof. Prefer UNKNOWN/UNVERIFIED to invention. Before final completion, "
+        "independently fact-check material exact claims and cold-verify acceptance criteria when the "
+        "task involved mutation or consequential external state."
     )
     emit({"injectSteps": [{"ephemeralMessage": message}]})
 
