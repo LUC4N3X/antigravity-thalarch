@@ -122,8 +122,8 @@ def pair_integrity(native: dict[str, Any], thalarch: dict[str, Any]) -> tuple[st
         return "INVALID:thalarch-activation", False
 
     quick_protocol = (
-        native.get("protocol_revision") == 3
-        and thalarch.get("protocol_revision") == 3
+        native.get("protocol_revision") == 4
+        and thalarch.get("protocol_revision") == 4
         and str(native.get("case_id") or "").startswith("QH-")
         and str(thalarch.get("case_id") or "").startswith("QH-")
     )
@@ -268,7 +268,7 @@ def main() -> None:
             trials_by_case[(n["host"], n["case_id"])].add(n["trial"])
         min_trials = min((len(v) for v in trials_by_case.values()), default=0)
         quick_protocol = any(
-            n.get("protocol_revision") == 3 and n["case_id"].startswith("QH-") for n, _ in valid
+            n.get("protocol_revision") == 4 and n["case_id"].startswith("QH-") for n, _ in valid
         )
         required_case_count = 8 if quick_protocol else 1
         complete_case_set = len(trials_by_case) >= required_case_count
