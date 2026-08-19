@@ -98,6 +98,7 @@ def normalized_model(row: dict[str, Any]) -> str:
 
 
 def pair_integrity(native: dict[str, Any], thalarch: dict[str, Any]) -> tuple[str, bool | None]:
+    """Validate that one native/Thalarch pair differs only by the intended skill condition."""
     unknown_models = {"", "unknown", "default", "record exact model if visible"}
     a_model = normalized_model(native)
     b_model = normalized_model(thalarch)
@@ -114,24 +115,25 @@ def pair_integrity(native: dict[str, Any], thalarch: dict[str, Any]) -> tuple[st
             return f"INVALID:{key}", False
 
     native_activation = str(native.get("thalarch_activation") or "")
-    guarded_activation = str(thalarch.get("thalarch_activation") or "")
+    thalarch_activation = str(thalarch.get("thalarch_activation") or "")
     if native_activation and native_activation != "native-default-agent":
         return "INVALID:native-activation", False
-    if guarded_activation and guarded_activation != "slash-skill:thalarch-mode":
+    if thalarch_activation and thalarch_activation != "slash-skill:thalarch-mode":
         return "INVALID:thalarch-activation", False
 
     quick_protocol = (
         native.get("protocol_revision") == 2
-        and guarded.get("protocol_revision") == 2
-        and native["case_id"].startswith("QH-")
+        and thalarch.get("protocol_revision") == 2
+        and str(native.get("case_id") or "").startswith("QH-")
+        and str(thalarch.get("case_id") or "").startswith("QH-")
     )
     if quick_protocol:
-        if native.get("plugin_match_verified") is not True or guarded.get("plugin_match_verified") is not True:
+        if native.get("plugin_match_verified") is not True or thalarch.get("plugin_match_verified") is not True:
             return "UNVERIFIED:plugin-checkout", None
         source_a = str(native.get("plugin_source_fingerprint") or "")
-        source_b = str(guarded.get("plugin_source_fingerprint") or "")
+        source_b = str(thalarch.get("plugin_source_fingerprint") or "")
         staged_a = str(native.get("plugin_staged_fingerprint") or "")
-        staged_b = str(guarded.get("plugin_staged_fingerprint") or "")
+        staged_b = str(thalarch.get("plugin_staged_fingerprint") or "")
         if not source_a or not source_b or not staged_a or not staged_b:
             return "UNVERIFIED:plugin-fingerprint", None
         if source_a != staged_a or source_b != staged_b or source_a != source_b:
@@ -211,21 +213,21 @@ def main() -> None:
     unverified_pairs = 0
     invalid_pairs = 0
     for (host, case, trial), pair in sorted(paired):
-        native, guarded = pair[False], pair[True]
-        label, integrity = pair_integrity(native, guarded)
+        native, thalarch = pair[False], pair[True]
+        label, integrity = pair_integrity(native, thalarch)
         if integrity is True:
-            valid.append((native, guarded))
+            valid.append((native, thalarch))
         elif integrity is False:
             invalid_pairs += 1
         else:
             unverified_pairs += 1
-        rel_delta = guarded["reliability"] - native["reliability"] if integrity is not False else None
-        hall_delta = guarded["hallucination_count"] - native["hallucination_count"] if integrity is not False else None
+        rel_delta = thalarch["reliability"] - native["reliability"] if integrity is not False else None
+        hall_delta = thalarch["hallucination_count"] - native["hallucination_count"] if integrity is not False else None
         print(
             f"{host} | {case} | {trial} | {label} | "
             f"{'-' if rel_delta is None else f'{rel_delta:+d}'} | "
             f"{'-' if hall_delta is None else f'{hall_delta:+d}'} | "
-            f"{native['task_status']}->{guarded['task_status']}"
+            f"{native['task_status']}->{thalarch['task_status']}"
         )
 
     print("\nPaired summary")
@@ -235,28 +237,28 @@ def main() -> None:
     print(f"orphan_pairs: {orphan_pairs}")
 
     if valid:
-        task_wins = sum(n["task_status"] != "PASS" and g["task_status"] == "PASS" for n, g in valid)
-        task_losses = sum(n["task_status"] == "PASS" and g["task_status"] != "PASS" for n, g in valid)
-        hall_wins = sum(g["hallucination_count"] < n["hallucination_count"] for n, g in valid)
-        hall_losses = sum(g["hallucination_count"] > n["hallucination_count"] for n, g in valid)
-        rel_delta = avg([float(g["reliability"] - n["reliability"]) for n, g in valid])
+        task_wins = sum(n["task_status"] != "PASS" and t["task_status"] == "PASS" for n, t in valid)
+        task_losses = sum(n["task_status"] == "PASS" and t["task_status"] != "PASS" for n, t in valid)
+        hall_wins = sum(t["hallucination_count"] < n["hallucination_count"] for n, t in valid)
+        hall_losses = sum(t["hallucination_count"] > n["hallucination_count"] for n, t in valid)
+        rel_delta = avg([float(t["reliability"] - n["reliability"]) for n, t in valid])
         native_pass = 100 * sum(n["task_status"] == "PASS" for n, _ in valid) / len(valid)
-        guarded_pass = 100 * sum(g["task_status"] == "PASS" for _, g in valid) / len(valid)
+        thalarch_pass = 100 * sum(t["task_status"] == "PASS" for _, t in valid) / len(valid)
         native_hall = sum(n["hallucination_count"] for n, _ in valid)
-        guarded_hall = sum(g["hallucination_count"] for _, g in valid)
-        time_deltas = []
-        for n, g in valid:
-            ns, gs = wall_seconds(n), wall_seconds(g)
-            if ns is not None and gs is not None:
-                time_deltas.append(gs - ns)
+        thalarch_hall = sum(t["hallucination_count"] for _, t in valid)
+        time_deltas: list[float] = []
+        for n, t in valid:
+            ns, ts = wall_seconds(n), wall_seconds(t)
+            if ns is not None and ts is not None:
+                time_deltas.append(ts - ns)
 
         print(f"task_pass_native: {native_pass:.1f}%")
-        print(f"task_pass_thalarch: {guarded_pass:.1f}%")
-        print(f"task_pass_delta_pp: {guarded_pass - native_pass:+.1f}")
+        print(f"task_pass_thalarch: {thalarch_pass:.1f}%")
+        print(f"task_pass_delta_pp: {thalarch_pass - native_pass:+.1f}")
         print(f"task_wins_losses: {task_wins}/{task_losses}")
         print(f"hallucinations_native: {native_hall}")
-        print(f"hallucinations_thalarch: {guarded_hall}")
-        print(f"hallucination_delta: {guarded_hall - native_hall:+d}")
+        print(f"hallucinations_thalarch: {thalarch_hall}")
+        print(f"hallucination_delta: {thalarch_hall - native_hall:+d}")
         print(f"hallucination_wins_losses: {hall_wins}/{hall_losses}")
         print(f"avg_reliability_delta: {fmt(rel_delta)}")
         print(f"avg_time_delta_sec: {fmt(avg(time_deltas))}")
