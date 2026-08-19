@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 from datetime import datetime
@@ -9,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import run_antigravity as runner
+from plugin_integrity import format_mismatch, verify_plugin_tree
 
 HERE = Path(__file__).resolve().parent
 BENCH_ROOT = HERE.parent
@@ -32,6 +34,14 @@ def run_validator() -> None:
     print(proc.stdout, end="")
 
 
+def annotate_integrity(path: Path, integrity: dict[str, Any]) -> None:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["plugin_match_verified"] = bool(integrity.get("match"))
+    payload["plugin_source_fingerprint"] = integrity.get("source_fingerprint")
+    payload["plugin_staged_fingerprint"] = integrity.get("staged_fingerprint")
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Run counterbalanced native-vs-Thalarch Antigravity benchmark trials"
@@ -48,6 +58,16 @@ def main() -> None:
 
     run_validator()
     agy = runner.ensure_agy()
+
+    plugin_integrity = verify_plugin_tree()
+    if not plugin_integrity.get("match"):
+        print("\nBENCHMARK INFRA_ERROR")
+        print("The staged Antigravity CLI copy of thalarch-mode does not exactly match this checkout.")
+        print(format_mismatch(plugin_integrity))
+        print("Re-stage the local plugin from this checkout before benchmarking.")
+        print("No model run was started and no hallucination score was recorded.")
+        raise SystemExit(2)
+
     run_id = args.run_id or datetime.now().strftime("%Y%m%d-%H%M%S")
     run_dir = runner.RESULTS_ROOT / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -64,6 +84,14 @@ def main() -> None:
         print(str(exc))
         raise SystemExit(2)
 
+    manifest.update({
+        "plugin_match_verified": True,
+        "plugin_source_fingerprint": plugin_integrity.get("source_fingerprint"),
+        "plugin_staged_fingerprint": plugin_integrity.get("staged_fingerprint"),
+        "plugin_behavior_file_count": plugin_integrity.get("source_file_count"),
+    })
+    (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
     suite = runner.load_json(runner.CASES_PATH)
     cases: list[dict[str, Any]] = suite["cases"]
     if args.cases:
@@ -78,6 +106,7 @@ def main() -> None:
     print(f"run_id: {run_id}")
     print(f"protocol: {runner.PROTOCOL_REVISION}")
     print(f"fingerprint: {manifest['protocol_fingerprint'][:12]}")
+    print(f"plugin fingerprint: {str(plugin_integrity['source_fingerprint'])[:12]} MATCH")
     print(f"model: {args.model}")
     print(f"effort: {args.effort or 'default'}")
     print(f"cases: {len(cases)}")
@@ -102,6 +131,8 @@ def main() -> None:
                         run_dir,
                         manifest,
                     )
+                    result_path = run_dir / "results" / f"{case['id']}.{phase}.r{trial:02d}.json"
+                    annotate_integrity(result_path, plugin_integrity)
                     status = "PASS" if row["passed"] else "FAIL"
                     print(
                         f"{case['id']} r{trial:02d} {phase:8s}: {status} | "
