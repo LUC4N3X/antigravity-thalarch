@@ -2,15 +2,8 @@
 
 <img src="assets/branding/thalarch-banner-final.webp" alt="Thalarch" width="100%" />
 
-<br/>
-
-<strong>Anti-hallucination engineering layer for Gemini on Google Antigravity.</strong>
-
-Thalarch is built first for **Gemini inside Google Antigravity**: it reduces coding hallucinations by forcing repository inspection, version grounding, specialist routing, independent review, and real evidence before the agent can call the work done.
-
-<sub>Codex and Claude Code adapters are included too — the same reliability core, adapted to each host.</sub>
-
-<br/><br/>
+<strong>Anti-hallucination engineering layer for Gemini on Google Antigravity.</strong><br/>
+<sub>Built first for Gemini inside Antigravity: repository inspection, version grounding, specialist routing, independent review, and real evidence before “done”.</sub>
 
 [![Version](https://img.shields.io/badge/Version-1.0.0-4F6B5F?style=flat-square)](#permanent-version-policy)
 [![Focus](https://img.shields.io/badge/Focus-Anti--hallucination-8B6F47?style=flat-square)](#why-thalarch)
@@ -18,15 +11,9 @@ Thalarch is built first for **Gemini inside Google Antigravity**: it reduces cod
 [![Hosts](https://img.shields.io/badge/Hosts-Antigravity%20%C2%B7%20Codex%20%C2%B7%20Claude-5D6B8A?style=flat-square)](#one-core-three-hosts)
 [![Validation](https://github.com/LUC4N3X/antigravity-thalarch/actions/workflows/validate.yml/badge.svg)](.github/workflows/validate.yml)
 
-<sub>Inspect first. Verify what matters. Never turn confidence into fake proof.</sub>
-
-<br/><br/>
-
-[Why Thalarch?](#why-thalarch) · [How it works](#how-thalarch-works) · [Install](#install) · [Use it](#use-thalarch) · [Skills](#engineering-surface) · [Validate](#validation)
+<sub>Codex and Claude Code adapters included too · Inspect first · Verify what matters · Never turn confidence into fake proof.</sub>
 
 </div>
-
----
 
 ## Why Thalarch?
 
