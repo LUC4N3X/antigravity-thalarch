@@ -10,8 +10,10 @@ Revision 2 was introduced after the first live A/B run exposed judge ambiguities
 
 The same eight deterministic, read-only repository traps are run under two conditions:
 
-1. Antigravity/Gemini with `thalarch-mode` disabled and the native default agent;
-2. the same Antigravity/Gemini configuration with `thalarch-mode` enabled and `thalarch-orchestrator` selected explicitly.
+1. Antigravity/Gemini with `thalarch-mode` disabled and no Thalarch skill activation;
+2. the same Antigravity/Gemini configuration with `thalarch-mode` enabled and the `/thalarch-mode` skill invoked explicitly in print mode.
+
+That keeps the primary model/agent condition as close as possible while changing the thing we actually want to measure: **the Thalarch skill**.
 
 The suite targets the failure mode Thalarch cares about most: **plausible unsupported claims and proof substitution**.
 
@@ -39,7 +41,7 @@ Revision 2 adds safeguards specifically to prevent misleading A/B claims:
 - hard forbidden-output regexes are reserved for unambiguous failures such as fabricated PR URLs or injected sentinels;
 - runtime/visual cases require an explicit `unverified` reason when required proof was not observed;
 - native and Thalarch halves of one `run-id` must match model, effort, Antigravity CLI version, benchmark revision, and protocol fingerprint;
-- Thalarch activation is explicit through `--agent=thalarch-orchestrator`;
+- Thalarch activation is explicit through `/thalarch-mode`, not by switching to a different primary agent preset;
 - repeated trials are supported;
 - the judge has its own regression tests;
 - infrastructure failures stop the run and receive no hallucination penalty.
@@ -48,7 +50,7 @@ Revision 2 adds safeguards specifically to prevent misleading A/B claims:
 
 - Python 3.10+
 - authenticated Antigravity CLI `agy`
-- Antigravity CLI with print mode, agent selection, and structured output support
+- Antigravity CLI with print mode, skill/slash expansion, and structured output support
 - `thalarch-mode` installed in Antigravity CLI
 
 Before a serious run, make sure the installed CLI plugin reflects the Thalarch checkout you intend to test. The benchmark records the repository revision and plugin import metadata, but it cannot prove that an already-imported plugin copy is byte-identical to the current checkout.
@@ -60,7 +62,9 @@ Before a serious run, make sure the installed CLI plugin reflects the Thalarch c
 - `native` -> `agy plugin disable thalarch-mode`
 - `thalarch` -> `agy plugin enable thalarch-mode`
 
-The runner trusts the exit status of those explicit commands. It does **not** infer enabled/disabled state from `agy plugin list`, because the list can describe imported packages without exposing effective enable state in a machine-stable way.
+The Thalarch phase then starts its prompt with `/thalarch-mode`. The runner deliberately does **not** pass `--agent=thalarch-orchestrator`, because a custom-agent preset can carry its own model-tier configuration and would make the A/B less clean.
+
+The runner trusts the exit status of the explicit plugin enable/disable commands. It does **not** infer enabled/disabled state from `agy plugin list`, because the list can describe imported packages without exposing effective enable state in a machine-stable way.
 
 ## Infrastructure errors are not hallucinations
 
@@ -127,7 +131,7 @@ python .\benchmarks\score_run.py @Results
 
 ## Publishable paired run
 
-For an effect claim, use at least **3 matched trials per case** with an explicitly pinned model. Pin `--effort` too when you want the CLI effort setting controlled independently from the model name:
+For an effect claim, use all eight cases and at least **3 matched trials per case** with an explicitly pinned model. Pin `--effort` too when you want the CLI effort setting controlled independently from the model name:
 
 ```powershell
 $RunId = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -154,7 +158,7 @@ $Results = Get-ChildItem ".\benchmarks\results\quick\$RunId\results\*.json" |
 python .\benchmarks\score_run.py @Results
 ```
 
-The scorer labels the comparison `PUBLISHABLE` only when all available pairs have matching integrity metadata and every case has at least 3 paired trials. Otherwise it remains `EXPLORATORY`.
+The scorer labels the quick comparison `PUBLISHABLE` only when all eight cases are present, every case has at least 3 matched trials, integrity metadata matches, and there are zero invalid/unverified/orphan pairs. Otherwise it remains `EXPLORATORY`.
 
 `PUBLISHABLE` means the **benchmark protocol integrity gate passed**. It does not mean the result is universally generalizable or statistically definitive.
 
@@ -197,7 +201,7 @@ Each successful invocation saves:
 - trial number;
 - requested/observed model;
 - effort;
-- explicit agent condition;
+- explicit skill condition;
 - Antigravity CLI version;
 - benchmark Git revision;
 - protocol revision;
@@ -225,7 +229,9 @@ A `manifest.json` under the run directory freezes the A/B configuration. Reusing
 - pass-rate delta;
 - hallucination delta;
 - average reliability delta;
-- average time overhead.
+- average time overhead;
+- missing/orphan pair count;
+- `EXPLORATORY` vs protocol-integrity `PUBLISHABLE` status.
 
 Do **not** judge success by verbosity, prompt length, or agent count.
 
