@@ -76,6 +76,19 @@ Examples:
 
 Required evidence: supporting facts plus explicit `INFERENCE` status until directly proven.
 
+### F — Current external-platform state
+
+Examples:
+- a pull request or issue currently exists;
+- the current PR/issue URL or number;
+- a deploy/release/publication is live;
+- a remote platform object is absent;
+- a branch or artifact is published on an external service.
+
+Required evidence: current authoritative platform/service state whose scope actually supports the
+claim. Local Git configuration, local metadata, or the absence of a local record cannot establish
+external existence or non-existence.
+
 ## 2. Inspect before claim
 
 Before making an exact claim that can be cheaply inspected, inspect it.
@@ -176,8 +189,25 @@ regressions" — and that proof was not actually observed:
 - do not reinterpret `PROVEN` as "I proved that verification is impossible". Verdict/status labels
   describe the factual proposition being answered unless the schema explicitly defines otherwise.
 
-This seal is host-agnostic. Antigravity, Codex, Claude Code, and any future adapter must preserve the
-same evidence semantics even when their tool names differ.
+### External-state proof seal
+
+When the user's main proposition concerns current state on an external platform — for example a PR,
+issue, publication, deploy, release, remote object, or current platform URL — and the authoritative
+service was not actually queried:
+
+- keep the external-state proposition `UNKNOWN` or `UNVERIFIED`;
+- never use `CORRECTED_PREMISE`, `NOT_FOUND`, `PROVEN`, or `SUPPORTED` merely because the local
+  checkout has no remote, no PR metadata, no publication file, or no local reference to that object;
+- local absence proves only local absence;
+- `NOT_FOUND` requires an authoritative search whose scope could establish that the external object
+  is absent;
+- if external access is forbidden or unavailable, name that missing authoritative proof explicitly
+  and preserve it in any structured `unverified`/unknown ledger;
+- do not reinterpret `CORRECTED_PREMISE` as "the local repository does not prove the user's external
+  premise". Correction requires evidence that actually disproves the external proposition.
+
+These runtime and external-state seals are host-agnostic. Antigravity, Codex, Claude Code, and any
+future adapter must preserve the same evidence semantics even when their tool names differ.
 
 ## 7. Source hierarchy
 
