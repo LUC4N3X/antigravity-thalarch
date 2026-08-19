@@ -13,7 +13,7 @@ Use `thalarch-skill-intelligence` before loading heavy instructions.
 
 ## Decision
 
-1. Inspect the skill inventory exposed by the current Antigravity session.
+1. Inspect the skill inventory exposed by the current host session.
 2. Shortlist skills by description without opening every full `SKILL.md`.
 3. Identify the task's primary goal/failure type.
 4. Detect the actual language/runtime/toolchain/framework from repository evidence.
@@ -52,12 +52,17 @@ scope and verification invariants.
 
 Use source files plus build manifests. Do not infer from repository name alone.
 
-- Java (`.java`, Maven/Gradle JVM Java source) → `thalarch-java` / `thalarch-java-engineer`;
-- Kotlin (`.kt`, `.kts`, Kotlin Gradle plugins) → `thalarch-kotlin` / `thalarch-kotlin-engineer`;
-- Python (`.py`, `pyproject.toml`, Python package metadata) → `thalarch-python` / `thalarch-python-engineer`;
-- TypeScript/JavaScript (`.ts`, `.tsx`, `.js`, `.jsx`, package scripts) → `thalarch-typescript` / `thalarch-typescript-engineer`;
-- Go (`.go`, `go.mod`) → `thalarch-go` / `thalarch-go-engineer`;
-- Rust (`.rs`, `Cargo.toml`) → `thalarch-rust` / `thalarch-rust-engineer`.
+- Java (`.java`, Maven/Gradle JVM Java source) → `thalarch-java`;
+- Kotlin (`.kt`, `.kts`, Kotlin Gradle plugins) → `thalarch-kotlin`;
+- Python (`.py`, `pyproject.toml`, Python package metadata) → `thalarch-python`;
+- TypeScript/JavaScript (`.ts`, `.tsx`, `.js`, `.jsx`, package scripts) → `thalarch-typescript`;
+- Go (`.go`, `go.mod`) → `thalarch-go`;
+- Rust (`.rs`, `Cargo.toml`) → `thalarch-rust`.
+
+When the current host exposes a matching language specialist/subagent, use it for substantial
+language-specific implementation or review. If that named specialist is unavailable, use the
+canonical language skill in the strongest compatible host-native context instead of inventing an
+agent name.
 
 If an installed project-local or official language/framework skill is more specific, use it with or
 instead of the generic language overlay as judged by `thalarch-skill-intelligence`.
@@ -88,9 +93,10 @@ Do not activate every JVM skill for every JVM repository.
 
 ## Platform routing
 
-When installed and relevant, automatically consider official Antigravity/vendor platform skills
-such as Kotlin/JetBrains tooling, Android, Chrome/Browser, Firebase, Modern Web, cloud/vendor SDKs,
-or other curated integrations. Do not require the user to remember their names.
+When installed and relevant, automatically consider current official/vendor platform skills exposed
+by the host — for example Kotlin/JetBrains tooling, Android, browser/Chrome tooling, Firebase,
+Modern Web, cloud/vendor SDKs, or other curated integrations. Do not require the user to remember
+their names.
 
 Platform skills supply current platform expertise; Thalarch supplies scope, causal debugging,
 review, evidence, and cold verification.
@@ -133,6 +139,6 @@ Return a compact routing decision:
 `Languages/stack: <detected evidence>`
 `Risk: <...>`
 `Skills: <ordered minimal stack>`
-`Agents: <only specialists actually needed>`
+`Agents: <only specialists actually available and needed>`
 `Evidence required: <...>`
 `Deferred/rejected: <only close alternatives when useful>`
