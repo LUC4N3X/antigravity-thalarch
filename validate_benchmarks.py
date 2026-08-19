@@ -114,11 +114,15 @@ if not errors:
     for term in [
         "class BenchmarkInfraError",
         "def set_thalarch_plugin_state",
+        "def build_cli_env",
         "BENCHMARK INFRA_ERROR",
         "No hallucination score was recorded for this infrastructure failure.",
+        "--add-dir=",
         "--output-format=stream-json",
         "--json-schema=",
-        "proc = run_text(cmd, cwd=workspace)",
+        "proc = run_text(cmd, cwd=workspace, env=build_cli_env())",
+        "list_dir and view_file",
+        "Do not use grep_search, run_command, browser, web, MCP, or external tools.",
     ]:
         if term not in runner:
             errors.append(f"quick benchmark runner missing infrastructure guard: {term}")
@@ -126,6 +130,8 @@ if not errors:
         errors.append("quick benchmark must not infer effective plugin state from plugin list")
     if "--cwd" in runner:
         errors.append("Antigravity CLI 1.1.x does not expose --cwd; benchmark must use subprocess cwd")
+    if "--dangerously-skip-permissions" in runner:
+        errors.append("quick benchmark must not bypass all user permissions")
     if '"type": "OTHER",\n                "claim": "Antigravity print-mode run failed."' in runner:
         errors.append("CLI infrastructure failures must not be recorded as hallucinations")
 
@@ -186,6 +192,9 @@ print("cross_model_cases: >=20")
 print("quick_antigravity_cases: 8")
 print("quick_structured_output: enforced")
 print("quick_cli_workdir: subprocess_cwd")
+print("quick_cli_workspace: add_dir")
+print("quick_read_tools: list_dir_view_file_only")
+print("quick_permission_bypass: forbidden")
 print("quick_infra_errors: separated_from_hallucinations")
 print("hallucination_taxonomy: enforced")
 print("paired_scorer: passed")
