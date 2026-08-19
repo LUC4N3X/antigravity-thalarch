@@ -1,0 +1,70 @@
+{
+  "description": "Thalarch 1.0.0 evidence and anti-hallucination gates for Codex.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.codex/hooks/thalarch_epistemic_gate.py",
+            "commandWindows": "py -3 %USERPROFILE%\\.codex\\hooks\\thalarch_epistemic_gate.py",
+            "timeout": 10,
+            "statusMessage": "Loading Thalarch evidence contract"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.codex/hooks/thalarch_epistemic_gate.py",
+            "commandWindows": "py -3 %USERPROFILE%\\.codex\\hooks\\thalarch_epistemic_gate.py",
+            "timeout": 10,
+            "statusMessage": "Grounding command against project evidence"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.codex/hooks/thalarch_epistemic_gate.py",
+            "commandWindows": "py -3 %USERPROFILE%\\.codex\\hooks\\thalarch_epistemic_gate.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.codex/hooks/thalarch_epistemic_gate.py",
+            "commandWindows": "py -3 %USERPROFILE%\\.codex\\hooks\\thalarch_epistemic_gate.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.codex/hooks/thalarch_epistemic_gate.py",
+            "commandWindows": "py -3 %USERPROFILE%\\.codex\\hooks\\thalarch_epistemic_gate.py",
+            "timeout": 15,
+            "statusMessage": "Checking completion evidence"
+          }
+        ]
+      }
+    ]
+  }
+}
