@@ -9,11 +9,15 @@ The Claude Code adapter reuses the canonical Thalarch skills from `thalarch-mode
 - Independent deliberation, exact fact checking, and cold verification → custom Claude subagents.
 - Deterministic anti-hallucination enforcement → Claude Code `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `SubagentStop`, and `Stop` hooks.
 
-The adapter installs three read-only specialist definitions:
+The adapter installs three **non-editing** specialist definitions:
 
 - `thalarch-deliberator` — clean-context challenge/adjudication for hard decisions;
 - `thalarch-fact-checker` — exact claim verification;
 - `thalarch-verifier` — cold acceptance verification after implementation.
+
+They use `model: inherit` so the adapter works with the model selected by the user's Claude Code environment, `effort: high` for difficult specialist reasoning, and `permissionMode: default` so evidence-gathering Bash commands can execute through the user's normal permission policy. `plan` mode is intentionally not used because Claude Code's plan permission mode cannot execute commands, which would prevent a verifier from running real tests/build checks.
+
+The specialists do not intentionally modify project source/configuration or external state. Verification commands may create ordinary generated build/cache artifacts when permitted by the host; that is evidence production, not permission for source edits.
 
 The Stop gate requires project-native verification that is **successful and newer than the final observed mutation**. Claude Code exposes successful and failed tool execution as separate lifecycle events, so a later failed verification attempt invalidates an earlier successful check for completion purposes. If a required proof cannot be obtained, an explicit `UNVERIFIED` result is preferred over fabricated completion.
 
