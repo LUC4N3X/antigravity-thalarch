@@ -19,7 +19,7 @@ The suite targets the failure mode Thalarch cares about most: **plausible unsupp
 
 ## Preferred runner: one paired command
 
-Use `run_pair.py` for normal benchmark work. It validates the benchmark first, freezes the paired configuration, alternates native-first and Thalarch-first order across case/trial pairs, runs both conditions, and invokes the scorer automatically.
+Use `run_pair.py` for normal benchmark work. It validates the benchmark first, verifies that the staged CLI plugin matches the checkout, freezes the paired configuration, alternates native-first and Thalarch-first order across case/trial pairs, runs both conditions, and invokes the scorer automatically.
 
 Counterbalancing matters because two large phase blocks can otherwise confound the A/B with transient host load, quota state, cache effects, or simple order effects.
 
@@ -52,6 +52,7 @@ The quick baseline deliberately avoids repository writes, builds, package instal
 - same user task;
 - same model and effort when pinned;
 - same benchmark fingerprint;
+- exact staged-plugin behavior fingerprint;
 - disposable workspace;
 - structured output;
 - independently testable judge.
@@ -68,6 +69,7 @@ Revision 2 adds safeguards specifically to prevent misleading A/B claims:
 - hard forbidden-output regexes are reserved for unambiguous failures such as fabricated PR URLs or injected sentinels;
 - runtime/visual cases require an explicit `unverified` reason when required proof was not observed;
 - native and Thalarch halves of one `run-id` must match model, effort, Antigravity CLI version, benchmark revision, and protocol fingerprint;
+- the staged CLI copy of Thalarch must exactly match the checkout across behavior-bearing plugin files;
 - Thalarch activation is explicit through `/thalarch-mode`, not by switching to a different primary agent preset;
 - repeated trials are supported;
 - paired execution is counterbalanced by case/trial;
@@ -81,7 +83,9 @@ Revision 2 adds safeguards specifically to prevent misleading A/B claims:
 - Antigravity CLI with print mode, skill/slash expansion, and structured output support
 - `thalarch-mode` installed in Antigravity CLI
 
-Before a serious run, make sure the installed CLI plugin reflects the Thalarch checkout you intend to test. The benchmark records the repository revision and plugin import metadata, but it cannot prove that an already-imported plugin copy is byte-identical to the current checkout.
+Before a paired run, `run_pair.py` compares the checkout's behavior-bearing plugin files against the CLI-staged copy. The comparison includes root `plugin.json`/`hooks.json` and files under `skills/`, `agents/`, and `hooks/`, while ignoring unrelated plugin-manager metadata. Missing, extra, or byte-different behavior files stop the benchmark before a model run starts.
+
+If this integrity check fails, re-stage Thalarch from the checkout and rerun the probe. Do not benchmark a stale imported copy.
 
 ## Plugin condition
 
@@ -98,12 +102,12 @@ The runner trusts the exit status of the explicit plugin enable/disable commands
 
 A CLI/parser/authentication/plugin/harness failure is not model behavior.
 
-If Antigravity exits non-zero before producing a benchmark answer, or exits successfully without a parseable schema-conformant final result, the runner:
+If Antigravity exits non-zero before producing a benchmark answer, exits successfully without a parseable schema-conformant final result, or the staged plugin fails its checkout-integrity check, the runner:
 
-1. writes raw stdout/stderr;
-2. prints `BENCHMARK INFRA_ERROR` and the real diagnostic;
+1. preserves or prints the relevant diagnostic;
+2. prints `BENCHMARK INFRA_ERROR` for run-time infrastructure failures;
 3. stops immediately;
-4. records **no hallucination penalty** for that invocation.
+4. records **no hallucination penalty** for that failed benchmark condition.
 
 Never use an infrastructure failure as evidence that native Gemini or Thalarch is better or worse.
 
@@ -115,9 +119,9 @@ Before running a model:
 python .\validate_benchmarks.py .
 ```
 
-This validates JSON/schema structure, compiles benchmark scripts, runs judge regression tests, checks the counterbalanced paired driver, and smoke-tests the scorer.
+This validates JSON/schema structure, compiles benchmark scripts, runs judge regression tests, checks staged-plugin integrity wiring and the counterbalanced paired driver, and smoke-tests the scorer.
 
-`run_pair.py` performs this validation automatically as well. Running it manually first is useful when developing the benchmark itself.
+`run_pair.py` performs this benchmark self-validation automatically as well. Running it manually first is useful when developing the benchmark itself.
 
 ## Exploratory vs protocol-integrity run
 
@@ -139,7 +143,7 @@ python .\benchmarks\quick\run_pair.py `
     --repeat 3
 ```
 
-The scorer labels the quick comparison `PUBLISHABLE` only when all eight cases are present, every case has at least 3 matched trials, integrity metadata matches, and there are zero invalid/unverified/orphan pairs. Otherwise it remains `EXPLORATORY`.
+The scorer labels the quick comparison `PUBLISHABLE` only when all eight cases are present, every case has at least 3 matched trials, integrity metadata matches, the staged plugin fingerprint is verified, and there are zero invalid/unverified/orphan pairs. Otherwise it remains `EXPLORATORY`.
 
 `PUBLISHABLE` means the **benchmark protocol integrity gate passed**. It does not mean the result is universally generalizable or statistically definitive.
 
@@ -176,7 +180,7 @@ The judge has regression tests for the live failure modes that motivated revisio
 
 ## Output and integrity metadata
 
-Each successful invocation saves:
+Each successful paired invocation saves:
 
 - raw Antigravity `stream-json`;
 - stderr;
@@ -190,6 +194,7 @@ Each successful invocation saves:
 - protocol revision;
 - protocol fingerprint;
 - plugin import metadata when exposed;
+- source/staged plugin behavior fingerprints;
 - tool-call count/token usage when exposed;
 - standard benchmark result JSON.
 
@@ -220,6 +225,7 @@ This does not eliminate all stochasticity, but it is stronger than running one c
 - average reliability delta;
 - average time overhead;
 - missing/orphan pair count;
+- staged-plugin checkout integrity;
 - `EXPLORATORY` vs protocol-integrity `PUBLISHABLE` status.
 
 Do **not** judge success by verbosity, prompt length, or agent count.
@@ -240,4 +246,4 @@ A single favorable trial is not enough to claim an effect. Likewise, one unfavor
 
 The benchmark uses plan mode, disposable fixtures in the OS temporary directory, and an explicit read-only contract. It does not authorize commit, push, PR, deployment, package installation, browser access, or external publication.
 
-The only deliberate host-state mutation is enabling/disabling the already installed `thalarch-mode` plugin to create the requested A/B condition.
+The deliberate host-state mutation is enabling/disabling the already installed `thalarch-mode` plugin to create the requested A/B condition. Re-staging a stale plugin is a separate operator action and is never performed silently by the benchmark.
