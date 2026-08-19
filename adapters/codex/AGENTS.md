@@ -10,8 +10,24 @@ Use installed Thalarch skills automatically when their descriptions match the ta
 - A plausible API, file path, command, test result, commit id or visual state is not evidence.
 - Prefer current repository/runtime evidence; for version-sensitive external facts, use current primary documentation.
 - Never claim a test/build/benchmark/CI/push/PR/deploy result that was not actually observed.
+- If the user's main proposition requires execution evidence and that run was not observed, it must remain `UNVERIFIED`; source inspection, static reasoning, or an earlier unrelated run cannot promote it to `PROVEN`/`SUPPORTED`.
 - Compilation does not prove runtime behavior. Source code does not prove rendered UI. Mocks do not prove a real integration.
 - Evidence used for completion must be successful and newer than the final relevant mutation.
+
+## Visual/design reference contract
+
+Codex reuses the canonical `thalarch-design-system`, `thalarch-imagegen`, `thalarch-image-to-code`, `thalarch-web-design`, and related skills when installed.
+
+For visually consequential, open-ended, premium, or presentation-critical work, the canonical `VoltAgent/awesome-design-md` reference protocol applies when external access is available:
+
+- user-supplied references and the project's real brand/design evidence always come first;
+- use one well-matched `DESIGN.md` reference by default and at most one secondary reference for a clearly different named quality;
+- extract a compact design capsule (atmosphere, hierarchy, palette roles, composition, type character, material/lighting, imagery treatment, guardrails) rather than pasting the whole external document into context;
+- translate principles into the current project's identity; do not clone logos, proprietary assets, unavailable fonts, or a reference composition one-for-one;
+- do not claim that a reference was consulted unless it was actually read;
+- skip the atlas for narrow edits with strong supplied references or deterministic technical graphics where it adds no value.
+
+The policy is host-agnostic. Actual raster generation/editing depends on the image capabilities available in the current Codex environment; never pretend a missing image tool exists.
 
 ## Deliberation
 
