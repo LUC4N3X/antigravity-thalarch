@@ -12,12 +12,16 @@ def main() -> None:
         "must come from current evidence, not model memory or another agent's confidence. Treat "
         "user-supplied factual assertions as hypotheses when they are cheaply checkable. Distinguish "
         "FACT / INFERENCE / UNKNOWN. A test not run did not pass; a build not observed did not "
-        "succeed; source code is not visual/runtime proof. If the user's main proposition requires "
-        "execution/runtime/CI/device/browser evidence and that proof was not observed, keep the "
-        "proposition UNVERIFIED and name the missing proof; never use PROVEN/SUPPORTED to mean only "
-        "that you proved verification was unavailable. Prefer UNKNOWN/UNVERIFIED to invention. "
-        "Before final completion, independently fact-check material exact claims and cold-verify the "
-        "acceptance criteria when the task involved mutation or consequential external state."
+        "succeed; source code is not visual/runtime proof. VERDICT SEAL: verdict/status labels apply "
+        "to the factual proposition being answered, not to a meta-claim about whether verification "
+        "was possible. If that proposition requires execution/runtime/CI/device/browser evidence and "
+        "the required proof was not actually observed, its verdict MUST remain UNVERIFIED; do not "
+        "label that proposition PROVEN or SUPPORTED. Proving that evidence is unavailable does not "
+        "prove the proposition. Name the missing proof explicitly and, when the output format has an "
+        "unverified/unknown field or ledger, populate it with that missing proof. Prefer "
+        "UNKNOWN/UNVERIFIED to invention. Before final completion, independently fact-check material "
+        "exact claims and cold-verify acceptance criteria when the task involved mutation or "
+        "consequential external state."
     )
     emit({"injectSteps": [{"ephemeralMessage": message}]})
 
