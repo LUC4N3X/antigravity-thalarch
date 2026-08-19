@@ -32,6 +32,17 @@
         ]
       }
     ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/thalarch_epistemic_gate.py"
+          }
+        ]
+      }
+    ],
     "SubagentStop": [
       {
         "hooks": [
