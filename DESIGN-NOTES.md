@@ -8,18 +8,38 @@ bumps.
 
 ## Goal
 
-Thalarch is a project-agnostic engineering and creative-production harness for Google Antigravity.
-The core must not assume a particular language, framework, product, repository layout, operating
-system, user, or preferred aesthetic.
+Thalarch is a project-agnostic, **model-agnostic** engineering and creative-production reliability
+harness. The core must not assume a particular host agent, language, framework, product, repository
+layout, operating system, user, or preferred aesthetic.
 
 Expertise is progressively disclosed through focused skills and loaded only when evidence says it
 is relevant.
+
+## One core, thin host adapters
+
+The canonical engineering doctrine lives in `thalarch-mode/skills/`. Host support must not fork
+those skills into separately evolving copies.
+
+Adapters translate only what genuinely differs between hosts:
+
+- skill discovery/install locations;
+- persistent instruction files;
+- custom-agent/subagent formats;
+- lifecycle-hook event/wire formats;
+- host-specific tool names and capabilities.
+
+Google Antigravity remains the richest native orchestration implementation. Codex maps the same
+reliability contract onto Agent Skills, `AGENTS.md`, native hooks, and its own agent/worktree
+facilities. Claude Code maps it onto skills, `CLAUDE.md`, custom subagents, and Claude-native hooks.
+
+If a host lacks a capability, Thalarch must report the affected claim `UNVERIFIED` or choose a
+supported fallback rather than pretend the Antigravity capability exists everywhere.
 
 ## Skill intelligence
 
 Thalarch does not hard-code one giant expert prompt.
 
-The orchestrator first inspects available skill metadata, then combines:
+The active coordinator first inspects available skill metadata, then combines:
 
 - explicit user/repository constraints;
 - project-local skills;
@@ -42,18 +62,47 @@ This is both a quality and context-efficiency decision.
 
 ## Structural enforcement
 
-The primary orchestrator intentionally has no project write tools, shell tool, or direct image-
-generation tool.
+On Antigravity, the primary orchestrator intentionally has no project write tools, shell tool, or
+direct image-generation tool.
+
+Across hosts the architectural intent remains the same even when the host's primitives differ:
 
 - planners/researchers/debuggers establish evidence;
 - language/implementation specialists mutate code;
-- the web designer owns bounded frontend implementation;
-- the visual director owns bounded image generation/editing;
+- web/visual specialists own bounded creative production where tools exist;
 - code/design/vision reviewers inspect independently;
+- fact checking verifies exact material claims;
 - the verifier judges acceptance from a cold context.
 
 The separation prevents one context from creating an artifact and then treating its own narrative
 as proof of quality.
+
+## Epistemic reliability
+
+Thalarch treats factual reliability as a first-class engineering property.
+
+Material claims are classified by the evidence they require: repository, external/version-sensitive,
+runtime, visual, or derived inference. Cheaply inspectable facts should be inspected before they are
+asserted. Missing evidence is represented explicitly as `UNKNOWN` or `UNVERIFIED` rather than filled
+with a plausible invention.
+
+Host-native hooks enforce only failure modes that can be checked deterministically enough to justify
+a hard gate. Hooks do not attempt to prove arbitrary semantic correctness with regexes.
+
+A verification result is fresh only when it is newer than the final relevant mutation. Earlier
+passing tests cannot be reused as evidence for code changed afterward.
+
+## Adaptive reasoning
+
+Reasoning depth is proportional to uncertainty and consequence rather than always maximal.
+
+- D0/D1 keep routine work fast;
+- D2 introduces explicit fact/inference/unknown separation and disconfirmation;
+- D3 adds independent challenge/adjudication for difficult architecture/debug/security/concurrency;
+- D4 adds stronger independence, negative testing, invariants and recovery thinking for critical
+  work.
+
+The visible artifact is compact evidence and decisions, not private chain-of-thought.
 
 ## Polyglot engineering
 
@@ -209,8 +258,8 @@ for it.
 Commit/push/PR, merge, publish/release, deployment, permission changes and destructive operations
 remain separate authorization classes.
 
-An optional command hook can harden this boundary but stays disabled by default because plugin hooks
-can affect every session.
+Host-native command hooks can harden this boundary, but they must never silently broaden user
+authorization or substitute a host-level permission prompt for a Thalarch completion claim.
 
 ## Self-evaluation
 
@@ -218,7 +267,8 @@ Thalarch measures behavior rather than prompt length or agent count.
 
 Evaluation should cover routing accuracy, unnecessary ceremony, scope discipline, API/version
 hallucination resistance, root-cause behavior, cross-language correctness, review false positives,
-verification honesty, context cost, cross-project portability, design distinctiveness, browser/
-device evidence, image-reference role correctness and collateral-drift resistance.
+verification honesty, context cost, cross-project portability, **cross-model portability**, design
+distinctiveness, browser/device evidence, image-reference role correctness and collateral-drift
+resistance.
 
-A longer prompt that does not improve measurable behavior is a regression.
+A longer prompt or another adapter that does not improve measurable behavior is a regression.
