@@ -24,6 +24,7 @@ required = [
     quick / "judge.py",
     quick / "test_judge.py",
     quick / "run_antigravity.py",
+    quick / "run_pair.py",
 ]
 for path in required:
     if not path.is_file():
@@ -43,7 +44,13 @@ for path in [
     except Exception as exc:
         errors.append(f"invalid JSON in {path.relative_to(root)}: {exc}")
 
-for script in [bench / "score_run.py", quick / "judge.py", quick / "test_judge.py", quick / "run_antigravity.py"]:
+for script in [
+    bench / "score_run.py",
+    quick / "judge.py",
+    quick / "test_judge.py",
+    quick / "run_antigravity.py",
+    quick / "run_pair.py",
+]:
     if not script.is_file():
         continue
     try:
@@ -168,6 +175,21 @@ if not errors:
     if "--dangerously-skip-permissions" in runner:
         errors.append("quick benchmark must not bypass all user permissions")
 
+    pair_driver = (quick / "run_pair.py").read_text(encoding="utf-8")
+    for term in [
+        "--model",
+        "required=True",
+        "default=3",
+        "counterbalanced per case/trial",
+        "native_first = (trial + case_index) % 2 == 1",
+        "runner.set_thalarch_plugin_state",
+        "runner.run_case",
+        "score_run.py",
+        "run_validator()",
+    ]:
+        if term not in pair_driver:
+            errors.append(f"quick paired driver missing control: {term}")
+
     judge = (quick / "judge.py").read_text(encoding="utf-8")
     for term in [
         "SUPPORTED_STATUSES",
@@ -277,6 +299,7 @@ print("quick_permission_bypass: forbidden")
 print("quick_infra_errors: separated_from_hallucinations")
 print("quick_paired_manifest: model_effort_revision_fingerprint")
 print("quick_repeated_trials: supported")
+print("quick_counterbalanced_driver: enforced")
 print("quick_thalarch_activation: explicit_skill_slash_command")
 print("hallucination_taxonomy: enforced")
 print("paired_scorer: passed")
