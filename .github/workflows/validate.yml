@@ -21,22 +21,22 @@ jobs:
           python-version: '3.12'
 
       - name: Validate package structure
-        run: python validate_thalarch.py .
+        run: python scripts/validation/validate_thalarch.py .
 
       - name: Validate autoresearch engine
-        run: python validate_autoresearch.py .
+        run: python scripts/validation/validate_autoresearch.py .
 
       - name: Validate anti-hallucination hard gates
-        run: python validate_hard_gates.py .
+        run: python scripts/validation/validate_hard_gates.py .
 
       - name: Validate Codex and Claude adapters
-        run: python validate_adapters.py .
+        run: python scripts/validation/validate_adapters.py .
 
       - name: Validate cross-host reliability and visual policy
-        run: python validate_cross_host_policy.py .
+        run: python scripts/validation/validate_cross_host_policy.py .
 
       - name: Validate cross-model benchmark suite
-        run: python validate_benchmarks.py .
+        run: python scripts/validation/validate_benchmarks.py .
 
       - name: Check shell installer syntax
         run: bash -n INSTALL.sh
