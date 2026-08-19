@@ -29,6 +29,9 @@ jobs:
       - name: Validate Codex and Claude adapters
         run: python validate_adapters.py .
 
+      - name: Validate cross-model benchmark suite
+        run: python validate_benchmarks.py .
+
       - name: Check shell installer syntax
         run: bash -n INSTALL.sh
 
