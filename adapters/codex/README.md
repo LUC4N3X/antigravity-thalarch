@@ -1,13 +1,15 @@
 # Thalarch for OpenAI Codex
 
-The Codex adapter reuses the canonical Thalarch skills from `thalarch-mode/skills/`.
+The Codex adapter reuses the canonical Thalarch skills from `thalarch-mode/skills/` instead of maintaining a second prompt fork.
 
 ## Native mapping
 
-- Thalarch skills → Codex agent skills under `.agents/skills/` or `~/.agents/skills/`.
-- Thalarch persistent reliability rules → `AGENTS.md`.
-- Deterministic anti-hallucination enforcement → Codex `PreToolUse`, `UserPromptSubmit` and `Stop` hooks.
-- Parallel/independent reasoning → Codex subagents/worktrees when available.
+- Thalarch skills → Codex Agent Skills under `.agents/skills/` or `~/.agents/skills/`.
+- Persistent reliability rules → repository/global `AGENTS.md`.
+- Deterministic anti-hallucination enforcement → Codex `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `SubagentStop`, and `Stop` hooks.
+- Independent/parallel investigation → Codex's native subagent/worktree facilities when the current environment exposes them.
+
+The hook layer grounds selected project commands and requires fresh verification evidence **after the final observed mutation**. It does not claim that regex inspection proves arbitrary program correctness; semantic claims still flow through Thalarch reasoning, review, and verification.
 
 ## Install
 
@@ -23,8 +25,10 @@ For one repository only:
 python installers/install_adapter.py codex --scope repo --repo /path/to/project
 ```
 
-The installer never overwrites an existing `AGENTS.md`. It installs a `THALARCH.codex.md` companion file and prints a small block you may merge into your own project instructions.
+If no relevant `AGENTS.md` exists, the installer creates the Thalarch instruction file in the native location. If one already exists, it is preserved and `THALARCH.codex.md` is written beside it for review/merge.
 
-Codex may require hook review/trust before non-managed hooks execute. Inspect them before trusting them.
+Likewise, an existing Codex `hooks.json` is never overwritten. Thalarch writes `THALARCH.hooks.json` beside it so the user can review and merge the hook group. When no hook config exists, the installer writes an active native `hooks.json` with an absolute interpreter/script path.
+
+Codex requires review/trust for non-managed command hooks before they execute; use the host's hook-review UI/command rather than bypassing that safety casually.
 
 Thalarch remains version `1.0.0`.
