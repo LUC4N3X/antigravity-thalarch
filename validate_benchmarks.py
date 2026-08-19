@@ -24,6 +24,7 @@ required = [
     quick / "response.schema.json",
     quick / "judge.py",
     quick / "test_judge.py",
+    quick / "structured_output.py",
     quick / "test_structured_output.py",
     quick / "plugin_integrity.py",
     quick / "run_antigravity.py",
@@ -53,6 +54,7 @@ scripts = [
     bench / "test_score_run.py",
     quick / "judge.py",
     quick / "test_judge.py",
+    quick / "structured_output.py",
     quick / "test_structured_output.py",
     quick / "plugin_integrity.py",
     quick / "run_antigravity.py",
@@ -97,8 +99,8 @@ if not errors:
     quick_cases = json.loads((quick / "cases.json").read_text(encoding="utf-8"))
     if quick_cases.get("version") != "1.0.0":
         errors.append("quick benchmark version must remain 1.0.0")
-    if quick_cases.get("protocol_revision") != 3:
-        errors.append("quick benchmark protocol revision must be 3")
+    if quick_cases.get("protocol_revision") != 4:
+        errors.append("quick benchmark protocol revision must be 4")
 
     entries = quick_cases.get("cases")
     if not isinstance(entries, list) or len(entries) != 8:
@@ -153,7 +155,7 @@ if not errors:
 
     runner = (quick / "run_antigravity.py").read_text(encoding="utf-8")
     runner_terms = [
-        "PROTOCOL_REVISION = 3",
+        "PROTOCOL_REVISION = 4",
         "class BenchmarkInfraError",
         "def set_thalarch_plugin_state",
         "def build_cli_env",
@@ -193,13 +195,26 @@ if not errors:
     if "--dangerously-skip-permissions" in runner:
         errors.append("quick benchmark must not bypass all user permissions")
 
+    structured_output = (quick / "structured_output.py").read_text(encoding="utf-8")
+    for term in [
+        "CASE_ID_RE", "FENCE_RE", "JSON_DECODER", "_json_objects_from_text",
+        "raw_decode", "validate_structured_response", "extract_result", "install_into",
+    ]:
+        if term not in structured_output:
+            errors.append(f"quick structured-output isolator missing control: {term}")
+
     structured_tests = (quick / "test_structured_output.py").read_text(encoding="utf-8")
     for term in [
         "test_schema_properties_are_not_a_response",
         "test_echoed_schema_before_valid_answer_is_ignored",
         "test_valid_json_string_is_extracted",
+        "test_fenced_json_is_extracted",
+        "test_json_embedded_in_text_is_extracted",
+        "test_double_encoded_json_is_extracted",
+        "test_raw_stdout_fallback_is_extracted",
         "test_wrong_enum_is_rejected",
         "test_claim_shape_is_enforced",
+        "test_case_id_shape_is_enforced",
     ]:
         if term not in structured_tests:
             errors.append(f"quick structured-output regression suite missing case: {term}")
@@ -219,7 +234,8 @@ if not errors:
         "native_first = (trial + case_index) % 2 == 1", "runner.set_thalarch_plugin_state",
         "runner.run_case", "score_run.py", "run_validator()", "verify_plugin_tree()",
         "plugin_match_verified", "plugin_source_fingerprint", "plugin_staged_fingerprint",
-        "staged Antigravity CLI copy",
+        "staged Antigravity CLI copy", "import structured_output",
+        "structured_output.install_into(runner)", "--resume", "ETA",
     ]:
         if term not in pair_driver:
             errors.append(f"quick paired driver missing control: {term}")
@@ -248,7 +264,7 @@ if not errors:
         "UNVERIFIED:plugin-checkout", "INVALID:plugin-fingerprint", "plugin_match_verified",
         "plugin_source_fingerprint", "plugin_staged_fingerprint",
         "def pair_integrity(native: dict[str, Any], thalarch: dict[str, Any])",
-        'native.get("protocol_revision") == 3', 'thalarch.get("protocol_revision") == 3',
+        'native.get("protocol_revision") == 4', 'thalarch.get("protocol_revision") == 4',
     ]:
         if term not in scorer:
             errors.append(f"benchmark scorer missing protocol/integrity control: {term}")
@@ -286,7 +302,7 @@ if not errors and score.is_file():
             "model": "test-model",
             "requested_model": "test-model",
             "effort": "high",
-            "protocol_revision": 3,
+            "protocol_revision": 4,
             "protocol_fingerprint": "abc",
             "benchmark_revision": "def",
             "agy_version": "1.1.15",
@@ -308,7 +324,7 @@ if not errors and score.is_file():
             "model": "test-model",
             "requested_model": "test-model",
             "effort": "high",
-            "protocol_revision": 3,
+            "protocol_revision": 4,
             "protocol_fingerprint": "abc",
             "benchmark_revision": "def",
             "agy_version": "1.1.15",
@@ -347,9 +363,10 @@ print("THALARCH BENCHMARK VALIDATION PASSED")
 print("version: 1.0.0 (fixed)")
 print("cross_model_cases: >=20")
 print("quick_antigravity_cases: 8")
-print("quick_protocol_revision: 3")
+print("quick_protocol_revision: 4")
 print("quick_structured_verdict_semantics: enforced")
 print("quick_structured_output_isolation: schema_echo_rejected")
+print("quick_structured_output_recovery: wrapper_fence_embedded_double_encoded")
 print("quick_polarity_aware_claims: enforced")
 print("quick_judge_regressions: passed")
 print("quick_structured_output_regressions: passed")
@@ -362,6 +379,8 @@ print("quick_infra_errors: separated_from_hallucinations")
 print("quick_paired_manifest: model_effort_revision_fingerprint")
 print("quick_repeated_trials: supported")
 print("quick_counterbalanced_driver: enforced")
+print("quick_resume: fingerprint_guarded")
+print("quick_progress_eta: enforced")
 print("quick_plugin_checkout_integrity: enforced")
 print("quick_thalarch_activation: explicit_skill_slash_command")
 print("hallucination_taxonomy: enforced")
