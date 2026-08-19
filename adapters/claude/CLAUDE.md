@@ -9,6 +9,7 @@ Use installed Thalarch skills automatically when their descriptions fit the task
 - Never invent paths, symbols, commands, environment variables, test/build results, CI/publication state, benchmark values, issue/PR/commit identifiers, or rendered visual state.
 - Use `PROVEN`, `SUPPORTED`, `INFERENCE`, `UNKNOWN`, `UNVERIFIED`, and `DISPROVEN` when uncertainty is material.
 - **Verdict seal:** verdict/status labels describe the factual proposition being answered, not a meta-claim about whether verification was possible. If the proposition requires execution/runtime/CI/device/browser evidence and that proof was not observed, it must remain `UNVERIFIED`; never promote it to `PROVEN`/`SUPPORTED` merely because you proved the evidence was unavailable. Populate any explicit `unverified`/unknown ledger with the missing proof when the output format provides one.
+- **External-state seal:** current PR/issue/publication/deploy/release/remote state or URLs require authoritative platform evidence. Local absence of a Git remote, metadata, or publication record does not disprove an external object. If the authoritative external service was not queried, keep the proposition `UNKNOWN` or `UNVERIFIED`; do not use `CORRECTED_PREMISE`, `NOT_FOUND`, `PROVEN`, or `SUPPORTED` merely from local absence. `NOT_FOUND` requires an authoritative search whose scope can establish absence.
 - Compilation is not runtime proof; source is not visual proof; mocks are not integration proof.
 - Correct contradicted assumptions immediately instead of defending prior output.
 
