@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+root = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
+bench = root / "benchmarks"
+errors: list[str] = []
+
+required = [
+    bench / "README.md",
+    bench / "cases.json",
+    bench / "rubric.json",
+    bench / "result-template.json",
+    bench / "score_run.py",
+]
+for path in required:
+    if not path.is_file():
+        errors.append(f"missing benchmark file: {path.relative_to(root)}")
+
+for path in [bench / "cases.json", bench / "rubric.json", bench / "result-template.json"]:
+    if not path.is_file():
+        continue
+    try:
+        json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        errors.append(f"invalid JSON in {path.relative_to(root)}: {exc}")
+
+score = bench / "score_run.py"
+if score.is_file():
+    try:
+        compile(score.read_text(encoding="utf-8"), str(score), "exec")
+    except SyntaxError as exc:
+        errors.append(f"syntax error in {score.relative_to(root)}: {exc}")
+
+if not errors:
+    cases = json.loads((bench / "cases.json").read_text(encoding="utf-8"))
+    entries = cases.get("cases") if isinstance(cases, dict) else None
+    if not isinstance(entries, list) or len(entries) < 20:
+        errors.append("benchmark suite must contain at least 20 diverse cases")
+    else:
+        ids = [str(case.get("id") or "") for case in entries if isinstance(case, dict)]
+        if len(ids) != len(set(ids)):
+            errors.append("benchmark case ids must be unique")
+        for case in entries:
+            if not isinstance(case, dict):
+                errors.append("every benchmark case must be an object")
+                continue
+            for key in ["id", "category", "title", "prompt", "fixture_requirement", "success_signal"]:
+                if not isinstance(case.get(key), str) or not case[key].strip():
+                    errors.append(f"benchmark case {case.get('id', '?')} missing {key}")
+
+    rubric = json.loads((bench / "rubric.json").read_text(encoding="utf-8"))
+    if rubric.get("version") != "1.0.0":
+        errors.append("benchmark rubric version must remain 1.0.0")
+    required_types = {
+        "REPO_FACT", "API_VERSION", "COMMAND", "RUNTIME_RESULT", "EXTERNAL_STATE",
+        "VISUAL_STATE", "PROOF_SUBSTITUTION", "CITATION_SOURCE", "OTHER",
+    }
+    weights = rubric.get("hallucination_weights", {})
+    if not required_types.issubset(set(weights)):
+        errors.append("benchmark rubric missing hallucination taxonomy weights")
+
+# Scorer smoke test with a paired native/Thalarch result.
+if not errors and score.is_file():
+    template = json.loads((bench / "result-template.json").read_text(encoding="utf-8"))
+    with tempfile.TemporaryDirectory() as temp:
+        temp = Path(temp)
+        native = dict(template)
+        native.update({
+            "case_id": "H-01",
+            "host": "test-host",
+            "thalarch": False,
+            "task_status": "FAIL",
+            "hallucinations": [{
+                "type": "REPO_FACT",
+                "claim": "invented symbol",
+                "evidence": "symbol absent",
+                "corrected_before_final": False,
+            }],
+        })
+        guarded = dict(template)
+        guarded.update({
+            "case_id": "H-01",
+            "host": "test-host",
+            "thalarch": True,
+            "task_status": "PASS",
+            "hallucinations": [],
+        })
+        native_path = temp / "native.json"
+        guarded_path = temp / "thalarch.json"
+        native_path.write_text(json.dumps(native), encoding="utf-8")
+        guarded_path.write_text(json.dumps(guarded), encoding="utf-8")
+        proc = subprocess.run(
+            [sys.executable, str(score), str(native_path), str(guarded_path)],
+            cwd=root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            errors.append(f"benchmark scorer smoke test failed: {proc.stderr or proc.stdout}")
+        else:
+            if "Paired Thalarch delta" not in proc.stdout or "test-host | H-01" not in proc.stdout:
+                errors.append("benchmark scorer did not produce paired comparison output")
+
+if errors:
+    print("THALARCH BENCHMARK VALIDATION FAILED")
+    for error in errors:
+        print(" -", error)
+    raise SystemExit(1)
+
+print("THALARCH BENCHMARK VALIDATION PASSED")
+print("version: 1.0.0 (fixed)")
+print("cross_model_cases: >=20")
+print("hallucination_taxonomy: enforced")
+print("paired_scorer: passed")
