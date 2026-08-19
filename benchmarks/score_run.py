@@ -128,7 +128,7 @@ def main() -> None:
     paired = [(key, pair) for key, pair in by_pair.items() if False in pair and True in pair]
     if paired:
         print("\nPaired Thalarch delta")
-        print("host | case | model check | reliability Δ | hallucinations Δ | task native→thalarch")
+        print("host | case | model check | reliability delta | hallucinations delta | task native->thalarch")
         print("--- | --- | --- | ---: | ---: | ---")
         valid_pairs = 0
         invalid_pairs = 0
@@ -139,7 +139,7 @@ def main() -> None:
                 invalid_pairs += 1
                 print(
                     f"{host} | {case} | INVALID: {native['model']} != {thalarch['model']} | "
-                    f"- | - | {native['task_status']}→{thalarch['task_status']}"
+                    f"- | - | {native['task_status']}->{thalarch['task_status']}"
                 )
                 continue
             if model_check is None:
@@ -151,7 +151,7 @@ def main() -> None:
                 f"{host} | {case} | {check_label} | "
                 f"{thalarch['reliability'] - native['reliability']:+d} | "
                 f"{thalarch['hallucination_count'] - native['hallucination_count']:+d} | "
-                f"{native['task_status']}→{thalarch['task_status']}"
+                f"{native['task_status']}->{thalarch['task_status']}"
             )
 
         if invalid_pairs:
