@@ -19,7 +19,7 @@ def base_pair() -> tuple[dict, dict]:
         "model": "gemini-3.1-pro-high",
         "requested_model": "gemini-3.1-pro-high",
         "effort": "high",
-        "protocol_revision": 3,
+        "protocol_revision": 4,
         "protocol_fingerprint": "protocol-abc",
         "benchmark_revision": "commit-abc",
         "agy_version": "1.1.15",
@@ -59,6 +59,10 @@ def main() -> None:
     wrong_activation = copy.deepcopy(thalarch)
     wrong_activation["thalarch_activation"] = "thalarch-orchestrator"
     expect(("INVALID:thalarch-activation", False), native, wrong_activation)
+
+    old_protocol = copy.deepcopy(thalarch)
+    old_protocol["protocol_revision"] = 3
+    expect(("INVALID:protocol_revision", False), native, old_protocol)
 
     print("THALARCH SCORE RUN REGRESSION TESTS PASSED")
 
