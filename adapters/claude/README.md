@@ -21,6 +21,14 @@ The specialists do not intentionally modify project source/configuration or exte
 
 The Stop gate requires project-native verification that is **successful and newer than the final observed mutation**. Claude Code exposes successful and failed tool execution as separate lifecycle events, so a later failed verification attempt invalidates an earlier successful check for completion purposes. If a required proof cannot be obtained, an explicit `UNVERIFIED` result is preferred over fabricated completion.
 
+## Visual parity
+
+Claude Code receives the same canonical visual doctrine as Antigravity. `thalarch-design-system` includes the `VoltAgent/awesome-design-md` reference-atlas protocol, and the same design capsule is used by web/image workflows: one primary reference by task fit, at most one secondary reference, project/user identity first, and no blind brand cloning.
+
+The actual production medium remains capability-aware. If the current Claude Code environment lacks raster image generation/editing, Thalarch uses the reference for design reasoning, deterministic/vector assets, image-to-code, or implementation guidance instead of pretending an unavailable image tool exists.
+
+The same runtime proof seal is preserved across hosts: execution-dependent propositions remain `UNVERIFIED` until the required run/CI/device/browser evidence is actually observed.
+
 ## Install
 
 ```bash
