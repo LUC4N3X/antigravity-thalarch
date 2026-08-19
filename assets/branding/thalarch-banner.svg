@@ -1,157 +1,86 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" width="1200" height="380">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="1200" height="360">
   <defs>
-
-    <!-- Background Gradient -->
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#070B14"/>
-      <stop offset="50%" stop-color="#0C1326"/>
-      <stop offset="100%" stop-color="#060911"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#02070d"/><stop offset="1" stop-color="#05090f"/>
     </linearGradient>
-
-    <linearGradient id="borderGlow" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00F0FF" stop-opacity="0.5"/>
-      <stop offset="50%" stop-color="#10B981" stop-opacity="0.1"/>
-      <stop offset="100%" stop-color="#0284C7" stop-opacity="0.5"/>
+    <linearGradient id="teal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#14d8e8"/><stop offset="1" stop-color="#0f8f9f"/>
     </linearGradient>
-
-    <!-- Grid Pattern -->
-    <pattern id="dotGrid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="10" cy="10" r="1" fill="#FFFFFF" opacity="0.03"/>
-    </pattern>
-
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#11d6b5"/><stop offset="1" stop-color="#087d68"/>
+    </linearGradient>
+    <linearGradient id="orange" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff9b66"/><stop offset="1" stop-color="#d7582f"/>
+    </linearGradient>
+    <linearGradient id="anti" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#7b3cff"/><stop offset="0.23" stop-color="#16c7ff"/><stop offset="0.48" stop-color="#2fd480"/><stop offset="0.72" stop-color="#f3d347"/><stop offset="1" stop-color="#ff645f"/>
+    </linearGradient>
+    <filter id="softGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
-
-    <filter id="heavyGlow">
-      <feGaussianBlur stdDeviation="12" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-
-    <!-- Emblem Gradients -->
-    <linearGradient id="plateGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF"/>
-      <stop offset="100%" stop-color="#CBD5E1"/>
-    </linearGradient>
-    
-    <linearGradient id="coreFissure" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#00F0FF"/>
-      <stop offset="100%" stop-color="#10B981"/>
-    </linearGradient>
-    
-    <radialGradient id="vortexGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#00F0FF" stop-opacity="0.3"/>
-      <stop offset="100%" stop-color="#0C1326" stop-opacity="0"/>
-    </radialGradient>
-
-    <radialGradient id="bgRadialGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#00F0FF" stop-opacity="0.15"/>
-      <stop offset="100%" stop-color="#0C1326" stop-opacity="0"/>
-    </radialGradient>
-    
-    <linearGradient id="textGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF"/>
-      <stop offset="100%" stop-color="#E2E8F0"/>
-    </linearGradient>
-
   </defs>
 
-  <!-- Background Card -->
-  <rect x="2" y="2" width="1196" height="376" rx="16" fill="url(#bgGrad)" stroke="url(#borderGlow)" stroke-width="2"/>
-  <rect x="2" y="2" width="1196" height="376" rx="16" fill="url(#dotGrid)"/>
+  <rect width="1200" height="360" rx="18" fill="url(#bg)"/>
+  <rect x="1" y="1" width="1198" height="358" rx="17" fill="none" stroke="#123047"/>
 
-  <!-- Geometric Emblem (Left) -->
-  <g transform="translate(240, 190) scale(1.5)">
+  <rect x="88" y="44" width="286" height="272" rx="42" fill="#050b12" stroke="#0f6070"/>
+  <rect x="89" y="45" width="284" height="270" rx="41" fill="none" stroke="#08bdd2" stroke-opacity=".35"/>
+  <circle cx="231" cy="180" r="104" fill="none" stroke="#0b5d70" stroke-width="1" stroke-dasharray="3 8"/>
+  <circle cx="231" cy="180" r="78" fill="none" stroke="#0e7890" stroke-opacity=".5"/>
+  <circle cx="231" cy="77" r="4" fill="#13e0ed"/><circle cx="333" cy="180" r="4" fill="#13e0ed"/><circle cx="231" cy="283" r="4" fill="#13e0ed"/>
+  <circle cx="129" cy="180" r="4" fill="#ff965b"/>
+  <path d="M231 88 L190 114 L231 154 Z" fill="url(#teal)"/>
+  <path d="M235 88 L279 116 L279 160 L235 154 Z" fill="url(#orange)"/>
+  <path d="M230 158 L184 206 L230 230 Z" fill="url(#green)"/>
+  <path d="M235 160 L281 205 L235 230 Z" fill="#0d695f"/>
+  <path d="M193 116 L231 155 L184 202 Z" fill="#08b9c9" opacity=".72"/>
+  <path d="M279 116 L235 155 L279 203 Z" fill="#ee6f42" opacity=".72"/>
+  <path d="M184 206 L230 184 L230 230 Z" fill="#0bb390" opacity=".82"/>
+  <path d="M281 205 L235 184 L235 230 Z" fill="#0a8b77" opacity=".78"/>
+  <circle cx="231" cy="180" r="5" fill="#041017"/>
 
-    <!-- Soft bioluminescent radial glow behind emblem -->
-    <circle cx="0" cy="0" r="140" fill="url(#bgRadialGlow)" filter="url(#heavyGlow)"/>
+  <g font-family="Inter,Segoe UI,Arial,sans-serif">
+    <rect x="438" y="54" width="220" height="34" rx="17" fill="#06111a" stroke="#164459"/>
+    <circle cx="456" cy="71" r="5" fill="#13dce8"/>
+    <text x="477" y="77" font-size="15" fill="#16d7e4" letter-spacing="3">THALARCH MODE</text>
 
-    <!-- Orbiting Constellation Elements -->
-    <circle cx="0" cy="0" r="95" fill="none" stroke="#CBD5E1" stroke-width="0.5" stroke-dasharray="2 6" opacity="0.3"/>
-    <circle cx="0" cy="0" r="75" fill="none" stroke="#00F0FF" stroke-width="0.5" opacity="0.4"/>
-    
-    <!-- Micro-coordinate crosshairs (+) -->
-    <path d="M -95 -4 L -95 4 M -99 0 L -91 0" stroke="#00F0FF" stroke-width="1" opacity="0.8"/>
-    <path d="M 95 -4 L 95 4 M 91 0 L 99 0" stroke="#00F0FF" stroke-width="1" opacity="0.8"/>
-    <path d="M -4 -95 L 4 -95 M 0 -99 L 0 -91" stroke="#00F0FF" stroke-width="1" opacity="0.8"/>
-    <path d="M -4 95 L 4 95 M 0 91 L 0 99" stroke="#00F0FF" stroke-width="1" opacity="0.8"/>
-    
-    <!-- 6 glowing agent constellation nodes -->
-    <circle cx="-65" cy="-65" r="3" fill="#00F0FF" filter="url(#glow)"/>
-    <circle cx="70" cy="-40" r="2.5" fill="#10B981" filter="url(#glow)"/>
-    <circle cx="-85" cy="15" r="2" fill="#00F0FF" filter="url(#glow)"/>
-    <circle cx="55" cy="70" r="3" fill="#00F0FF" filter="url(#glow)"/>
-    <circle cx="20" cy="-85" r="2.5" fill="#FFFFFF" filter="url(#glow)"/>
-    <circle cx="-35" cy="80" r="2" fill="#10B981" filter="url(#glow)"/>
+    <text x="438" y="149" font-size="70" font-weight="500" fill="#f7f7f8" letter-spacing="15">THALARCH</text>
+    <text x="440" y="184" font-size="14" fill="#8490a3" letter-spacing="4">HIGH-RIGOR MULTI-AGENT ENGINEERING PROTOCOL</text>
 
-    <!-- Abyssal vortex background glow -->
-    <circle cx="0" cy="45" r="45" fill="url(#vortexGlow)" filter="url(#glow)"/>
-
-    <!-- Flanking Kinetic Fins/Wings -->
-    <!-- Left Fin -->
-    <polygon points="-25,-25 -60,-10 -40,35 -20,15" fill="#0C1326" stroke="#00F0FF" stroke-width="1" opacity="0.8"/>
-    <polygon points="-25,-25 -60,-10 -45,-5 -25,-5" fill="url(#plateGrad)" opacity="0.4"/>
-    <!-- Right Fin -->
-    <polygon points="25,-25 60,-10 40,35 20,15" fill="#0C1326" stroke="#00F0FF" stroke-width="1" opacity="0.8"/>
-    <polygon points="25,-25 60,-10 45,-5 25,-5" fill="url(#plateGrad)" opacity="0.4"/>
-
-    <!-- Upper Arch: Interlocking geometric crystal plates -->
-    <!-- Main top plate -->
-    <polygon points="-45,-50 45,-50 25,-25 -25,-25" fill="url(#plateGrad)" stroke="#00F0FF" stroke-width="1.5"/>
-    <!-- Top crown tip -->
-    <polygon points="-25,-50 0,-70 25,-50" fill="#FFFFFF" opacity="0.9" stroke="#00F0FF" stroke-width="1"/>
-    
-    <!-- Downward Spire: Segmented, glowing kinetic pillar -->
-    <!-- Upper spire block -->
-    <polygon points="-15,-25 15,-25 10,15 -10,15" fill="#0C1326" stroke="#CBD5E1" stroke-width="1"/>
-    <!-- Lower spire descending into vortex -->
-    <polygon points="-10,15 10,15 0,65" fill="#060911" stroke="#00F0FF" stroke-width="1"/>
-    
-    <!-- Core Energy Fissure -->
-    <polygon points="-4,-20 4,-20 2,45 -2,45" fill="url(#coreFissure)" filter="url(#glow)"/>
-    <polygon points="-1.5,-20 1.5,-20 0.5,45 -0.5,45" fill="#FFFFFF"/>
-
-  </g>
-
-  <!-- Typography (Right) -->
-  <g transform="translate(480, 170)">
-    <!-- Skill Badge (Proper bounding box and padding) -->
-    <g transform="translate(0, -80)">
-      <!-- 340px width allows generous room for the 39 chars text -->
-      <rect x="0" y="0" width="340" height="26" rx="12" fill="#0D1A2A" stroke="#00F0FF" stroke-width="1" opacity="0.8"/>
-      <!-- Glowing dot shifted to fit with margin -->
-      <circle cx="16" cy="13" r="4" fill="#00F0FF" filter="url(#glow)"/>
-      <text x="32" y="17.5" fill="#00F0FF" font-family="Inter, -apple-system, sans-serif" font-size="11" font-weight="600" letter-spacing="0.1em">SKILL: thalarch-mode • GOOGLE ANTIGRAVITY</text>
-    </g>
-
-    <!-- Main Title -->
-    <!-- Font size 72, letter-spacing 0.2em, textGrad -->
-    <text x="0" y="20" fill="url(#textGrad)" font-family="Inter, -apple-system, sans-serif" font-size="72" font-weight="800" letter-spacing="0.2em">THALARCH</text>
-    
-    <!-- Subtitle -->
-    <text x="2" y="65" fill="#94A3B8" font-family="Inter, -apple-system, sans-serif" font-size="13" font-weight="500" letter-spacing="0.3em">HIGH-RIGOR MULTI-AGENT ENGINEERING PROTOCOL</text>
-    
-    <!-- Protocol Tags / Micro-pills -->
-    <g transform="translate(2, 95)" font-family="Inter, -apple-system, sans-serif" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#00F0FF">
-      <g transform="translate(0, 0)">
-        <rect x="0" y="0" width="170" height="20" rx="4" fill="#00F0FF" fill-opacity="0.1" stroke="#00F0FF" stroke-width="0.5" stroke-opacity="0.5"/>
-        <text x="85" y="13.5" text-anchor="middle">[ STRUCTURAL DELEGATION ]</text>
+    <g transform="translate(430 208)">
+      <rect width="183" height="58" rx="12" fill="#050c13" stroke="#17344a"/>
+      <g transform="translate(23 14)" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 2c5 0 8 3 9 7 4-2 9 0 11 4 2 4 1 8-2 11 3 2 4 7 2 11-2 4-7 6-11 4-1 4-4 7-9 7-5 0-8-3-9-7-4 2-9 0-11-4-2-4-1-8 2-11-3-3-4-7-2-11 2-4 7-6 11-4 1-4 4-7 9-7z" transform="scale(.72)"/>
+        <path d="M8 14l7-4 7 4v8l-7 4-7-4z" transform="scale(.72)"/>
       </g>
-      <g transform="translate(180, 0)">
-        <rect x="0" y="0" width="150" height="20" rx="4" fill="#00F0FF" fill-opacity="0.1" stroke="#00F0FF" stroke-width="0.5" stroke-opacity="0.5"/>
-        <text x="75" y="13.5" text-anchor="middle">[ COLD VERIFICATION ]</text>
+      <text x="64" y="37" font-size="15" fill="#ffffff" letter-spacing="1">OPENAI CODEX</text>
+
+      <g transform="translate(194 0)">
+        <rect width="164" height="58" rx="12" fill="#080c10" stroke="#2c261e"/>
+        <g transform="translate(30 29)" stroke="#ff8c2a" stroke-width="3" stroke-linecap="round">
+          <path d="M0-16V16M-16 0H16M-11-11L11 11M11-11L-11 11M-6-15L6 15M6-15L-6 15"/>
+        </g>
+        <text x="63" y="37" font-size="16" fill="#ff9a3d" letter-spacing="2">CLAUDE</text>
       </g>
-      <g transform="translate(340, 0)">
-        <rect x="0" y="0" width="135" height="20" rx="4" fill="#00F0FF" fill-opacity="0.1" stroke="#00F0FF" stroke-width="0.5" stroke-opacity="0.5"/>
-        <text x="67.5" y="13.5" text-anchor="middle">[ ANTIGRAVITY 2.0 ]</text>
+
+      <g transform="translate(369 0)">
+        <rect width="154" height="58" rx="12" fill="#050c13" stroke="#17344a"/>
+        <path d="M31 15 C34 24 39 27 48 29 C39 31 34 35 31 44 C28 35 23 31 14 29 C23 27 28 24 31 15Z" fill="#65a2ff"/>
+        <text x="59" y="37" font-size="16" fill="#6fa7ff" letter-spacing="2">GEMINI</text>
+      </g>
+
+      <g transform="translate(534 0)">
+        <rect width="200" height="58" rx="12" fill="#050c13" stroke="#17344a"/>
+        <path d="M20 43 C25 30 31 14 40 14 C49 14 55 30 60 43" fill="none" stroke="url(#anti)" stroke-width="8" stroke-linecap="round" filter="url(#softGlow)"/>
+        <path d="M27 35 C31 25 35 19 40 19 C45 19 49 25 53 35" fill="none" stroke="#061019" stroke-width="4" stroke-linecap="round"/>
+        <text x="76" y="37" font-size="15" fill="#18d8ca" letter-spacing="2">ANTIGRAVITY</text>
       </g>
     </g>
+
+    <text x="438" y="300" font-size="13" fill="#758095" letter-spacing="3">STRUCTURAL DELEGATION</text>
+    <circle cx="690" cy="296" r="4" fill="#0ddce2"/>
+    <text x="716" y="300" font-size="13" fill="#758095" letter-spacing="3">COLD VERIFICATION</text>
+    <circle cx="933" cy="296" r="4" fill="#0ddce2"/>
+    <text x="958" y="300" font-size="13" fill="#758095" letter-spacing="3">ANTIGRAVITY 2.0</text>
   </g>
 </svg>
