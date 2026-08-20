@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Prevent orchestrated mutation from ending without independent evidence.
+"""Prevent final output from outrunning the evidence actually observed.
 
 Primary evidence comes from the hook event ledger written by PreToolUse/PostToolUse.
-Transcript parsing is retained only as a backward-compatible fallback for a
-conversation that began before the event recorder was installed.
+Transcript parsing is retained both for final-answer epistemic checks and as a
+backward-compatible fallback for conversations that began before the event recorder
+was installed.
 """
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from hook_utils import emit, latest_model_content, load_state, read_payload, save_state, tool_calls
@@ -23,6 +25,40 @@ MUTATOR_AGENTS = {
     "thalarch-web-designer",
     "thalarch-visual-director",
 }
+
+STRONG_EXTERNAL_VERDICTS = {"CORRECTED_PREMISE", "NOT_FOUND", "PROVEN", "SUPPORTED"}
+EXTERNAL_STATE_RE = re.compile(
+    r"(?ix)"
+    r"\b(?:pull\s+request|pr\b|issue\s+#?\d+|issue\s+url|"
+    r"deploy(?:ment)?\s+(?:state|status|url|live)|"
+    r"release\s+(?:state|status|url|live|published)|"
+    r"publication\s+(?:state|status|url|live|published)|"
+    r"remote\s+(?:state|object|url)|platform\s+url)\b|"
+    r"https?://(?:www\.)?(?:github\.com|gitlab\.com|bitbucket\.org)/"
+)
+CONCLUSION_RE = re.compile(
+    r"(?i)[\"']?conclusion[\"']?\s*[:=]\s*[\"']?"
+    r"(CORRECTED_PREMISE|NOT_FOUND|PROVEN|SUPPORTED|UNKNOWN|UNVERIFIED)\b"
+)
+AUTHORITATIVE_TOOL_MARKERS = (
+    "github",
+    "gitlab",
+    "bitbucket",
+    "browser",
+    "web",
+    "mcp",
+    "http",
+    "url",
+    "remote_api",
+)
+AUTHORITATIVE_ARG_MARKERS = (
+    "github.com",
+    "api.github.com",
+    "gitlab.com",
+    "bitbucket.org",
+    "http://",
+    "https://",
+)
 
 
 def unavailable_but_honest(content: str) -> bool:
@@ -72,6 +108,81 @@ def transcript_fallback_calls(payload: dict[str, Any]) -> list[tuple[int, str, s
     return result
 
 
+def final_conclusion(content: str) -> str:
+    stripped = content.strip()
+    if not stripped:
+        return ""
+    try:
+        parsed = json.loads(stripped)
+    except Exception:
+        parsed = None
+    if isinstance(parsed, dict):
+        value = parsed.get("conclusion")
+        if isinstance(value, str):
+            return value.strip().upper()
+    match = CONCLUSION_RE.search(content)
+    return match.group(1).upper() if match else ""
+
+
+def looks_like_current_external_state(content: str) -> bool:
+    return bool(EXTERNAL_STATE_RE.search(content))
+
+
+def has_authoritative_external_evidence(calls: list[tuple[int, str, str]]) -> bool:
+    """Recognize direct platform/web evidence, never local Git/file inspection alone."""
+    for _, name, args_text in calls:
+        lowered_name = name.lower()
+        if any(marker in lowered_name for marker in AUTHORITATIVE_TOOL_MARKERS):
+            return True
+        if any(marker in args_text for marker in AUTHORITATIVE_ARG_MARKERS):
+            return True
+    return False
+
+
+def external_state_final_gate(
+    payload: dict[str, Any],
+    calls: list[tuple[int, str, str]],
+    latest: str,
+) -> str | None:
+    """Return a blocking reason when the final external-state verdict outruns evidence.
+
+    This check intentionally runs for read-only tasks too. Local list/read/Git evidence can support
+    local sub-claims, but cannot justify a proposition-level verdict about a current external object.
+    """
+    conclusion = final_conclusion(latest)
+    if conclusion not in STRONG_EXTERNAL_VERDICTS:
+        save_state(payload, "external-state-final-gate", {"signature": "clear", "attempts": 0})
+        return None
+    if not looks_like_current_external_state(latest):
+        return None
+    if has_authoritative_external_evidence(calls):
+        save_state(payload, "external-state-final-gate", {"signature": "clear", "attempts": 0})
+        return None
+
+    signature = conclusion
+    state = load_state(payload, "external-state-final-gate")
+    attempts = int(state.get("attempts", 0)) + 1 if state.get("signature") == signature else 1
+    save_state(payload, "external-state-final-gate", {"signature": signature, "attempts": attempts})
+
+    escalation = ""
+    if attempts >= 2:
+        escalation = (
+            " This is the final structured-verdict gate, not optional guidance: rewrite the top-level "
+            "conclusion before stopping."
+        )
+    return (
+        "THALARCH EXTERNAL-STATE FINAL VERDICT GATE: completion is blocked because the final "
+        f"conclusion is {conclusion}, but no authoritative current platform/service evidence was "
+        "observed. For the main current external-state proposition, UNKNOWN/UNVERIFIED takes "
+        "precedence and verdict selection stops there. Local absence of remotes, metadata, files, "
+        "or references may be reported only as local facts. Set the top-level conclusion to UNKNOWN "
+        "or UNVERIFIED, explicitly name the missing authoritative proof, populate any unverified/unknown "
+        "ledger, and do not use CORRECTED_PREMISE/NOT_FOUND/PROVEN/SUPPORTED until authoritative "
+        "external evidence actually exists."
+        + escalation
+    )
+
+
 def main() -> None:
     payload = read_payload()
     if not bool(payload.get("fullyIdle", True)):
@@ -93,6 +204,13 @@ def main() -> None:
     calls = recorded_calls(payload)
     if not calls:
         calls = transcript_fallback_calls(payload)
+
+    latest = latest_model_content(payload)
+    external_block = external_state_final_gate(payload, calls, latest)
+    if external_block:
+        emit({"decision": "continue", "reason": external_block})
+        return
+
     if not calls:
         emit({"decision": "stop"})
         return
@@ -127,7 +245,7 @@ def main() -> None:
         if "thalarch-design-reviewer" in text:
             design_review_orders.append(order)
 
-    # Enforce the hard completion protocol only at the parent/orchestrator boundary.
+    # Enforce the orchestration completion protocol only at the parent/orchestrator boundary.
     # Direct implementation subagents must be able to return evidence to their parent.
     if not orchestrated_mutation:
         emit({"decision": "stop"})
@@ -158,7 +276,6 @@ def main() -> None:
         emit({"decision": "stop"})
         return
 
-    latest = latest_model_content(payload)
     if unavailable_but_honest(latest):
         # Honest incompleteness is permitted; fabricated completion is not.
         emit({"decision": "stop"})
