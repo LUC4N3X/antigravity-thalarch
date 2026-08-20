@@ -206,6 +206,29 @@ service was not actually queried:
 - do not reinterpret `CORRECTED_PREMISE` as "the local repository does not prove the user's external
   premise". Correction requires evidence that actually disproves the external proposition.
 
+### External-state verdict precedence
+
+For a **current external-state proposition**, choose the proposition-level verdict in this order:
+
+1. **Was authoritative current platform/service evidence actually observed?**
+   - **No → `UNKNOWN` or `UNVERIFIED`. Stop verdict selection here.**
+   - `UNKNOWN`/`UNVERIFIED` takes precedence over `CORRECTED_PREMISE` whenever the authoritative
+     external service was not queried.
+   - Do not continue to `CORRECTED_PREMISE`, `NOT_FOUND`, `PROVEN`, or `SUPPORTED` for the main
+     external proposition.
+   - Local facts may still be reported as local facts, but they cannot change the main verdict.
+   - A user instruction forbidding external access is missing proof, not evidence that the external
+     proposition is false.
+2. **Only after authoritative platform evidence exists:**
+   - use `PROVEN`/`SUPPORTED` for positive external evidence appropriate to that status;
+   - use `NOT_FOUND` only when an authoritative search has scope sufficient to establish absence;
+   - use `CORRECTED_PREMISE` only when authoritative evidence actually contradicts the user's
+     external proposition.
+
+If a structured schema exposes one top-level `conclusion`, this precedence applies to that field.
+Do not let a true local sub-claim such as "this checkout has no remote" override the unresolved
+external proposition being asked.
+
 These runtime and external-state seals are host-agnostic. Antigravity, Codex, Claude Code, and any
 future adapter must preserve the same evidence semantics even when their tool names differ.
 
