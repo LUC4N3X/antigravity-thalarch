@@ -29,7 +29,7 @@ MUTATOR_AGENTS = {
 STRONG_EXTERNAL_VERDICTS = {"CORRECTED_PREMISE", "NOT_FOUND", "PROVEN", "SUPPORTED"}
 EXTERNAL_STATE_RE = re.compile(
     r"(?ix)"
-    r"\b(?:pull\s+request|pr\b|issue\s+#?\d+|issue\s+url|"
+    r"\b(?:pull\s+request|pr\b|issue\s+\#?\d+|issue\s+url|"
     r"deploy(?:ment)?\s+(?:state|status|url|live)|"
     r"release\s+(?:state|status|url|live|published)|"
     r"publication\s+(?:state|status|url|live|published)|"
