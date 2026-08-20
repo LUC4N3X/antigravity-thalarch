@@ -3,8 +3,7 @@
 
 Primary evidence comes from the hook event ledger written by PreToolUse/PostToolUse.
 Transcript parsing is retained both for final-answer epistemic checks and as a
-backward-compatible fallback for conversations that began before the event recorder
-was installed.
+backward-compatible source of user intent/tool evidence.
 """
 from __future__ import annotations
 
@@ -12,7 +11,15 @@ import json
 import re
 from typing import Any
 
-from hook_utils import emit, latest_model_content, load_state, read_payload, save_state, tool_calls
+from hook_utils import (
+    emit,
+    latest_model_content,
+    load_state,
+    read_payload,
+    save_state,
+    tool_calls,
+    transcript_steps,
+)
 
 MUTATOR_AGENTS = {
     "thalarch-implementer",
@@ -28,27 +35,28 @@ MUTATOR_AGENTS = {
 
 STRONG_EXTERNAL_VERDICTS = {"CORRECTED_PREMISE", "NOT_FOUND", "PROVEN", "SUPPORTED"}
 EXTERNAL_STATE_RE = re.compile(
-    r"(?ix)"
-    r"\b(?:pull\s+request|pr\b|issue\s+\#?\d+|issue\s+url|"
+    r"\b(?:pull\s+request|pr\b|issue\s+#?\d+|issue\s+url|"
     r"deploy(?:ment)?\s+(?:state|status|url|live)|"
     r"release\s+(?:state|status|url|live|published)|"
     r"publication\s+(?:state|status|url|live|published)|"
     r"remote\s+(?:state|object|url)|platform\s+url)\b|"
-    r"https?://(?:www\.)?(?:github\.com|gitlab\.com|bitbucket\.org)/"
+    r"https?://(?:www\.)?(?:github\.com|gitlab\.com|bitbucket\.org)/",
+    re.IGNORECASE,
 )
 CONCLUSION_RE = re.compile(
-    r"(?i)[\"']?conclusion[\"']?\s*[:=]\s*[\"']?"
-    r"(CORRECTED_PREMISE|NOT_FOUND|PROVEN|SUPPORTED|UNKNOWN|UNVERIFIED)\b"
+    r"[\"']?conclusion[\"']?\s*[:=]\s*[\"']?"
+    r"(CORRECTED_PREMISE|NOT_FOUND|PROVEN|SUPPORTED|UNKNOWN|UNVERIFIED)\b",
+    re.IGNORECASE,
 )
 AUTHORITATIVE_TOOL_MARKERS = (
     "github",
     "gitlab",
     "bitbucket",
+    "search_web",
     "browser",
     "web",
     "mcp",
     "http",
-    "url",
     "remote_api",
 )
 AUTHORITATIVE_ARG_MARKERS = (
@@ -59,6 +67,8 @@ AUTHORITATIVE_ARG_MARKERS = (
     "http://",
     "https://",
 )
+USER_SOURCES = {"USER_EXPLICIT", "USER", "HUMAN"}
+USER_TYPES = {"USER_INPUT", "REQUEST", "USER_MESSAGE", "HUMAN_MESSAGE"}
 
 
 def unavailable_but_honest(content: str) -> bool:
@@ -108,6 +118,68 @@ def transcript_fallback_calls(payload: dict[str, Any]) -> list[tuple[int, str, s
     return result
 
 
+def observed_calls(payload: dict[str, Any]) -> list[tuple[int, str, str]]:
+    """Merge event-ledger and transcript calls without discarding either evidence source."""
+    merged = recorded_calls(payload) + transcript_fallback_calls(payload)
+    seen: set[tuple[int, str, str]] = set()
+    result: list[tuple[int, str, str]] = []
+    for item in sorted(merged, key=lambda value: value[0]):
+        if item in seen:
+            continue
+        seen.add(item)
+        result.append(item)
+    return result
+
+
+def _extract_user_request(content: str) -> str:
+    opener = "<USER_REQUEST>"
+    closer = "</USER_REQUEST>"
+    start = content.find(opener)
+    if start < 0:
+        return content.strip()
+    body_start = start + len(opener)
+    end = content.find(closer, body_start)
+    if end < 0:
+        return content[body_start:].strip()
+    return content[body_start:end].strip()
+
+
+def latest_user_request(payload: dict[str, Any]) -> str:
+    """Return the latest explicit user request from Antigravity's transcript.
+
+    Current Antigravity transcripts use USER_EXPLICIT/USER_INPUT, while older or
+    alternate builds may use USER/REQUEST-style names. Provider-added metadata is
+    excluded when the request is wrapped in <USER_REQUEST> tags.
+    """
+    candidates: list[tuple[int, str]] = []
+    for fallback, step in enumerate(transcript_steps(payload)):
+        source = str(step.get("source") or "").upper()
+        typ = str(step.get("type") or "").upper()
+        content = step.get("content")
+        if not isinstance(content, str):
+            continue
+        if source not in USER_SOURCES and typ not in USER_TYPES:
+            continue
+        request = _extract_user_request(content)
+        if request:
+            try:
+                order = int(step.get("step_index", step.get("stepIndex", fallback)))
+            except Exception:
+                order = fallback
+            candidates.append((order, request))
+
+    if candidates:
+        return max(candidates, key=lambda item: item[0])[1]
+
+    # Defensive compatibility fallback for a future Stop payload that may expose
+    # the current request directly. Official payloads currently rely on transcriptPath.
+    for key in ("userPrompt", "userMessage", "prompt", "request"):
+        value = payload.get(key)
+        if isinstance(value, str) and value.strip():
+            return _extract_user_request(value)
+    return ""
+
+
 def final_conclusion(content: str) -> str:
     stripped = content.strip()
     if not stripped:
@@ -124,8 +196,10 @@ def final_conclusion(content: str) -> str:
     return match.group(1).upper() if match else ""
 
 
-def looks_like_current_external_state(content: str) -> bool:
-    return bool(EXTERNAL_STATE_RE.search(content))
+def looks_like_current_external_state(user_request: str, final_content: str) -> bool:
+    """Classify the proposition from user intent plus the final answer, not answer wording alone."""
+    combined = "\n".join(part for part in (user_request, final_content) if part)
+    return bool(EXTERNAL_STATE_RE.search(combined))
 
 
 def has_authoritative_external_evidence(calls: list[tuple[int, str, str]]) -> bool:
@@ -142,24 +216,27 @@ def has_authoritative_external_evidence(calls: list[tuple[int, str, str]]) -> bo
 def external_state_final_gate(
     payload: dict[str, Any],
     calls: list[tuple[int, str, str]],
+    user_request: str,
     latest: str,
 ) -> str | None:
     """Return a blocking reason when the final external-state verdict outruns evidence.
 
-    This check intentionally runs for read-only tasks too. Local list/read/Git evidence can support
-    local sub-claims, but cannot justify a proposition-level verdict about a current external object.
+    This check intentionally runs for read-only tasks too. The proposition class is
+    derived from the latest explicit user request plus the final response. Local
+    list/read/Git evidence can support local sub-claims but cannot justify a current
+    external-object verdict.
     """
     conclusion = final_conclusion(latest)
     if conclusion not in STRONG_EXTERNAL_VERDICTS:
         save_state(payload, "external-state-final-gate", {"signature": "clear", "attempts": 0})
         return None
-    if not looks_like_current_external_state(latest):
+    if not looks_like_current_external_state(user_request, latest):
         return None
     if has_authoritative_external_evidence(calls):
         save_state(payload, "external-state-final-gate", {"signature": "clear", "attempts": 0})
         return None
 
-    signature = conclusion
+    signature = f"{conclusion}|{user_request[:160]}"
     state = load_state(payload, "external-state-final-gate")
     attempts = int(state.get("attempts", 0)) + 1 if state.get("signature") == signature else 1
     save_state(payload, "external-state-final-gate", {"signature": signature, "attempts": attempts})
@@ -173,12 +250,12 @@ def external_state_final_gate(
     return (
         "THALARCH EXTERNAL-STATE FINAL VERDICT GATE: completion is blocked because the final "
         f"conclusion is {conclusion}, but no authoritative current platform/service evidence was "
-        "observed. For the main current external-state proposition, UNKNOWN/UNVERIFIED takes "
-        "precedence and verdict selection stops there. Local absence of remotes, metadata, files, "
-        "or references may be reported only as local facts. Set the top-level conclusion to UNKNOWN "
-        "or UNVERIFIED, explicitly name the missing authoritative proof, populate any unverified/unknown "
-        "ledger, and do not use CORRECTED_PREMISE/NOT_FOUND/PROVEN/SUPPORTED until authoritative "
-        "external evidence actually exists."
+        "observed for the user's external-state request. For the main current external-state "
+        "proposition, UNKNOWN/UNVERIFIED takes precedence and verdict selection stops there. Local "
+        "absence of remotes, metadata, files, or references may be reported only as local facts. "
+        "Set the top-level conclusion to UNKNOWN or UNVERIFIED, explicitly name the missing "
+        "authoritative proof, populate any unverified/unknown ledger, and do not use "
+        "CORRECTED_PREMISE/NOT_FOUND/PROVEN/SUPPORTED until authoritative external evidence actually exists."
         + escalation
     )
 
@@ -201,12 +278,10 @@ def main() -> None:
         emit({"decision": "stop"})
         return
 
-    calls = recorded_calls(payload)
-    if not calls:
-        calls = transcript_fallback_calls(payload)
-
+    calls = observed_calls(payload)
     latest = latest_model_content(payload)
-    external_block = external_state_final_gate(payload, calls, latest)
+    user_request = latest_user_request(payload)
+    external_block = external_state_final_gate(payload, calls, user_request, latest)
     if external_block:
         emit({"decision": "continue", "reason": external_block})
         return
