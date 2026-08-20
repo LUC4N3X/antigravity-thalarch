@@ -23,6 +23,7 @@ required_scripts = [
     hooks_dir / "stop_evidence_gate.py",
     hooks_dir / "test_hard_gates.py",
     hooks_dir / "test_finish_payload_gate.py",
+    hooks_dir / "test_visual_state_gate.py",
 ]
 
 for path in required_scripts:
@@ -36,11 +37,7 @@ for path in required_scripts:
 
 
 def semantic_python_text(path: Path) -> str:
-    """Return searchable Python policy text including AST string constants.
-
-    Hard-gate messages are intentionally split across adjacent literals and f-strings for
-    readability. Validation should assert semantic concepts, not depend on physical line wrapping.
-    """
+    """Return searchable Python policy text including AST string constants."""
     source = path.read_text(encoding="utf-8")
     try:
         tree = ast.parse(source, filename=str(path))
@@ -110,9 +107,13 @@ if stop_gate.is_file():
     stop_text = semantic_python_text(stop_gate)
     for term in [
         "external_state_final_gate",
+        "visual_state_final_gate",
         "final_conclusion",
+        "final_unverified_items",
         "looks_like_current_external_state",
+        "looks_like_visual_state",
         "has_authoritative_external_evidence",
+        "has_rendered_visual_evidence",
         "latest_user_request",
         "observed_calls",
         "finish_payload_text",
@@ -120,10 +121,12 @@ if stop_gate.is_file():
         "USER_EXPLICIT",
         "USER_INPUT",
         "STRONG_EXTERNAL_VERDICTS",
+        "STRONG_VISUAL_VERDICTS",
         "EXTERNAL-STATE FINAL VERDICT GATE",
+        "VISUAL-STATE FINAL VERDICT GATE",
     ]:
         if term not in stop_text:
-            errors.append(f"stop_evidence_gate.py missing read-only external-state guard: {term}")
+            errors.append(f"stop_evidence_gate.py missing hard-gate guard: {term}")
 
     stop_lower = stop_text.lower()
     for concept in [
@@ -137,9 +140,15 @@ if stop_gate.is_file():
         "user's external-state request",
         "finish tool arguments",
         "final-answer content alone",
+        "rendered visual state",
+        "source code",
+        "screenshot",
+        "mobile",
+        "desktop",
+        "unverified ledger",
     ]:
         if concept not in stop_lower:
-            errors.append(f"stop_evidence_gate.py missing external-state verdict concept: {concept}")
+            errors.append(f"stop_evidence_gate.py missing verdict concept: {concept}")
 
 tests = hooks_dir / "test_hard_gates.py"
 if tests.is_file():
@@ -168,6 +177,20 @@ if finish_tests.is_file():
         if term not in finish_text:
             errors.append(f"finish-payload regression suite missing case: {term}")
 
+visual_tests = hooks_dir / "test_visual_state_gate.py"
+if visual_tests.is_file():
+    visual_text = visual_tests.read_text(encoding="utf-8")
+    for term in [
+        "test_blocks_corrected_premise_without_rendered_visual_evidence",
+        "test_requires_explicit_visual_unverified_ledger",
+        "test_allows_unverified_with_concrete_missing_visual_proof",
+        "test_allows_strong_visual_verdict_after_real_visual_tool_evidence",
+        "looks perfect on both mobile and desktop",
+        "browser_screenshot",
+    ]:
+        if term not in visual_text:
+            errors.append(f"visual-state regression suite missing case: {term}")
+
 if errors:
     print("THALARCH HARD-GATE VALIDATION FAILED")
     for error in errors:
@@ -175,7 +198,14 @@ if errors:
     raise SystemExit(1)
 
 proc = subprocess.run(
-    [sys.executable, "-m", "unittest", "test_hard_gates.py", "test_finish_payload_gate.py"],
+    [
+        sys.executable,
+        "-m",
+        "unittest",
+        "test_hard_gates.py",
+        "test_finish_payload_gate.py",
+        "test_visual_state_gate.py",
+    ],
     cwd=hooks_dir,
     text=True,
     capture_output=True,
@@ -195,6 +225,8 @@ print("event_ledger_pre_post_tool_use: enforced")
 print("read_only_external_state_final_gate: enforced")
 print("external_state_user_context: enforced")
 print("finish_payload_final_gate: enforced")
+print("visual_state_final_gate: enforced")
+print("visual_unverified_ledger: enforced_when_structured")
 print("python_policy_strings: ast_semantic")
 print("orchestrated_stop_evidence_gate: enforced")
 print("unit_tests: passed")
