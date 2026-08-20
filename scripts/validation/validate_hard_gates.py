@@ -112,6 +112,10 @@ if stop_gate.is_file():
         "final_conclusion",
         "looks_like_current_external_state",
         "has_authoritative_external_evidence",
+        "latest_user_request",
+        "observed_calls",
+        "USER_EXPLICIT",
+        "USER_INPUT",
         "STRONG_EXTERNAL_VERDICTS",
         "EXTERNAL-STATE FINAL VERDICT GATE",
     ]:
@@ -126,6 +130,8 @@ if stop_gate.is_file():
         "local absence",
         "corrected_premise",
         "not_found",
+        "user request",
+        "user's external-state request",
     ]:
         if concept not in stop_lower:
             errors.append(f"stop_evidence_gate.py missing external-state verdict concept: {concept}")
@@ -137,9 +143,13 @@ if tests.is_file():
         "test_stop_gate_blocks_read_only_external_corrected_premise_without_authoritative_evidence",
         "test_stop_gate_allows_read_only_external_unverified_without_authoritative_evidence",
         "test_stop_gate_allows_external_strong_verdict_after_authoritative_platform_call",
+        "USER_EXPLICIT",
+        "USER_INPUT",
+        "The requested state cannot be established from this local checkout.",
+        "Tell me the current pull request URL for this local work.",
     ]:
         if term not in tests_text:
-            errors.append(f"hard-gate regression suite missing external-state case: {term}")
+            errors.append(f"hard-gate regression suite missing external-state case/context: {term}")
 
 if errors:
     print("THALARCH HARD-GATE VALIDATION FAILED")
@@ -166,6 +176,7 @@ print("exact_read_target_gate: enforced")
 print("project_command_grounding: enforced")
 print("event_ledger_pre_post_tool_use: enforced")
 print("read_only_external_state_final_gate: enforced")
+print("external_state_user_context: enforced")
 print("python_policy_strings: ast_semantic")
 print("orchestrated_stop_evidence_gate: enforced")
 print("unit_tests: passed")
