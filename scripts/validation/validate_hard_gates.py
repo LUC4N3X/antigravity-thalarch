@@ -22,6 +22,7 @@ required_scripts = [
     hooks_dir / "evidence_event_result.py",
     hooks_dir / "stop_evidence_gate.py",
     hooks_dir / "test_hard_gates.py",
+    hooks_dir / "test_finish_payload_gate.py",
 ]
 
 for path in required_scripts:
@@ -114,6 +115,8 @@ if stop_gate.is_file():
         "has_authoritative_external_evidence",
         "latest_user_request",
         "observed_calls",
+        "finish_payload_text",
+        "NON_EVIDENCE_TERMINAL_TOOLS",
         "USER_EXPLICIT",
         "USER_INPUT",
         "STRONG_EXTERNAL_VERDICTS",
@@ -132,6 +135,8 @@ if stop_gate.is_file():
         "not_found",
         "user request",
         "user's external-state request",
+        "finish tool arguments",
+        "final-answer content alone",
     ]:
         if concept not in stop_lower:
             errors.append(f"stop_evidence_gate.py missing external-state verdict concept: {concept}")
@@ -151,6 +156,18 @@ if tests.is_file():
         if term not in tests_text:
             errors.append(f"hard-gate regression suite missing external-state case/context: {term}")
 
+finish_tests = hooks_dir / "test_finish_payload_gate.py"
+if finish_tests.is_file():
+    finish_text = finish_tests.read_text(encoding="utf-8")
+    for term in [
+        "test_blocks_strong_external_verdict_from_finish_when_final_model_content_is_absent",
+        "test_finish_answer_url_is_not_authoritative_external_evidence",
+        '"name": "finish"',
+        '"conclusion": conclusion',
+    ]:
+        if term not in finish_text:
+            errors.append(f"finish-payload regression suite missing case: {term}")
+
 if errors:
     print("THALARCH HARD-GATE VALIDATION FAILED")
     for error in errors:
@@ -158,7 +175,7 @@ if errors:
     raise SystemExit(1)
 
 proc = subprocess.run(
-    [sys.executable, str(hooks_dir / "test_hard_gates.py")],
+    [sys.executable, "-m", "unittest", "test_hard_gates.py", "test_finish_payload_gate.py"],
     cwd=hooks_dir,
     text=True,
     capture_output=True,
@@ -177,6 +194,7 @@ print("project_command_grounding: enforced")
 print("event_ledger_pre_post_tool_use: enforced")
 print("read_only_external_state_final_gate: enforced")
 print("external_state_user_context: enforced")
+print("finish_payload_final_gate: enforced")
 print("python_policy_strings: ast_semantic")
 print("orchestrated_stop_evidence_gate: enforced")
 print("unit_tests: passed")
