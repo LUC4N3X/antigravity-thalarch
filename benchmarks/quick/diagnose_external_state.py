@@ -99,6 +99,48 @@ def decision_continue_seen(events: list[dict[str, Any]]) -> bool:
     return False
 
 
+def _tool_name(obj: dict[str, Any]) -> str:
+    for key in ("name", "tool_name", "toolName", "canonical_name", "canonicalName"):
+        value = obj.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    info = obj.get("tool_info")
+    if isinstance(info, dict):
+        return _tool_name(info)
+    return ""
+
+
+def _compact(value: Any, limit: int = 1800) -> str:
+    try:
+        text = json.dumps(value, ensure_ascii=False, sort_keys=True)
+    except Exception:
+        text = repr(value)
+    text = text.replace("\r", " ").replace("\n", " ")
+    return text if len(text) <= limit else text[: limit - 3] + "..."
+
+
+def finish_observations(events: list[dict[str, Any]]) -> list[tuple[int, dict[str, Any]]]:
+    """Return compact finish-tool-bearing objects from the captured CLI stream.
+
+    This is intentionally shape-tolerant: Antigravity has used both nested tool_info
+    wrappers and direct name/tool_name objects across stream-json revisions.
+    """
+    found: list[tuple[int, dict[str, Any]]] = []
+    seen: set[str] = set()
+    for event_index, event in enumerate(events):
+        for obj in walk(event):
+            if not isinstance(obj, dict):
+                continue
+            if _tool_name(obj).lower() != "finish":
+                continue
+            marker = _compact(obj, limit=10000)
+            if marker in seen:
+                continue
+            seen.add(marker)
+            found.append((event_index, obj))
+    return found
+
+
 def latest_run_dir() -> Path:
     candidates = [path for path in RESULTS_ROOT.iterdir() if path.is_dir()] if RESULTS_ROOT.is_dir() else []
     if not candidates:
@@ -125,11 +167,15 @@ def diagnose_file(path: Path) -> int:
     selected = extract_result(events, stdout)
     gate_seen = truthy_marker(events, GATE_MARKER) or GATE_MARKER.lower() in stdout.lower()
     continue_seen = decision_continue_seen(events)
+    finishes = finish_observations(events)
 
     print(f"\n=== {path.name} ===")
     print(f"events: {len(events)}")
     print(f"gate_marker_seen: {'YES' if gate_seen else 'NO'}")
     print(f"decision_continue_seen: {'YES' if continue_seen else 'NO'}")
+    print(f"finish_observations: {len(finishes)}")
+    for ordinal, (event_index, obj) in enumerate(finishes, start=1):
+        print(f"  finish[{ordinal}] event={event_index}: {_compact(obj)}")
     print(f"valid_structured_candidates: {len(chronological)}")
 
     for ordinal, (event_index, candidate) in enumerate(chronological, start=1):
@@ -144,13 +190,18 @@ def diagnose_file(path: Path) -> int:
     selected_conclusion = selected.get("conclusion") if isinstance(selected, dict) else None
     print(f"extract_result_selected: {selected_conclusion or 'NONE'}")
 
+    if finishes:
+        print("finish_diagnosis: finish tool data is present in captured stream; inspect whether its payload carries the final structured answer/verdict.")
+    else:
+        print("finish_diagnosis: no finish-bearing object was found in captured stream; transcript/internal hook payload remains the only observed finish source.")
+
     if selected_conclusion == "CORRECTED_PREMISE":
         if any(candidate.get("conclusion") in {"UNKNOWN", "UNVERIFIED", "NOT_FOUND"} for _, candidate in chronological):
             print("diagnosis: scorer selected CORRECTED_PREMISE even though a later/alternate acceptable candidate exists; inspect extraction ordering.")
         elif gate_seen or continue_seen:
             print("diagnosis: gate activity is visible, but no corrected structured answer reached the captured stream; inspect Stop continuation behavior.")
         else:
-            print("diagnosis: no gate activity is visible in captured stream. This does NOT prove the hook did not run; capture Antigravity internal/log output next.")
+            print("diagnosis: no gate activity is visible in captured stream. Stop trace is needed to distinguish hook timing from host propagation.")
     elif selected_conclusion:
         print("diagnosis: selected structured verdict is not CORRECTED_PREMISE.")
     else:
