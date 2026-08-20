@@ -8,7 +8,9 @@ backward-compatible source of user intent/tool evidence.
 from __future__ import annotations
 
 import json
+import os
 import re
+from pathlib import Path
 from typing import Any
 
 from hook_utils import (
@@ -69,6 +71,27 @@ AUTHORITATIVE_ARG_MARKERS = (
 )
 USER_SOURCES = {"USER_EXPLICIT", "USER", "HUMAN"}
 USER_TYPES = {"USER_INPUT", "REQUEST", "USER_MESSAGE", "HUMAN_MESSAGE"}
+TRACE_ENV = "THALARCH_HOOK_TRACE_FILE"
+
+
+def trace_event(event: str, **fields: Any) -> None:
+    """Append opt-in diagnostic data without changing hook behavior.
+
+    The trace is disabled unless THALARCH_HOOK_TRACE_FILE is explicitly set by a
+    benchmark/debug shell. This keeps normal Thalarch operation side-effect free.
+    """
+    raw = os.environ.get(TRACE_ENV, "").strip()
+    if not raw:
+        return
+    try:
+        path = Path(raw).expanduser()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        record = {"event": event, **fields}
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+    except Exception:
+        # Diagnostics must never change the epistemic decision or break completion.
+        pass
 
 
 def unavailable_but_honest(content: str) -> bool:
@@ -260,10 +283,26 @@ def external_state_final_gate(
     )
 
 
+def emit_decision(decision: str, *, reason: str = "", **trace_fields: Any) -> None:
+    trace_event("stop_decision", decision=decision, reason=reason[:240], **trace_fields)
+    payload: dict[str, Any] = {"decision": decision}
+    if reason:
+        payload["reason"] = reason
+    emit(payload)
+
+
 def main() -> None:
     payload = read_payload()
+    trace_event(
+        "stop_enter",
+        fully_idle=bool(payload.get("fullyIdle", True)),
+        termination_reason=str(payload.get("terminationReason") or ""),
+        transcript_path=str(payload.get("transcriptPath") or ""),
+        payload_keys=sorted(str(key) for key in payload.keys()),
+    )
+
     if not bool(payload.get("fullyIdle", True)):
-        emit({"decision": "stop"})
+        emit_decision("stop", reason="not_fully_idle")
         return
 
     reason = str(payload.get("terminationReason") or "").lower()
@@ -275,19 +314,46 @@ def main() -> None:
         "user_cancelled",
         "user_canceled",
     }:
-        emit({"decision": "stop"})
+        emit_decision("stop", reason=f"terminal_reason:{reason}")
         return
 
     calls = observed_calls(payload)
     latest = latest_model_content(payload)
     user_request = latest_user_request(payload)
+    conclusion = final_conclusion(latest)
+    is_external = looks_like_current_external_state(user_request, latest)
+    authoritative = has_authoritative_external_evidence(calls)
+    trace_event(
+        "stop_observation",
+        conclusion=conclusion,
+        current_external_state=is_external,
+        authoritative_external_evidence=authoritative,
+        observed_call_count=len(calls),
+        observed_call_names=[name for _, name, _ in calls],
+        user_request=user_request[:500],
+        latest_model_content=latest[:1000],
+    )
+
     external_block = external_state_final_gate(payload, calls, user_request, latest)
     if external_block:
-        emit({"decision": "continue", "reason": external_block})
+        emit_decision(
+            "continue",
+            reason=external_block,
+            gate="external_state_final_gate",
+            conclusion=conclusion,
+            current_external_state=is_external,
+            authoritative_external_evidence=authoritative,
+        )
         return
 
     if not calls:
-        emit({"decision": "stop"})
+        emit_decision(
+            "stop",
+            reason="no_observed_calls",
+            conclusion=conclusion,
+            current_external_state=is_external,
+            authoritative_external_evidence=authoritative,
+        )
         return
 
     mutation_orders: list[int] = []
@@ -323,7 +389,7 @@ def main() -> None:
     # Enforce the orchestration completion protocol only at the parent/orchestrator boundary.
     # Direct implementation subagents must be able to return evidence to their parent.
     if not orchestrated_mutation:
-        emit({"decision": "stop"})
+        emit_decision("stop", reason="no_orchestrated_mutation")
         return
 
     last_mutation = max(mutation_orders)
@@ -348,12 +414,12 @@ def main() -> None:
 
     if not missing:
         save_state(payload, "stop-evidence-gate", {"signature": "clear", "attempts": 0})
-        emit({"decision": "stop"})
+        emit_decision("stop", reason="orchestration_evidence_complete")
         return
 
     if unavailable_but_honest(latest):
         # Honest incompleteness is permitted; fabricated completion is not.
-        emit({"decision": "stop"})
+        emit_decision("stop", reason="honest_unverified_escape")
         return
 
     signature = f"{last_mutation}|{'|'.join(sorted(missing))}"
@@ -370,16 +436,14 @@ def main() -> None:
             "that acceptance claim as UNVERIFIED."
         )
 
-    emit({
-        "decision": "continue",
-        "reason": (
-            "THALARCH HARD EVIDENCE GATE: completion is blocked because the final implementation "
-            f"mutation is not followed by the required independent evidence: {missing_text}. "
-            "Do not claim DONE, PASS, fixed, visually correct, pushed/published, or regression-free. "
-            "Run the missing independent checks from current evidence, then cold-verify acceptance."
-            + escalation
-        ),
-    })
+    block_reason = (
+        "THALARCH HARD EVIDENCE GATE: completion is blocked because the final implementation "
+        f"mutation is not followed by the required independent evidence: {missing_text}. "
+        "Do not claim DONE, PASS, fixed, visually correct, pushed/published, or regression-free. "
+        "Run the missing independent checks from current evidence, then cold-verify acceptance."
+        + escalation
+    )
+    emit_decision("continue", reason=block_reason, gate="orchestrated_stop_evidence_gate")
 
 
 if __name__ == "__main__":
