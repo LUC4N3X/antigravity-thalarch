@@ -69,6 +69,7 @@ AUTHORITATIVE_ARG_MARKERS = (
     "http://",
     "https://",
 )
+NON_EVIDENCE_TERMINAL_TOOLS = {"finish"}
 USER_SOURCES = {"USER_EXPLICIT", "USER", "HUMAN"}
 USER_TYPES = {"USER_INPUT", "REQUEST", "USER_MESSAGE", "HUMAN_MESSAGE"}
 TRACE_ENV = "THALARCH_HOOK_TRACE_FILE"
@@ -154,6 +155,17 @@ def observed_calls(payload: dict[str, Any]) -> list[tuple[int, str, str]]:
     return result
 
 
+def finish_payload_text(calls: list[tuple[int, str, str]]) -> str:
+    """Return the newest terminal finish payload captured in the internal transcript.
+
+    Antigravity CLI can invoke Stop before the final planner response is materialized in
+    transcript content. The finish tool arguments are already present at that point and
+    therefore provide the last pre-delivery representation of the structured answer.
+    """
+    finish_calls = [(order, text) for order, name, text in calls if name.lower() == "finish"]
+    return max(finish_calls, key=lambda item: item[0])[1] if finish_calls else ""
+
+
 def _extract_user_request(content: str) -> str:
     opener = "<USER_REQUEST>"
     closer = "</USER_REQUEST>"
@@ -194,8 +206,6 @@ def latest_user_request(payload: dict[str, Any]) -> str:
     if candidates:
         return max(candidates, key=lambda item: item[0])[1]
 
-    # Defensive compatibility fallback for a future Stop payload that may expose
-    # the current request directly. Official payloads currently rely on transcriptPath.
     for key in ("userPrompt", "userMessage", "prompt", "request"):
         value = payload.get(key)
         if isinstance(value, str) and value.strip():
@@ -226,9 +236,11 @@ def looks_like_current_external_state(user_request: str, final_content: str) -> 
 
 
 def has_authoritative_external_evidence(calls: list[tuple[int, str, str]]) -> bool:
-    """Recognize direct platform/web evidence, never local Git/file inspection alone."""
+    """Recognize direct platform/web evidence, never local Git/file/final-answer content alone."""
     for _, name, args_text in calls:
         lowered_name = name.lower()
+        if lowered_name in NON_EVIDENCE_TERMINAL_TOOLS:
+            continue
         if any(marker in lowered_name for marker in AUTHORITATIVE_TOOL_MARKERS):
             return True
         if any(marker in args_text for marker in AUTHORITATIVE_ARG_MARKERS):
@@ -240,20 +252,14 @@ def external_state_final_gate(
     payload: dict[str, Any],
     calls: list[tuple[int, str, str]],
     user_request: str,
-    latest: str,
+    final_content: str,
 ) -> str | None:
-    """Return a blocking reason when the final external-state verdict outruns evidence.
-
-    This check intentionally runs for read-only tasks too. The proposition class is
-    derived from the latest explicit user request plus the final response. Local
-    list/read/Git evidence can support local sub-claims but cannot justify a current
-    external-object verdict.
-    """
-    conclusion = final_conclusion(latest)
+    """Return a blocking reason when the final external-state verdict outruns evidence."""
+    conclusion = final_conclusion(final_content)
     if conclusion not in STRONG_EXTERNAL_VERDICTS:
         save_state(payload, "external-state-final-gate", {"signature": "clear", "attempts": 0})
         return None
-    if not looks_like_current_external_state(user_request, latest):
+    if not looks_like_current_external_state(user_request, final_content):
         return None
     if has_authoritative_external_evidence(calls):
         save_state(payload, "external-state-final-gate", {"signature": "clear", "attempts": 0})
@@ -319,22 +325,26 @@ def main() -> None:
 
     calls = observed_calls(payload)
     latest = latest_model_content(payload)
+    finish_text = finish_payload_text(calls)
+    final_content = latest or finish_text
     user_request = latest_user_request(payload)
-    conclusion = final_conclusion(latest)
-    is_external = looks_like_current_external_state(user_request, latest)
+    conclusion = final_conclusion(final_content)
+    is_external = looks_like_current_external_state(user_request, final_content)
     authoritative = has_authoritative_external_evidence(calls)
     trace_event(
         "stop_observation",
         conclusion=conclusion,
         current_external_state=is_external,
         authoritative_external_evidence=authoritative,
+        final_content_source="model_content" if latest else ("finish_payload" if finish_text else "none"),
         observed_call_count=len(calls),
         observed_call_names=[name for _, name, _ in calls],
+        finish_payload=finish_text[:2000],
         user_request=user_request[:500],
         latest_model_content=latest[:1000],
     )
 
-    external_block = external_state_final_gate(payload, calls, user_request, latest)
+    external_block = external_state_final_gate(payload, calls, user_request, final_content)
     if external_block:
         emit_decision(
             "continue",
@@ -386,8 +396,6 @@ def main() -> None:
         if "thalarch-design-reviewer" in text:
             design_review_orders.append(order)
 
-    # Enforce the orchestration completion protocol only at the parent/orchestrator boundary.
-    # Direct implementation subagents must be able to return evidence to their parent.
     if not orchestrated_mutation:
         emit_decision("stop", reason="no_orchestrated_mutation")
         return
@@ -417,8 +425,7 @@ def main() -> None:
         emit_decision("stop", reason="orchestration_evidence_complete")
         return
 
-    if unavailable_but_honest(latest):
-        # Honest incompleteness is permitted; fabricated completion is not.
+    if unavailable_but_honest(final_content):
         emit_decision("stop", reason="honest_unverified_escape")
         return
 
