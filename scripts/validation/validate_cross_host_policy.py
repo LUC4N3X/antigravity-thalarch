@@ -20,7 +20,10 @@ checks = {
     root / "thalarch-mode/skills/thalarch-epistemic-guard/SKILL.md": [
         "Runtime proof seal",
         "External-state proof seal",
+        "External-state verdict precedence",
         "local absence proves only local absence",
+        "takes precedence over `CORRECTED_PREMISE`",
+        "Stop verdict selection here",
         "CORRECTED_PREMISE",
         "NOT_FOUND",
         "host-agnostic",
@@ -49,12 +52,16 @@ checks = {
         "VoltAgent/awesome-design-md",
         "Verdict seal",
         "External-state seal",
+        "External-state verdict precedence",
+        "takes precedence over `CORRECTED_PREMISE`",
     ],
     root / "adapters/claude/CLAUDE.md": [
         "Visual/design reference contract",
         "VoltAgent/awesome-design-md",
         "Verdict seal",
         "External-state seal",
+        "External-state verdict precedence",
+        "takes precedence over `CORRECTED_PREMISE`",
     ],
     root / "adapters/codex/README.md": [
         "Visual parity",
@@ -105,7 +112,16 @@ for path, terms in checks.items():
 hook = root / "thalarch-mode/hooks/pre_invocation_epistemic_guard.py"
 hook_text = require_terms(
     hook,
-    ["VERDICT SEAL", "EXTERNAL-STATE SEAL", "UNVERIFIED", "PROVEN", "SUPPORTED", "CORRECTED_PREMISE", "NOT_FOUND"],
+    [
+        "VERDICT SEAL",
+        "EXTERNAL-STATE SEAL",
+        "EXTERNAL-STATE VERDICT PRECEDENCE",
+        "UNVERIFIED",
+        "PROVEN",
+        "SUPPORTED",
+        "CORRECTED_PREMISE",
+        "NOT_FOUND",
+    ],
 )
 hook_lower = hook_text.lower()
 for concept in [
@@ -117,6 +133,9 @@ for concept in [
     "local absence",
     "external-state proposition",
     "authoritative search",
+    "verdict selection stops",
+    "takes precedence over corrected_premise",
+    "forbidding external access",
 ]:
     if concept not in hook_lower:
         errors.append(f"{hook.relative_to(root)} missing verdict-seal concept: {concept}")
@@ -134,11 +153,15 @@ for adapter in [root / "adapters/codex/AGENTS.md", root / "adapters/claude/CLAUD
         "supported",
         "evidence was unavailable",
         "external-state seal",
+        "external-state verdict precedence",
         "authoritative platform evidence",
         "local absence",
         "corrected_premise",
         "not_found",
         "authoritative search",
+        "takes precedence over `corrected_premise`",
+        "verdict selection stops",
+        "forbidding external access",
     ]:
         if concept not in text:
             errors.append(f"{adapter.relative_to(root)} missing cross-host verdict concept: {concept}")
@@ -158,6 +181,7 @@ print("THALARCH CROSS-HOST POLICY VALIDATION PASSED")
 print("version: 1.0.0 (fixed)")
 print("runtime_proof_seal: antigravity_codex_claude")
 print("external_state_seal: antigravity_codex_claude")
+print("external_state_verdict_precedence: enforced_cross_host")
 print("canonical_external_state_seal: thalarch_mode_epistemic_guard")
 print("verdict_semantics: proposition_level")
 print("design_reference_atlas: awesome-design-md")
