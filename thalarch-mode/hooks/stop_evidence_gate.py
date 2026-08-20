@@ -36,6 +36,7 @@ MUTATOR_AGENTS = {
 }
 
 STRONG_EXTERNAL_VERDICTS = {"CORRECTED_PREMISE", "NOT_FOUND", "PROVEN", "SUPPORTED"}
+STRONG_VISUAL_VERDICTS = STRONG_EXTERNAL_VERDICTS
 EXTERNAL_STATE_RE = re.compile(
     r"\b(?:pull\s+request|pr\b|issue\s+#?\d+|issue\s+url|"
     r"deploy(?:ment)?\s+(?:state|status|url|live)|"
@@ -43,6 +44,18 @@ EXTERNAL_STATE_RE = re.compile(
     r"publication\s+(?:state|status|url|live|published)|"
     r"remote\s+(?:state|object|url)|platform\s+url)\b|"
     r"https?://(?:www\.)?(?:github\.com|gitlab\.com|bitbucket\.org)/",
+    re.IGNORECASE,
+)
+VISUAL_STATE_RE = re.compile(
+    r"\b(?:looks?\s+(?:perfect|correct|right)|visually\s+(?:correct|verified|perfect)|"
+    r"render(?:ed|ing)?\s+(?:correctly|perfectly|as\s+expected)|"
+    r"visual\s+(?:state|fidelity|proof|verification)|"
+    r"(?:mobile|desktop)\s+(?:layout|view|viewport|render|appearance)|"
+    r"matches?\s+(?:the\s+)?(?:reference|design))\b",
+    re.IGNORECASE,
+)
+VISUAL_UNVERIFIED_RE = re.compile(
+    r"\b(?:render|browser|visual|screenshot|viewport|mobile|desktop|emulator|device)\w*\b",
     re.IGNORECASE,
 )
 CONCLUSION_RE = re.compile(
@@ -69,6 +82,20 @@ AUTHORITATIVE_ARG_MARKERS = (
     "http://",
     "https://",
 )
+VISUAL_EVIDENCE_TOOL_MARKERS = (
+    "screenshot",
+    "screen_capture",
+    "capture_screen",
+    "vision",
+    "view_image",
+    "image_view",
+    "render",
+    "emulator",
+    "device",
+    "playwright",
+    "puppeteer",
+    "viewport",
+)
 NON_EVIDENCE_TERMINAL_TOOLS = {"finish"}
 USER_SOURCES = {"USER_EXPLICIT", "USER", "HUMAN"}
 USER_TYPES = {"USER_INPUT", "REQUEST", "USER_MESSAGE", "HUMAN_MESSAGE"}
@@ -76,11 +103,7 @@ TRACE_ENV = "THALARCH_HOOK_TRACE_FILE"
 
 
 def trace_event(event: str, **fields: Any) -> None:
-    """Append opt-in diagnostic data without changing hook behavior.
-
-    The trace is disabled unless THALARCH_HOOK_TRACE_FILE is explicitly set by a
-    benchmark/debug shell. This keeps normal Thalarch operation side-effect free.
-    """
+    """Append opt-in diagnostic data without changing hook behavior."""
     raw = os.environ.get(TRACE_ENV, "").strip()
     if not raw:
         return
@@ -156,12 +179,7 @@ def observed_calls(payload: dict[str, Any]) -> list[tuple[int, str, str]]:
 
 
 def finish_payload_text(calls: list[tuple[int, str, str]]) -> str:
-    """Return the newest terminal finish payload captured in the internal transcript.
-
-    Antigravity CLI can invoke Stop before the final planner response is materialized in
-    transcript content. The finish tool arguments are already present at that point and
-    therefore provide the last pre-delivery representation of the structured answer.
-    """
+    """Return the newest terminal finish payload captured in the internal transcript."""
     finish_calls = [(order, text) for order, name, text in calls if name.lower() == "finish"]
     return max(finish_calls, key=lambda item: item[0])[1] if finish_calls else ""
 
@@ -180,12 +198,7 @@ def _extract_user_request(content: str) -> str:
 
 
 def latest_user_request(payload: dict[str, Any]) -> str:
-    """Return the latest explicit user request from Antigravity's transcript.
-
-    Current Antigravity transcripts use USER_EXPLICIT/USER_INPUT, while older or
-    alternate builds may use USER/REQUEST-style names. Provider-added metadata is
-    excluded when the request is wrapped in <USER_REQUEST> tags.
-    """
+    """Return the latest explicit user request from Antigravity's transcript."""
     candidates: list[tuple[int, str]] = []
     for fallback, step in enumerate(transcript_steps(payload)):
         source = str(step.get("source") or "").upper()
@@ -229,10 +242,42 @@ def final_conclusion(content: str) -> str:
     return match.group(1).upper() if match else ""
 
 
+def _walk_json(value: Any):
+    yield value
+    if isinstance(value, dict):
+        for child in value.values():
+            yield from _walk_json(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from _walk_json(child)
+
+
+def final_unverified_items(content: str) -> tuple[bool, list[str]]:
+    """Return whether a structured unverified ledger exists and its string entries."""
+    try:
+        parsed = json.loads(content.strip())
+    except Exception:
+        return False, []
+    for obj in _walk_json(parsed):
+        if not isinstance(obj, dict) or "unverified" not in obj:
+            continue
+        raw = obj.get("unverified")
+        if isinstance(raw, list):
+            return True, [item for item in raw if isinstance(item, str)]
+        return True, []
+    return False, []
+
+
 def looks_like_current_external_state(user_request: str, final_content: str) -> bool:
     """Classify the proposition from user intent plus the final answer, not answer wording alone."""
     combined = "\n".join(part for part in (user_request, final_content) if part)
     return bool(EXTERNAL_STATE_RE.search(combined))
+
+
+def looks_like_visual_state(user_request: str, final_content: str) -> bool:
+    """Recognize propositions whose truth depends on rendered/observed visual state."""
+    combined = "\n".join(part for part in (user_request, final_content) if part)
+    return bool(VISUAL_STATE_RE.search(combined))
 
 
 def has_authoritative_external_evidence(calls: list[tuple[int, str, str]]) -> bool:
@@ -244,6 +289,17 @@ def has_authoritative_external_evidence(calls: list[tuple[int, str, str]]) -> bo
         if any(marker in lowered_name for marker in AUTHORITATIVE_TOOL_MARKERS):
             return True
         if any(marker in args_text for marker in AUTHORITATIVE_ARG_MARKERS):
+            return True
+    return False
+
+
+def has_rendered_visual_evidence(calls: list[tuple[int, str, str]]) -> bool:
+    """Require a tool capable of exposing rendered pixels/device visual state, not source inspection."""
+    for _, name, _ in calls:
+        lowered_name = name.lower()
+        if lowered_name in NON_EVIDENCE_TERMINAL_TOOLS or lowered_name == "generate_image":
+            continue
+        if any(marker in lowered_name for marker in VISUAL_EVIDENCE_TOOL_MARKERS):
             return True
     return False
 
@@ -285,6 +341,57 @@ def external_state_final_gate(
         "Set the top-level conclusion to UNKNOWN or UNVERIFIED, explicitly name the missing "
         "authoritative proof, populate any unverified/unknown ledger, and do not use "
         "CORRECTED_PREMISE/NOT_FOUND/PROVEN/SUPPORTED until authoritative external evidence actually exists."
+        + escalation
+    )
+
+
+def visual_state_final_gate(
+    payload: dict[str, Any],
+    calls: list[tuple[int, str, str]],
+    user_request: str,
+    final_content: str,
+) -> str | None:
+    """Block visual-state verdicts that rely on source inspection instead of rendered evidence."""
+    if not looks_like_visual_state(user_request, final_content):
+        return None
+    if has_rendered_visual_evidence(calls):
+        save_state(payload, "visual-state-final-gate", {"signature": "clear", "attempts": 0})
+        return None
+
+    conclusion = final_conclusion(final_content)
+    ledger_present, unverified_items = final_unverified_items(final_content)
+    has_visual_reason = any(VISUAL_UNVERIFIED_RE.search(item) for item in unverified_items)
+    if conclusion in {"UNKNOWN", "UNVERIFIED"} and (not ledger_present or has_visual_reason):
+        save_state(payload, "visual-state-final-gate", {"signature": "clear", "attempts": 0})
+        return None
+
+    if conclusion not in STRONG_VISUAL_VERDICTS and conclusion not in {"UNKNOWN", "UNVERIFIED"}:
+        return None
+
+    signature = f"{conclusion}|{user_request[:160]}|{int(ledger_present)}|{int(has_visual_reason)}"
+    state = load_state(payload, "visual-state-final-gate")
+    attempts = int(state.get("attempts", 0)) + 1 if state.get("signature") == signature else 1
+    save_state(payload, "visual-state-final-gate", {"signature": signature, "attempts": attempts})
+
+    ledger_instruction = ""
+    if ledger_present and not has_visual_reason:
+        ledger_instruction = (
+            " The structured output exposes an unverified ledger, so add a concrete missing visual proof "
+            "there using terms such as render, browser, screenshot, viewport, mobile, or desktop."
+        )
+    escalation = ""
+    if attempts >= 2:
+        escalation = " Rewrite the structured verdict/ledger before stopping; source inspection is not visual proof."
+
+    return (
+        "THALARCH VISUAL-STATE FINAL VERDICT GATE: completion is blocked because the user's main "
+        "proposition depends on rendered visual state, but no rendered/browser/screenshot/device evidence "
+        "was observed. Source code, CSS, DOM text, or a generation prompt cannot prove how the page actually "
+        "looks on mobile or desktop. UNKNOWN/UNVERIFIED takes precedence and verdict selection stops there. "
+        "Set the top-level conclusion to UNKNOWN or UNVERIFIED and explicitly name the missing visual proof. "
+        "Do not use CORRECTED_PREMISE/NOT_FOUND/PROVEN/SUPPORTED for the main visual proposition until "
+        "appropriate rendered evidence actually exists."
+        + ledger_instruction
         + escalation
     )
 
@@ -331,11 +438,15 @@ def main() -> None:
     conclusion = final_conclusion(final_content)
     is_external = looks_like_current_external_state(user_request, final_content)
     authoritative = has_authoritative_external_evidence(calls)
+    is_visual = looks_like_visual_state(user_request, final_content)
+    rendered_visual_evidence = has_rendered_visual_evidence(calls)
     trace_event(
         "stop_observation",
         conclusion=conclusion,
         current_external_state=is_external,
         authoritative_external_evidence=authoritative,
+        visual_state=is_visual,
+        rendered_visual_evidence=rendered_visual_evidence,
         final_content_source="model_content" if latest else ("finish_payload" if finish_text else "none"),
         observed_call_count=len(calls),
         observed_call_names=[name for _, name, _ in calls],
@@ -356,6 +467,18 @@ def main() -> None:
         )
         return
 
+    visual_block = visual_state_final_gate(payload, calls, user_request, final_content)
+    if visual_block:
+        emit_decision(
+            "continue",
+            reason=visual_block,
+            gate="visual_state_final_gate",
+            conclusion=conclusion,
+            visual_state=is_visual,
+            rendered_visual_evidence=rendered_visual_evidence,
+        )
+        return
+
     if not calls:
         emit_decision(
             "stop",
@@ -363,6 +486,8 @@ def main() -> None:
             conclusion=conclusion,
             current_external_state=is_external,
             authoritative_external_evidence=authoritative,
+            visual_state=is_visual,
+            rendered_visual_evidence=rendered_visual_evidence,
         )
         return
 
