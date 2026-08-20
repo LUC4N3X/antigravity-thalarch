@@ -47,8 +47,9 @@ runner.protocol_fingerprint = paired_protocol_fingerprint
 
 
 def run_validator() -> None:
+    validator = REPO_ROOT / "scripts" / "validation" / "validate_benchmarks.py"
     proc = subprocess.run(
-        [sys.executable, str(REPO_ROOT / "validate_benchmarks.py"), str(REPO_ROOT)],
+        [sys.executable, str(validator), str(REPO_ROOT)],
         cwd=REPO_ROOT,
         text=True,
         encoding="utf-8",
