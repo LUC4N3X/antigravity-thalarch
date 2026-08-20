@@ -62,6 +62,8 @@
   </g>
   <circle cx="87" cy="185" r="4" fill="#6fc7d0"/><circle cx="353" cy="119" r="4" fill="#dca275"/>
   <circle cx="288" cy="59" r="4" fill="#8d83df"/><circle cx="356" cy="252" r="3.5" fill="#76c1c7"/>
+  <circle cx="236" cy="185" r="5.5" fill="#ffffff" opacity="0.90"/>
+  <circle cx="236" cy="185" r="10" fill="none" stroke="url(#accent)" stroke-width="1.2" opacity="0.52"/>
 
   <!-- protocol label -->
   <rect x="456" y="60" width="286" height="38" rx="19" fill="#ffffff" fill-opacity="0.74" stroke="#b6b2d5"/>
