@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/branding/thalarch-banner.svg" alt="Thalarch" width="100%" />
+<img src="assets/branding/thalarch-banner.webp" alt="Thalarch" width="100%" />
 
 <strong>Anti-hallucination engineering layer for Gemini on Google Antigravity.</strong><br/>
 <sub>Built first for Gemini inside Antigravity: repository inspection, version grounding, specialist routing, independent review, and real evidence before “done”.</sub>
