@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import ast
 import json
 import subprocess
 import sys
@@ -31,6 +32,27 @@ for path in required_scripts:
         compile(path.read_text(encoding="utf-8"), str(path), "exec")
     except SyntaxError as exc:
         errors.append(f"syntax error in {path.relative_to(root)}: {exc}")
+
+
+def semantic_python_text(path: Path) -> str:
+    """Return searchable Python policy text including AST string constants.
+
+    Hard-gate messages are intentionally split across adjacent literals and f-strings for
+    readability. Validation should assert semantic concepts, not depend on physical line wrapping.
+    """
+    source = path.read_text(encoding="utf-8")
+    try:
+        tree = ast.parse(source, filename=str(path))
+    except SyntaxError:
+        return source
+
+    strings = [
+        node.value
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Constant) and isinstance(node.value, str)
+    ]
+    return source + "\n" + "\n".join(strings)
+
 
 config = {}
 if not hooks_json.is_file():
@@ -84,18 +106,29 @@ else:
 
 stop_gate = hooks_dir / "stop_evidence_gate.py"
 if stop_gate.is_file():
-    stop_text = stop_gate.read_text(encoding="utf-8")
+    stop_text = semantic_python_text(stop_gate)
     for term in [
         "external_state_final_gate",
         "final_conclusion",
         "looks_like_current_external_state",
         "has_authoritative_external_evidence",
         "STRONG_EXTERNAL_VERDICTS",
-        "UNKNOWN/UNVERIFIED takes precedence",
         "EXTERNAL-STATE FINAL VERDICT GATE",
     ]:
         if term not in stop_text:
             errors.append(f"stop_evidence_gate.py missing read-only external-state guard: {term}")
+
+    stop_lower = stop_text.lower()
+    for concept in [
+        "unknown/unverified",
+        "precedence",
+        "authoritative current platform/service evidence",
+        "local absence",
+        "corrected_premise",
+        "not_found",
+    ]:
+        if concept not in stop_lower:
+            errors.append(f"stop_evidence_gate.py missing external-state verdict concept: {concept}")
 
 tests = hooks_dir / "test_hard_gates.py"
 if tests.is_file():
@@ -133,5 +166,6 @@ print("exact_read_target_gate: enforced")
 print("project_command_grounding: enforced")
 print("event_ledger_pre_post_tool_use: enforced")
 print("read_only_external_state_final_gate: enforced")
+print("python_policy_strings: ast_semantic")
 print("orchestrated_stop_evidence_gate: enforced")
 print("unit_tests: passed")
