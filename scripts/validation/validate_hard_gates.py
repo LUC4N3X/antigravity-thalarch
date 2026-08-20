@@ -82,6 +82,32 @@ else:
     if not any("invoke_subagent" in matcher for matcher in post_matchers):
         errors.append("evidence event result hook must match invoke_subagent")
 
+stop_gate = hooks_dir / "stop_evidence_gate.py"
+if stop_gate.is_file():
+    stop_text = stop_gate.read_text(encoding="utf-8")
+    for term in [
+        "external_state_final_gate",
+        "final_conclusion",
+        "looks_like_current_external_state",
+        "has_authoritative_external_evidence",
+        "STRONG_EXTERNAL_VERDICTS",
+        "UNKNOWN/UNVERIFIED takes precedence",
+        "EXTERNAL-STATE FINAL VERDICT GATE",
+    ]:
+        if term not in stop_text:
+            errors.append(f"stop_evidence_gate.py missing read-only external-state guard: {term}")
+
+tests = hooks_dir / "test_hard_gates.py"
+if tests.is_file():
+    tests_text = tests.read_text(encoding="utf-8")
+    for term in [
+        "test_stop_gate_blocks_read_only_external_corrected_premise_without_authoritative_evidence",
+        "test_stop_gate_allows_read_only_external_unverified_without_authoritative_evidence",
+        "test_stop_gate_allows_external_strong_verdict_after_authoritative_platform_call",
+    ]:
+        if term not in tests_text:
+            errors.append(f"hard-gate regression suite missing external-state case: {term}")
+
 if errors:
     print("THALARCH HARD-GATE VALIDATION FAILED")
     for error in errors:
@@ -106,5 +132,6 @@ print("pre_invocation_epistemic_contract: enforced")
 print("exact_read_target_gate: enforced")
 print("project_command_grounding: enforced")
 print("event_ledger_pre_post_tool_use: enforced")
+print("read_only_external_state_final_gate: enforced")
 print("orchestrated_stop_evidence_gate: enforced")
 print("unit_tests: passed")
