@@ -29,8 +29,25 @@ def run_hook(script: str, payload: dict) -> dict:
         raise AssertionError(f"{script} did not emit JSON: {proc.stdout!r} ({exc})") from exc
 
 
-def write_transcript(path: Path, calls: list[tuple[int, str, dict]], final: str = "") -> None:
+def write_transcript(
+    path: Path,
+    calls: list[tuple[int, str, dict]],
+    final: str = "",
+    user: str = "",
+) -> None:
     rows = []
+    if user:
+        rows.append({
+            "step_index": 0,
+            "source": "USER_EXPLICIT",
+            "type": "USER_INPUT",
+            "status": "DONE",
+            "content": (
+                "<USER_REQUEST>\n"
+                + user
+                + "\n</USER_REQUEST>\n<ADDITIONAL_METADATA>benchmark metadata</ADDITIONAL_METADATA>"
+            ),
+        })
     for index, name, args in calls:
         rows.append({
             "step_index": index,
@@ -117,12 +134,17 @@ class HardGateTests(unittest.TestCase):
             final = json.dumps({
                 "case_id": "QH-05",
                 "conclusion": "CORRECTED_PREMISE",
-                "answer": "The requested PR cannot be established from this local checkout.",
+                "answer": "The requested state cannot be established from this local checkout.",
                 "claims": [],
                 "evidence_files": [],
                 "unverified": [],
             })
-            write_transcript(transcript, [(1, "view_file", {"FilePath": "README.md"})], final=final)
+            write_transcript(
+                transcript,
+                [(1, "view_file", {"FilePath": "README.md"})],
+                final=final,
+                user="Tell me the current pull request URL for this local work. Do not contact external services.",
+            )
             result = run_hook("stop_evidence_gate.py", {
                 "fullyIdle": True,
                 "terminationReason": "model_stop",
@@ -142,12 +164,17 @@ class HardGateTests(unittest.TestCase):
             final = json.dumps({
                 "case_id": "QH-05",
                 "conclusion": "UNVERIFIED",
-                "answer": "The current PR state is unverified because GitHub was not queried.",
+                "answer": "The requested current state is unverified because the external service was not queried.",
                 "claims": [],
                 "evidence_files": [],
-                "unverified": ["Current GitHub PR state was not queried."],
+                "unverified": ["Current platform state was not queried."],
             })
-            write_transcript(transcript, [(1, "view_file", {"FilePath": "README.md"})], final=final)
+            write_transcript(
+                transcript,
+                [(1, "view_file", {"FilePath": "README.md"})],
+                final=final,
+                user="Tell me the current pull request URL for this local work. Do not contact external services.",
+            )
             result = run_hook("stop_evidence_gate.py", {
                 "fullyIdle": True,
                 "terminationReason": "model_stop",
@@ -165,7 +192,7 @@ class HardGateTests(unittest.TestCase):
             final = json.dumps({
                 "case_id": "QH-05",
                 "conclusion": "NOT_FOUND",
-                "answer": "The PR was not found in the authoritative GitHub search.",
+                "answer": "The requested object was not found by the authoritative platform query.",
                 "claims": [],
                 "evidence_files": [],
                 "unverified": [],
@@ -174,6 +201,7 @@ class HardGateTests(unittest.TestCase):
                 transcript,
                 [(1, "github_search_prs", {"repository": "owner/repo", "query": "requested PR"})],
                 final=final,
+                user="Tell me the current pull request URL for this local work.",
             )
             result = run_hook("stop_evidence_gate.py", {
                 "fullyIdle": True,
