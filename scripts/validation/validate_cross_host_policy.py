@@ -12,6 +12,7 @@ checks = {
     root / "thalarch-mode/skills/thalarch-mode/SKILL.md": [
         "Verdict decision seals",
         "External-state seal",
+        "visual claim → actual rendered pixels/interaction evidence",
         "authoritative external service",
         "local absence",
         "CORRECTED_PREMISE",
@@ -21,6 +22,9 @@ checks = {
         "Runtime proof seal",
         "External-state proof seal",
         "External-state verdict precedence",
+        "### D — Visual fact",
+        "actual rendered pixels/screenshots/recording/asset inspection",
+        "browser source looks correct + no render → visual fidelity remains `UNVERIFIED`",
         "local absence proves only local absence",
         "takes precedence over `CORRECTED_PREMISE`",
         "Stop verdict selection here",
@@ -51,6 +55,7 @@ checks = {
         "Visual/design reference contract",
         "VoltAgent/awesome-design-md",
         "Verdict seal",
+        "Visual-state seal",
         "External-state seal",
         "External-state verdict precedence",
         "takes precedence over `CORRECTED_PREMISE`",
@@ -59,6 +64,7 @@ checks = {
         "Visual/design reference contract",
         "VoltAgent/awesome-design-md",
         "Verdict seal",
+        "Visual-state seal",
         "External-state seal",
         "External-state verdict precedence",
         "takes precedence over `CORRECTED_PREMISE`",
@@ -114,6 +120,7 @@ hook_text = require_terms(
     hook,
     [
         "VERDICT SEAL",
+        "VISUAL-STATE VERDICT PRECEDENCE",
         "EXTERNAL-STATE SEAL",
         "EXTERNAL-STATE VERDICT PRECEDENCE",
         "UNVERIFIED",
@@ -129,6 +136,10 @@ for concept in [
     "factual proposition",
     "evidence is unavailable",
     "missing proof",
+    "rendered pixels/browser/screenshot/device/vision evidence",
+    "source/dom/css inspection",
+    "main visual-state proposition",
+    "unverified ledger",
     "authoritative platform evidence",
     "local absence",
     "external-state proposition",
@@ -140,7 +151,7 @@ for concept in [
     if concept not in hook_lower:
         errors.append(f"{hook.relative_to(root)} missing verdict-seal concept: {concept}")
 
-# Codex and Claude must preserve the same proposition/external-state semantics.
+# Codex and Claude must preserve the same proposition/external-state/visual-state semantics.
 for adapter in [root / "adapters/codex/AGENTS.md", root / "adapters/claude/CLAUDE.md"]:
     if not adapter.is_file():
         continue
@@ -152,6 +163,10 @@ for adapter in [root / "adapters/codex/AGENTS.md", root / "adapters/claude/CLAUD
         "proven",
         "supported",
         "evidence was unavailable",
+        "visual-state seal",
+        "rendered pixels/browser/screenshot/device/vision evidence",
+        "source, dom, css",
+        "main visual-state proposition",
         "external-state seal",
         "external-state verdict precedence",
         "authoritative platform evidence",
@@ -180,6 +195,8 @@ if errors:
 print("THALARCH CROSS-HOST POLICY VALIDATION PASSED")
 print("version: 1.0.0 (fixed)")
 print("runtime_proof_seal: antigravity_codex_claude")
+print("visual_state_seal: antigravity_codex_claude")
+print("visual_state_verdict_precedence: enforced_cross_host")
 print("external_state_seal: antigravity_codex_claude")
 print("external_state_verdict_precedence: enforced_cross_host")
 print("canonical_external_state_seal: thalarch_mode_epistemic_guard")
