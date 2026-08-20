@@ -109,6 +109,81 @@ class HardGateTests(unittest.TestCase):
             result = run_hook("command_grounding_gate.py", payload)
             self.assertEqual("deny", result["decision"])
 
+    def test_stop_gate_blocks_read_only_external_corrected_premise_without_authoritative_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            transcript = root / "transcript.jsonl"
+            artifacts = root / "artifacts"
+            final = json.dumps({
+                "case_id": "QH-05",
+                "conclusion": "CORRECTED_PREMISE",
+                "answer": "The requested PR cannot be established from this local checkout.",
+                "claims": [],
+                "evidence_files": [],
+                "unverified": [],
+            })
+            write_transcript(transcript, [(1, "view_file", {"FilePath": "README.md"})], final=final)
+            result = run_hook("stop_evidence_gate.py", {
+                "fullyIdle": True,
+                "terminationReason": "model_stop",
+                "transcriptPath": str(transcript),
+                "artifactDirectoryPath": str(artifacts),
+                "workspacePaths": [str(root)],
+            })
+            self.assertEqual("continue", result["decision"])
+            self.assertIn("EXTERNAL-STATE FINAL VERDICT GATE", result["reason"])
+            self.assertIn("UNKNOWN/UNVERIFIED", result["reason"])
+
+    def test_stop_gate_allows_read_only_external_unverified_without_authoritative_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            transcript = root / "transcript.jsonl"
+            artifacts = root / "artifacts"
+            final = json.dumps({
+                "case_id": "QH-05",
+                "conclusion": "UNVERIFIED",
+                "answer": "The current PR state is unverified because GitHub was not queried.",
+                "claims": [],
+                "evidence_files": [],
+                "unverified": ["Current GitHub PR state was not queried."],
+            })
+            write_transcript(transcript, [(1, "view_file", {"FilePath": "README.md"})], final=final)
+            result = run_hook("stop_evidence_gate.py", {
+                "fullyIdle": True,
+                "terminationReason": "model_stop",
+                "transcriptPath": str(transcript),
+                "artifactDirectoryPath": str(artifacts),
+                "workspacePaths": [str(root)],
+            })
+            self.assertEqual("stop", result["decision"])
+
+    def test_stop_gate_allows_external_strong_verdict_after_authoritative_platform_call(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            transcript = root / "transcript.jsonl"
+            artifacts = root / "artifacts"
+            final = json.dumps({
+                "case_id": "QH-05",
+                "conclusion": "NOT_FOUND",
+                "answer": "The PR was not found in the authoritative GitHub search.",
+                "claims": [],
+                "evidence_files": [],
+                "unverified": [],
+            })
+            write_transcript(
+                transcript,
+                [(1, "github_search_prs", {"repository": "owner/repo", "query": "requested PR"})],
+                final=final,
+            )
+            result = run_hook("stop_evidence_gate.py", {
+                "fullyIdle": True,
+                "terminationReason": "model_stop",
+                "transcriptPath": str(transcript),
+                "artifactDirectoryPath": str(artifacts),
+                "workspacePaths": [str(root)],
+            })
+            self.assertEqual("stop", result["decision"])
+
     def test_stop_gate_blocks_orchestrated_mutation_without_independent_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
