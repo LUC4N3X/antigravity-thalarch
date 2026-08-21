@@ -10,7 +10,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "invoke_subagent|write_to_file|replace_file_content|multi_replace_file_content|generate_image",
+        "matcher": "invoke_subagent|write_to_file|replace_file_content|multi_replace_file_content|generate_image|run_command",
         "hooks": [
           {
             "type": "command",
@@ -42,7 +42,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "invoke_subagent|write_to_file|replace_file_content|multi_replace_file_content|generate_image",
+        "matcher": "invoke_subagent|write_to_file|replace_file_content|multi_replace_file_content|generate_image|run_command",
         "hooks": [
           {
             "type": "command",
@@ -55,8 +55,8 @@
     "Stop": [
       {
         "type": "command",
-        "command": "python3 hooks/stop_evidence_gate.py || python hooks/stop_evidence_gate.py || py -3 hooks/stop_evidence_gate.py",
-        "timeout": 15
+        "command": "python3 hooks/proof_freshness_gate.py || python hooks/proof_freshness_gate.py || py -3 hooks/proof_freshness_gate.py",
+        "timeout": 20
       }
     ]
   },
