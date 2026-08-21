@@ -55,8 +55,8 @@
     "Stop": [
       {
         "type": "command",
-        "command": "python3 hooks/proof_freshness_gate.py || python hooks/proof_freshness_gate.py || py -3 hooks/proof_freshness_gate.py",
-        "timeout": 20
+        "command": "python3 hooks/structured_verdict_gate.py --delegate hooks/proof_freshness_gate.py || python hooks/structured_verdict_gate.py --delegate hooks/proof_freshness_gate.py || py -3 hooks/structured_verdict_gate.py --delegate hooks/proof_freshness_gate.py",
+        "timeout": 25
       }
     ]
   },
