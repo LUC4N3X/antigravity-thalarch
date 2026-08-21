@@ -86,10 +86,12 @@ def classify_depth(text: str) -> str:
         return "D4"
     if DEEP_RE.search(compact):
         return "D3"
-    if DELIBERATE_RE.search(compact):
-        return "D2"
+    # A bounded documentation/wording edit stays direct even when the request
+    # naturally uses a verb such as "fix". Risk-bearing terms above still win.
     if len(compact) <= 180 and DIRECT_RE.search(compact):
         return "D0"
+    if DELIBERATE_RE.search(compact):
+        return "D2"
     return "D1"
 
 
