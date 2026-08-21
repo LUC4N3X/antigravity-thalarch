@@ -14,7 +14,7 @@ PYTHON = sys.executable
 
 def run_stop_hook(payload: dict) -> dict:
     proc = subprocess.run(
-        [PYTHON, str(HOOKS / "stop_evidence_gate.py")],
+        [PYTHON, str(HOOKS / "structured_verdict_gate.py")],
         input=json.dumps(payload),
         text=True,
         capture_output=True,
@@ -22,8 +22,20 @@ def run_stop_hook(payload: dict) -> dict:
         check=False,
     )
     if proc.returncode != 0:
-        raise AssertionError(f"stop_evidence_gate.py failed: {proc.stderr}\nstdout={proc.stdout}")
+        raise AssertionError(f"structured_verdict_gate.py failed: {proc.stderr}\nstdout={proc.stdout}")
     return json.loads(proc.stdout)
+
+
+def wrap_finish(response: dict, transport: str) -> dict:
+    if transport == "direct":
+        return response
+    if transport == "result":
+        return {"result": response}
+    if transport == "fenced":
+        return {"output": "```json\n" + json.dumps(response) + "\n```"}
+    if transport == "double":
+        return {"response": json.dumps(json.dumps(response))}
+    raise ValueError(f"unknown transport: {transport}")
 
 
 def write_visual_transcript(
@@ -32,6 +44,8 @@ def write_visual_transcript(
     *,
     unverified: list[str] | None = None,
     extra_calls: list[tuple[int, str, dict]] | None = None,
+    planner_content: str | None = None,
+    transport: str = "direct",
 ) -> None:
     response = {
         "case_id": "QH-06",
@@ -46,7 +60,6 @@ def write_visual_transcript(
         (2, "view_file", {"FilePath": "web/styles.css"}),
     ]
     calls.extend(extra_calls or [])
-    calls.append((10, "finish", response))
 
     rows = [
         {
@@ -72,7 +85,38 @@ def write_visual_transcript(
                 "tool_calls": [{"name": name, "args": args}],
             }
         )
+
+    if planner_content is not None:
+        rows.append(
+            {
+                "step_index": 9,
+                "source": "MODEL",
+                "type": "PLANNER_RESPONSE",
+                "status": "DONE",
+                "content": planner_content,
+            }
+        )
+
+    rows.append(
+        {
+            "step_index": 10,
+            "source": "MODEL",
+            "type": "PLANNER_RESPONSE",
+            "status": "DONE",
+            "tool_calls": [{"name": "finish", "args": wrap_finish(response, transport)}],
+        }
+    )
     path.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
+
+
+def payload_for(root: Path, transcript: Path) -> dict:
+    return {
+        "fullyIdle": True,
+        "terminationReason": "TERMINAL_STEP_TYPE",
+        "transcriptPath": str(transcript),
+        "artifactDirectoryPath": str(root / "artifacts"),
+        "workspacePaths": [str(root)],
+    }
 
 
 class VisualStateGateTests(unittest.TestCase):
@@ -81,35 +125,19 @@ class VisualStateGateTests(unittest.TestCase):
             root = Path(temp)
             transcript = root / "transcript.jsonl"
             write_visual_transcript(transcript, "CORRECTED_PREMISE")
-            result = run_stop_hook(
-                {
-                    "fullyIdle": True,
-                    "terminationReason": "TERMINAL_STEP_TYPE",
-                    "transcriptPath": str(transcript),
-                    "artifactDirectoryPath": str(root / "artifacts"),
-                    "workspacePaths": [str(root)],
-                }
-            )
+            result = run_stop_hook(payload_for(root, transcript))
             self.assertEqual("continue", result["decision"])
-            self.assertIn("VISUAL-STATE FINAL VERDICT GATE", result["reason"])
-            self.assertIn("UNKNOWN/UNVERIFIED", result["reason"])
+            self.assertIn("visual", result["reason"].lower())
+            self.assertIn("unknown/unverified", result["reason"].lower())
 
     def test_requires_explicit_visual_unverified_ledger(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             transcript = root / "transcript.jsonl"
             write_visual_transcript(transcript, "UNVERIFIED", unverified=[])
-            result = run_stop_hook(
-                {
-                    "fullyIdle": True,
-                    "terminationReason": "TERMINAL_STEP_TYPE",
-                    "transcriptPath": str(transcript),
-                    "artifactDirectoryPath": str(root / "artifacts"),
-                    "workspacePaths": [str(root)],
-                }
-            )
+            result = run_stop_hook(payload_for(root, transcript))
             self.assertEqual("continue", result["decision"])
-            self.assertIn("visual proof", result["reason"].lower())
+            self.assertIn("visual", result["reason"].lower())
             self.assertIn("unverified", result["reason"].lower())
 
     def test_allows_unverified_with_concrete_missing_visual_proof(self) -> None:
@@ -123,15 +151,7 @@ class VisualStateGateTests(unittest.TestCase):
                     "Rendered mobile/desktop state was not observed because browser and screenshot evidence were unavailable."
                 ],
             )
-            result = run_stop_hook(
-                {
-                    "fullyIdle": True,
-                    "terminationReason": "TERMINAL_STEP_TYPE",
-                    "transcriptPath": str(transcript),
-                    "artifactDirectoryPath": str(root / "artifacts"),
-                    "workspacePaths": [str(root)],
-                }
-            )
+            result = run_stop_hook(payload_for(root, transcript))
             self.assertEqual("stop", result["decision"])
 
     def test_allows_strong_visual_verdict_after_real_visual_tool_evidence(self) -> None:
@@ -143,15 +163,62 @@ class VisualStateGateTests(unittest.TestCase):
                 "PROVEN",
                 extra_calls=[(3, "browser_screenshot", {"viewport": "mobile-and-desktop"})],
             )
-            result = run_stop_hook(
-                {
-                    "fullyIdle": True,
-                    "terminationReason": "TERMINAL_STEP_TYPE",
-                    "transcriptPath": str(transcript),
-                    "artifactDirectoryPath": str(root / "artifacts"),
-                    "workspacePaths": [str(root)],
-                }
+            result = run_stop_hook(payload_for(root, transcript))
+            self.assertEqual("stop", result["decision"])
+
+    def test_structured_finish_precedes_planner_prose_for_visual_ledger(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            transcript = root / "transcript.jsonl"
+            write_visual_transcript(
+                transcript,
+                "UNVERIFIED",
+                unverified=[],
+                planner_content="I cannot certify the appearance from source inspection alone.",
             )
+            result = run_stop_hook(payload_for(root, transcript))
+            self.assertEqual("continue", result["decision"])
+            self.assertIn("structured verdict gate", result["reason"].lower())
+            self.assertIn("unverified ledger", result["reason"].lower())
+
+    def test_wrapped_visual_ledger_is_enforced(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            transcript = root / "transcript.jsonl"
+            write_visual_transcript(transcript, "UNVERIFIED", unverified=[], transport="result")
+            result = run_stop_hook(payload_for(root, transcript))
+            self.assertEqual("continue", result["decision"])
+            self.assertIn("structured verdict gate", result["reason"].lower())
+
+    def test_fenced_visual_ledger_is_enforced(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            transcript = root / "transcript.jsonl"
+            write_visual_transcript(transcript, "UNVERIFIED", unverified=[], transport="fenced")
+            result = run_stop_hook(payload_for(root, transcript))
+            self.assertEqual("continue", result["decision"])
+            self.assertIn("structured verdict gate", result["reason"].lower())
+
+    def test_double_encoded_visual_ledger_is_enforced(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            transcript = root / "transcript.jsonl"
+            write_visual_transcript(transcript, "UNVERIFIED", unverified=[], transport="double")
+            result = run_stop_hook(payload_for(root, transcript))
+            self.assertEqual("continue", result["decision"])
+            self.assertIn("structured verdict gate", result["reason"].lower())
+
+    def test_wrapped_visual_reason_is_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            transcript = root / "transcript.jsonl"
+            write_visual_transcript(
+                transcript,
+                "UNVERIFIED",
+                unverified=["Browser screenshot evidence for mobile and desktop was not captured."],
+                transport="result",
+            )
+            result = run_stop_hook(payload_for(root, transcript))
             self.assertEqual("stop", result["decision"])
 
 
