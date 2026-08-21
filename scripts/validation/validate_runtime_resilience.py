@@ -17,6 +17,7 @@ required = [
     hooks / "telemetry.py",
     hooks / "convergent_stop_gate.py",
     hooks / "test_runtime_resilience.py",
+    hooks / "test_hook_chaos.py",
 ]
 for path in required:
     if not path.is_file():
@@ -71,6 +72,18 @@ if (hooks / "telemetry.py").is_file():
         if term not in text:
             errors.append(f"telemetry.py missing trace concept: {term}")
 
+chaos_path = hooks / "test_hook_chaos.py"
+if chaos_path.is_file():
+    chaos_text = chaos_path.read_text(encoding="utf-8")
+    for term in [
+        "Random(20260821)",
+        "test_seeded_transport_fuzz_never_raises",
+        "test_nested_nonzero_exit_can_never_become_success",
+        "test_schema_like_noise_is_not_a_verdict_without_conclusion_value",
+    ]:
+        if term not in chaos_text:
+            errors.append(f"hook chaos suite missing deterministic invariant: {term}")
+
 if errors:
     print("THALARCH RUNTIME-RESILIENCE VALIDATION FAILED")
     for error in errors:
@@ -78,7 +91,7 @@ if errors:
     raise SystemExit(1)
 
 proc = subprocess.run(
-    [sys.executable, "-m", "unittest", "test_runtime_resilience.py"],
+    [sys.executable, "-m", "unittest", "test_runtime_resilience.py", "test_hook_chaos.py"],
     cwd=hooks,
     text=True,
     capture_output=True,
@@ -95,4 +108,6 @@ print("stop_convergence: bounded_honest_unverified_retry")
 print("adaptive_profiles: D0_D4")
 print("task_capsule: request_scoped")
 print("telemetry: local_json_optional_otel")
+print("chaos_transport_fuzz: seeded_reproducible")
+print("failed_exit_invariant: nested_nonzero_rejected")
 print("unit_tests: passed")
