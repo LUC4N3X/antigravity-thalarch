@@ -25,6 +25,8 @@ checks = {
         "### D — Visual fact",
         "actual rendered pixels/screenshots/recording/asset inspection",
         "browser source looks correct + no render → visual fidelity remains `UNVERIFIED`",
+        "CLAIM | CLASS | STATUS | EVIDENCE | FRESHNESS/SCOPE",
+        "current repository/runtime evidence",
         "local absence proves only local absence",
         "takes precedence over `CORRECTED_PREMISE`",
         "Stop verdict selection here",
@@ -54,6 +56,8 @@ checks = {
     root / "adapters/codex/AGENTS.md": [
         "Visual/design reference contract",
         "VoltAgent/awesome-design-md",
+        "Evidence freshness seal",
+        "Runtime-state verdict precedence",
         "Verdict seal",
         "Visual-state seal",
         "External-state seal",
@@ -63,6 +67,8 @@ checks = {
     root / "adapters/claude/CLAUDE.md": [
         "Visual/design reference contract",
         "VoltAgent/awesome-design-md",
+        "Evidence freshness seal",
+        "Runtime-state verdict precedence",
         "Verdict seal",
         "Visual-state seal",
         "External-state seal",
@@ -119,6 +125,8 @@ hook = root / "thalarch-mode/hooks/pre_invocation_epistemic_guard.py"
 hook_text = require_terms(
     hook,
     [
+        "EVIDENCE FRESHNESS",
+        "RUNTIME-STATE VERDICT PRECEDENCE",
         "VERDICT SEAL",
         "VISUAL-STATE VERDICT PRECEDENCE",
         "EXTERNAL-STATE SEAL",
@@ -132,6 +140,11 @@ hook_text = require_terms(
 )
 hook_lower = hook_text.lower()
 for concept in [
+    "latest user request",
+    "failed or merely attempted tool call",
+    "successful matching execution",
+    "tests/build/lint/typecheck/benchmark/command execution",
+    "previous run",
     "execution/runtime/ci/device/browser evidence",
     "factual proposition",
     "evidence is unavailable",
@@ -151,12 +164,18 @@ for concept in [
     if concept not in hook_lower:
         errors.append(f"{hook.relative_to(root)} missing verdict-seal concept: {concept}")
 
-# Codex and Claude must preserve the same proposition/external-state/visual-state semantics.
+# Codex and Claude must preserve the same proposition/runtime/external/visual semantics.
 for adapter in [root / "adapters/codex/AGENTS.md", root / "adapters/claude/CLAUDE.md"]:
     if not adapter.is_file():
         continue
     text = adapter.read_text(encoding="utf-8").lower()
     for concept in [
+        "evidence freshness seal",
+        "latest user request",
+        "failed or merely attempted tool call",
+        "runtime-state verdict precedence",
+        "successful matching execution",
+        "source/config/static reasoning",
         "factual proposition",
         "execution/runtime/ci/device/browser evidence",
         "unverified",
@@ -194,7 +213,9 @@ if errors:
 
 print("THALARCH CROSS-HOST POLICY VALIDATION PASSED")
 print("version: 1.0.0 (fixed)")
+print("evidence_freshness_seal: antigravity_codex_claude")
 print("runtime_proof_seal: antigravity_codex_claude")
+print("runtime_state_verdict_precedence: enforced_cross_host")
 print("visual_state_seal: antigravity_codex_claude")
 print("visual_state_verdict_precedence: enforced_cross_host")
 print("external_state_seal: antigravity_codex_claude")
