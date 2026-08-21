@@ -5,34 +5,58 @@ param(
 
 $ErrorActionPreference = "Stop"
 $Source = Join-Path $PSScriptRoot "thalarch-mode"
+$LockTool = Join-Path $PSScriptRoot "scripts\security\behavior_lock.py"
 
 if (-not (Test-Path $Source)) {
     throw "Plugin folder not found: $Source"
 }
 
+function Test-PythonCandidate {
+    param(
+        [string]$Command,
+        [string[]]$Prefix = @()
+    )
+    if (-not (Get-Command $Command -ErrorAction SilentlyContinue)) {
+        return $false
+    }
+    try {
+        & $Command @Prefix -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)"
+        return $LASTEXITCODE -eq 0
+    } catch {
+        return $false
+    }
+}
+
 function Test-Python3 {
-    foreach ($candidate in @("python3", "python")) {
-        $cmd = Get-Command $candidate -ErrorAction SilentlyContinue
-        if ($cmd) {
-            try {
-                & $candidate -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)"
-                if ($LASTEXITCODE -eq 0) { return $true }
-            } catch {}
-        }
+    if (Test-PythonCandidate "python3") { return $true }
+    if (Test-PythonCandidate "python") { return $true }
+    if (Test-PythonCandidate "py" @("-3")) { return $true }
+    return $false
+}
+
+function Invoke-ThalarchPython {
+    param([string[]]$Arguments)
+
+    if (Test-PythonCandidate "python3") {
+        & python3 @Arguments
+    } elseif (Test-PythonCandidate "python") {
+        & python @Arguments
+    } elseif (Test-PythonCandidate "py" @("-3")) {
+        & py -3 @Arguments
+    } else {
+        throw "Python 3.10+ was not found."
     }
 
-    $py = Get-Command py -ErrorAction SilentlyContinue
-    if ($py) {
-        try {
-            & py -3 -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)"
-            if ($LASTEXITCODE -eq 0) { return $true }
-        } catch {}
+    if ($LASTEXITCODE -ne 0) {
+        throw "Python command failed with exit code $LASTEXITCODE"
     }
-    return $false
 }
 
 if (-not (Test-Python3)) {
     throw "Thalarch 1.0.0 requires Python 3.10+ for its hard anti-hallucination hooks. Install Python 3 and rerun this installer."
+}
+if (-not (Test-Path $LockTool)) {
+    throw "Behavior-lock tool not found: $LockTool"
 }
 
 function Install-Ide {
@@ -48,9 +72,12 @@ function Install-Ide {
     }
 
     Copy-Item $Source $Dest -Recurse -Force
+    Invoke-ThalarchPython @($LockTool, "write", $Dest)
+    Invoke-ThalarchPython @($LockTool, "verify", $Dest)
     Write-Host "Installed Thalarch 1.0.0 for Antigravity IDE:"
     Write-Host "  $Dest"
     Write-Host "Hard anti-hallucination evidence gates: ENABLED"
+    Write-Host "Behavior integrity lock: VERIFIED"
 }
 
 function Install-Cli {
@@ -59,12 +86,24 @@ function Install-Cli {
         throw "The 'agy' command was not found in PATH. Install/use Antigravity CLI or run with -Target IDE."
     }
 
-    & agy plugin install $Source
-    if ($LASTEXITCODE -ne 0) {
-        throw "agy plugin install failed with exit code $LASTEXITCODE"
+    $SourceLock = Join-Path $Source "behavior-lock.json"
+    if (Test-Path $SourceLock) {
+        throw "Refusing to overwrite an existing source behavior-lock.json: $SourceLock"
     }
+
+    Invoke-ThalarchPython @($LockTool, "write", $Source, "--output", $SourceLock)
+    try {
+        & agy plugin install $Source
+        if ($LASTEXITCODE -ne 0) {
+            throw "agy plugin install failed with exit code $LASTEXITCODE"
+        }
+    } finally {
+        Remove-Item $SourceLock -Force -ErrorAction SilentlyContinue
+    }
+
     Write-Host "Installed Thalarch 1.0.0 for Antigravity CLI."
     Write-Host "Hard anti-hallucination evidence gates: ENABLED"
+    Write-Host "Behavior integrity lock: STAGED WITH PLUGIN"
     & agy plugin list
 }
 

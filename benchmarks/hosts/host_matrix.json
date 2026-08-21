@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "hosts": {
+    "antigravity": {
+      "command_env": "THALARCH_ANTIGRAVITY_CMD_JSON",
+      "adapter": "adapters/antigravity-native",
+      "notes": "Provide an argv JSON template for the exact installed Antigravity CLI/configuration."
+    },
+    "codex": {
+      "command_env": "THALARCH_CODEX_CMD_JSON",
+      "adapter": "adapters/codex",
+      "notes": "Provide an argv JSON template for the pinned Codex CLI/configuration under test."
+    },
+    "claude": {
+      "command_env": "THALARCH_CLAUDE_CMD_JSON",
+      "adapter": "adapters/claude",
+      "notes": "Provide an argv JSON template for the pinned Claude Code CLI/configuration under test."
+    }
+  },
+  "template_placeholders": [
+    "{prompt}",
+    "{workspace}",
+    "{model}"
+  ]
+}
