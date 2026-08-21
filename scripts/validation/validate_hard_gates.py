@@ -20,6 +20,7 @@ required_scripts = [
     hooks_dir / "command_grounding_gate.py",
     hooks_dir / "evidence_event_recorder.py",
     hooks_dir / "evidence_event_result.py",
+    hooks_dir / "structured_verdict_gate.py",
     hooks_dir / "proof_freshness_gate.py",
     hooks_dir / "stop_evidence_gate.py",
     hooks_dir / "test_hard_gates.py",
@@ -85,6 +86,7 @@ else:
         "command_grounding_gate.py",
         "evidence_event_recorder.py",
         "evidence_event_result.py",
+        "structured_verdict_gate.py",
         "proof_freshness_gate.py",
     ]:
         if filename not in serialized:
@@ -119,6 +121,33 @@ if result_hook.is_file():
     for term in ["EXIT_CODE_KEYS", "nonzero exit code", "status", "failed", "completed"]:
         if term not in result_text:
             errors.append(f"evidence_event_result.py missing successful-evidence guard: {term}")
+
+structured_gate = hooks_dir / "structured_verdict_gate.py"
+if structured_gate.is_file():
+    structured_text = semantic_python_text(structured_gate)
+    for term in [
+        "structured_verdict_object",
+        "current_finish_values",
+        "THALARCH STRUCTURED VERDICT GATE",
+        "Wrapper/fenced/embedded/double-encoded output",
+        "VISUAL_UNVERIFIED_RE",
+        "RUNTIME_UNVERIFIED_RE",
+        "EXTERNAL_UNVERIFIED_RE",
+        "proof_freshness_gate.py",
+    ]:
+        if term not in structured_text:
+            errors.append(f"structured_verdict_gate.py missing transport guard: {term}")
+    structured_lower = structured_text.lower()
+    for concept in [
+        "terminal finish",
+        "planner content",
+        "unverified ledger",
+        "render/browser/screenshot/viewport/mobile/desktop",
+        "successful matching execution",
+        "authoritative platform/service evidence",
+    ]:
+        if concept not in structured_lower:
+            errors.append(f"structured_verdict_gate.py missing structured-verdict concept: {concept}")
 
 proof_gate = hooks_dir / "proof_freshness_gate.py"
 if proof_gate.is_file():
@@ -240,6 +269,11 @@ if visual_tests.is_file():
         "test_requires_explicit_visual_unverified_ledger",
         "test_allows_unverified_with_concrete_missing_visual_proof",
         "test_allows_strong_visual_verdict_after_real_visual_tool_evidence",
+        "test_structured_finish_precedes_planner_prose_for_visual_ledger",
+        "test_wrapped_visual_ledger_is_enforced",
+        "test_fenced_visual_ledger_is_enforced",
+        "test_double_encoded_visual_ledger_is_enforced",
+        "test_wrapped_visual_reason_is_allowed",
         "looks perfect on both mobile and desktop",
         "browser_screenshot",
     ]:
@@ -296,6 +330,9 @@ print("project_command_grounding: enforced")
 print("event_ledger_pre_post_tool_use: enforced")
 print("current_request_evidence_binding: enforced")
 print("successful_runtime_evidence: nonzero_rejected")
+print("structured_verdict_transport: wrapper_fence_embedded_double_encoded")
+print("structured_finish_precedence: enforced")
+print("structured_unverified_ledgers: external_visual_runtime")
 print("runtime_state_final_gate: enforced")
 print("fresh_external_visual_evidence: enforced")
 print("read_only_external_state_final_gate: enforced")
