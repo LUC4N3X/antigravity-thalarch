@@ -36,17 +36,39 @@ for path in required:
             errors.append(f"invalid JSON in {path.relative_to(root)}: {exc}")
 
 checks = {
-    root / "benchmarks" / "ablation" / "run_ablation.py": ["skills_only", "gates_only", "native", "full", "restore exact source plugin"],
-    root / "benchmarks" / "holdout" / "run_holdout.py": ["expected-sha256", "Refusing an in-repository holdout", "cases_sha256"],
-    root / "benchmarks" / "long" / "run_longbench.py": ["hidden_files", "forbidden_paths", "protected_paths", "infra_status", "command_sha256"],
-    root / "benchmarks" / "publish_run.py": ["raw_transcripts_included", "attestation_sha256", "result_hashes_included"],
-    root / "benchmarks" / "hosts" / "run_matrix.py": ["THALARCH_", "SKIPPED_UNCONFIGURED", "command_template_sha256"],
+    root / "benchmarks" / "ablation" / "run_ablation.py": [
+        'ARMS = ("native", "skills_only", "gates_only", "full")',
+        "set_all_hooks_enabled",
+        "install_plugin(agy, SOURCE_PLUGIN)",
+    ],
+    root / "benchmarks" / "holdout" / "run_holdout.py": [
+        "expected-sha256",
+        "Refusing an in-repository holdout",
+        "cases_sha256",
+    ],
+    root / "benchmarks" / "long" / "run_longbench.py": [
+        "hidden_files",
+        "forbidden_paths",
+        "protected_paths",
+        "infra_status",
+        "command_sha256",
+    ],
+    root / "benchmarks" / "publish_run.py": [
+        "raw_transcripts_included",
+        "attestation_sha256",
+        "result_hashes_included",
+    ],
+    root / "benchmarks" / "hosts" / "run_matrix.py": [
+        "command_env",
+        "SKIPPED_UNCONFIGURED",
+        "command_template_sha256",
+    ],
 }
 for path, terms in checks.items():
     text = path.read_text(encoding="utf-8") if path.is_file() else ""
     for term in terms:
         if term not in text:
-            errors.append(f"{path.relative_to(root)} missing robustness concept: {term}")
+            errors.append(f"{path.relative_to(root)} missing robustness invariant: {term}")
 
 if errors:
     print("THALARCH ROBUSTNESS-MATRIX VALIDATION FAILED")
