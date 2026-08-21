@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Front-door Stop gate for fresh, modality-correct evidence.
 
-This wrapper adds two guarantees before delegating to stop_evidence_gate.py:
-1. evidence for current external/visual claims must belong to the latest user request;
-2. test/build/lint/typecheck/benchmark claims require a successful matching runtime event
+This wrapper adds three guarantees before delegating to stop_evidence_gate.py:
+1. final content and evidence are scoped to the latest explicit user request;
+2. current external/visual claims cannot reuse evidence from an earlier user turn;
+3. test/build/lint/typecheck/benchmark claims require a successful matching runtime event
    from the latest request, not a stale or merely attempted command.
 
 The existing stop_evidence_gate remains the canonical external/visual/orchestration gate.
@@ -18,7 +19,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from hook_utils import emit, latest_model_content, load_state, read_payload, tool_calls, transcript_steps
+from hook_utils import emit, load_state, tool_calls, transcript_steps
 
 HOOKS = Path(__file__).resolve().parent
 LEGACY_GATE = HOOKS / "stop_evidence_gate.py"
@@ -54,18 +55,22 @@ VISUAL_STATE_RE = re.compile(
 )
 RUNTIME_STATE_RE = re.compile(
     r"\b(?:"
-    r"(?:all\s+)?tests?\s+(?:pass|passed|passing|succeed|succeeded|green)|"
-    r"(?:full|entire)\s+(?:test\s+)?suite\s+(?:pass|passed|passing|succeed|succeeded|green)|"
-    r"(?:build|compile|compilation)\s+(?:pass|passes|passed|succeed|succeeds|succeeded|successful)|"
-    r"(?:lint|linter|typecheck|type-check|type\s+check)\s+(?:pass|passes|passed|clean|succeed|succeeds|succeeded)|"
-    r"benchmark\s+(?:pass|passes|passed|completed|completes|succeed|succeeds|succeeded)|"
-    r"(?:command|script|job)\s+(?:pass|passes|passed|work|works|succeed|succeeds|succeeded)"
+    r"(?:all\s+)?tests?\b[^\n.!?]{0,80}\b(?:pass|passed|passing|succeed|succeeds|succeeded|green)|"
+    r"(?:full|entire)\s+(?:test\s+)?suite\b[^\n.!?]{0,80}\b(?:pass|passed|passing|succeed|succeeds|succeeded|green)|"
+    r"(?:build|compile|compilation)\b[^\n.!?]{0,80}\b(?:pass|passes|passed|succeed|succeeds|succeeded|successful)|"
+    r"(?:lint|linter|typecheck|type-check|type\s+check)\b[^\n.!?]{0,80}\b(?:pass|passes|passed|clean|succeed|succeeds|succeeded)|"
+    r"benchmark\b[^\n.!?]{0,80}\b(?:pass|passes|passed|completed|completes|succeed|succeeds|succeeded)|"
+    r"(?:command|script|job)\b[^\n.!?]{0,80}\b(?:pass|passes|passed|work|works|succeed|succeeds|succeeded)"
     r")\b",
     re.IGNORECASE,
 )
 RUNTIME_NEGATION_RE = re.compile(
     r"\b(?:cannot|can't|couldn't|could\s+not|didn't|did\s+not|not\s+run|not\s+executed|"
     r"unverified|unknown|unable\s+to|without\s+(?:running|executing))\b",
+    re.IGNORECASE,
+)
+RUNTIME_QUESTION_CONTEXT_RE = re.compile(
+    r"\b(?:whether|do|does|did|can|could|would|will|confirm\s+if|tell\s+me\s+if)\b",
     re.IGNORECASE,
 )
 RUNTIME_UNVERIFIED_RE = re.compile(
@@ -143,6 +148,14 @@ def _extract_user_request(content: str) -> str:
     return content[body_start:end].strip()
 
 
+def _step_order(step: dict[str, Any], fallback: int) -> int:
+    raw = step.get("step_index", step.get("stepIndex", step.get("_thalarch_line_index", fallback)))
+    try:
+        return int(raw)
+    except Exception:
+        return fallback
+
+
 def latest_user_context(payload: dict[str, Any]) -> tuple[int, str, str]:
     candidates: list[tuple[int, str]] = []
     for fallback, step in enumerate(transcript_steps(payload)):
@@ -154,14 +167,8 @@ def latest_user_context(payload: dict[str, Any]) -> tuple[int, str, str]:
         if source not in USER_SOURCES and typ not in USER_TYPES:
             continue
         request = _extract_user_request(content)
-        if not request:
-            continue
-        raw_order = step.get("step_index", step.get("stepIndex", fallback))
-        try:
-            order = int(raw_order)
-        except Exception:
-            order = fallback
-        candidates.append((order, request))
+        if request:
+            candidates.append((_step_order(step, fallback), request))
 
     if candidates:
         order, request = max(candidates, key=lambda item: item[0])
@@ -175,6 +182,22 @@ def latest_user_context(payload: dict[str, Any]) -> tuple[int, str, str]:
 
     request_key = hashlib.sha256(request.encode("utf-8")).hexdigest()[:16] if request else ""
     return order, request, request_key
+
+
+def current_model_content(payload: dict[str, Any], user_order: int) -> str:
+    """Return only model content produced after the latest explicit user request."""
+    candidates: list[tuple[int, str]] = []
+    for fallback, step in enumerate(transcript_steps(payload)):
+        order = _step_order(step, fallback)
+        if user_order >= 0 and order <= user_order:
+            continue
+        source = str(step.get("source") or "").upper()
+        status = str(step.get("status") or "").upper()
+        typ = str(step.get("type") or "").upper()
+        content = step.get("content")
+        if source == "MODEL" and status in ("", "DONE") and typ == "PLANNER_RESPONSE" and isinstance(content, str):
+            candidates.append((order, content))
+    return max(candidates, key=lambda item: item[0])[1] if candidates else ""
 
 
 def transcript_call_rows(payload: dict[str, Any]) -> list[tuple[int, str, str]]:
@@ -289,9 +312,10 @@ def successful_runtime_evidence(payload: dict[str, Any], request_key: str, kind:
 
 def assertive_runtime_prose(content: str) -> bool:
     for match in RUNTIME_STATE_RE.finditer(content):
-        prefix = content[max(0, match.start() - 90) : match.start()]
-        if not RUNTIME_NEGATION_RE.search(prefix):
-            return True
+        prefix = content[max(0, match.start() - 100) : match.start()]
+        if RUNTIME_NEGATION_RE.search(prefix) or RUNTIME_QUESTION_CONTEXT_RE.search(prefix):
+            continue
+        return True
     return False
 
 
@@ -350,7 +374,7 @@ def main() -> None:
     user_order, user_request, request_key = latest_user_context(payload)
     all_calls = transcript_call_rows(payload)
     current_calls = [row for row in all_calls if user_order < 0 or row[0] > user_order]
-    latest = latest_model_content(payload)
+    latest = current_model_content(payload, user_order)
     final_content = latest or finish_payload_text(current_calls) or finish_payload_text(all_calls)
     conclusion = final_conclusion(final_content)
     combined = "\n".join(part for part in (user_request, final_content) if part)
