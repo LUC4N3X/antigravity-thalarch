@@ -146,7 +146,7 @@ if proof_gate.is_file():
         "rendered visual-state",
         "successful matching execution",
         "current-request evidence",
-        "historical context",
+        "earlier user turn",
         "structured unverified ledger",
         "test",
         "build",
