@@ -2,7 +2,9 @@
 set -euo pipefail
 
 TARGET="${1:-IDE}"
-SOURCE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/thalarch-mode"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOURCE="$ROOT/thalarch-mode"
+LOCK_TOOL="$ROOT/scripts/security/behavior_lock.py"
 
 if [[ ! -d "$SOURCE" ]]; then
   echo "Plugin folder not found: $SOURCE" >&2
@@ -22,6 +24,10 @@ if [[ -z "$PYTHON_BIN" ]]; then
   echo "Install Python 3 and rerun this installer." >&2
   exit 1
 fi
+if [[ ! -f "$LOCK_TOOL" ]]; then
+  echo "Behavior-lock tool not found: $LOCK_TOOL" >&2
+  exit 1
+fi
 
 install_ide() {
   local plugin_root="$HOME/.gemini/config/plugins"
@@ -37,9 +43,12 @@ install_ide() {
   fi
 
   cp -R "$SOURCE" "$destination"
+  "$PYTHON_BIN" "$LOCK_TOOL" write "$destination"
+  "$PYTHON_BIN" "$LOCK_TOOL" verify "$destination"
   echo "Installed Thalarch 1.0.0 for Antigravity IDE:"
   echo "  $destination"
   echo "Hard anti-hallucination evidence gates: ENABLED"
+  echo "Behavior integrity lock: VERIFIED"
 }
 
 install_cli() {
@@ -48,9 +57,21 @@ install_cli() {
     exit 1
   fi
 
+  local source_lock="$SOURCE/behavior-lock.json"
+  if [[ -e "$source_lock" ]]; then
+    echo "Refusing to overwrite existing source behavior-lock.json: $source_lock" >&2
+    exit 1
+  fi
+
+  "$PYTHON_BIN" "$LOCK_TOOL" write "$SOURCE" --output "$source_lock"
+  trap 'rm -f "$source_lock"' RETURN
   agy plugin install "$SOURCE"
+  rm -f "$source_lock"
+  trap - RETURN
+
   echo "Installed Thalarch 1.0.0 for Antigravity CLI."
   echo "Hard anti-hallucination evidence gates: ENABLED"
+  echo "Behavior integrity lock: STAGED WITH PLUGIN"
   agy plugin list
 }
 
