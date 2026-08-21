@@ -20,10 +20,12 @@ required_scripts = [
     hooks_dir / "command_grounding_gate.py",
     hooks_dir / "evidence_event_recorder.py",
     hooks_dir / "evidence_event_result.py",
+    hooks_dir / "proof_freshness_gate.py",
     hooks_dir / "stop_evidence_gate.py",
     hooks_dir / "test_hard_gates.py",
     hooks_dir / "test_finish_payload_gate.py",
     hooks_dir / "test_visual_state_gate.py",
+    hooks_dir / "test_proof_freshness_gate.py",
 ]
 
 for path in required_scripts:
@@ -83,7 +85,7 @@ else:
         "command_grounding_gate.py",
         "evidence_event_recorder.py",
         "evidence_event_result.py",
-        "stop_evidence_gate.py",
+        "proof_freshness_gate.py",
     ]:
         if filename not in serialized:
             errors.append(f"hooks.json does not wire {filename}")
@@ -101,6 +103,59 @@ else:
         errors.append("evidence event recorder must match invoke_subagent")
     if not any("invoke_subagent" in matcher for matcher in post_matchers):
         errors.append("evidence event result hook must match invoke_subagent")
+    if not any("run_command" in matcher for matcher in post_matchers):
+        errors.append("runtime evidence result hook must match run_command")
+
+recorder = hooks_dir / "evidence_event_recorder.py"
+if recorder.is_file():
+    recorder_text = semantic_python_text(recorder)
+    for term in ["requestKey", "USER_EXPLICIT", "USER_INPUT", "sha256"]:
+        if term not in recorder_text:
+            errors.append(f"evidence_event_recorder.py missing request-freshness guard: {term}")
+
+result_hook = hooks_dir / "evidence_event_result.py"
+if result_hook.is_file():
+    result_text = semantic_python_text(result_hook)
+    for term in ["EXIT_CODE_KEYS", "nonzero exit code", "status", "failed", "completed"]:
+        if term not in result_text:
+            errors.append(f"evidence_event_result.py missing successful-evidence guard: {term}")
+
+proof_gate = hooks_dir / "proof_freshness_gate.py"
+if proof_gate.is_file():
+    proof_text = semantic_python_text(proof_gate)
+    for term in [
+        "latest_user_context",
+        "request_key",
+        "successful_runtime_evidence",
+        "runtime_command_matches",
+        "RUNTIME_STATE_RE",
+        "EXTERNAL_STATE_RE",
+        "VISUAL_STATE_RE",
+        "THALARCH FRESH PROOF GATE",
+        "latest user request",
+        "failed/attempted command",
+        "delegate_legacy",
+        "stop_evidence_gate.py",
+    ]:
+        if term not in proof_text:
+            errors.append(f"proof_freshness_gate.py missing fresh-proof guard: {term}")
+
+    proof_lower = proof_text.lower()
+    for concept in [
+        "current external-state",
+        "rendered visual-state",
+        "successful matching execution",
+        "current-request evidence",
+        "historical context",
+        "structured unverified ledger",
+        "test",
+        "build",
+        "lint",
+        "typecheck",
+        "benchmark",
+    ]:
+        if concept not in proof_lower:
+            errors.append(f"proof_freshness_gate.py missing proof concept: {concept}")
 
 stop_gate = hooks_dir / "stop_evidence_gate.py"
 if stop_gate.is_file():
@@ -191,6 +246,22 @@ if visual_tests.is_file():
         if term not in visual_text:
             errors.append(f"visual-state regression suite missing case: {term}")
 
+fresh_tests = hooks_dir / "test_proof_freshness_gate.py"
+if fresh_tests.is_file():
+    fresh_text = fresh_tests.read_text(encoding="utf-8")
+    for term in [
+        "test_blocks_proven_test_status_without_successful_current_run",
+        "test_failed_current_test_command_is_not_runtime_proof",
+        "test_successful_current_test_command_can_prove_runtime_status",
+        "test_stale_runtime_event_from_previous_request_is_rejected",
+        "test_stale_external_platform_call_cannot_prove_new_request",
+        "test_stale_screenshot_cannot_prove_new_visual_request",
+        "test_runtime_unverified_ledger_must_name_missing_runtime_proof",
+        "test_runtime_unverified_with_concrete_missing_run_is_allowed",
+    ]:
+        if term not in fresh_text:
+            errors.append(f"fresh-proof regression suite missing case: {term}")
+
 if errors:
     print("THALARCH HARD-GATE VALIDATION FAILED")
     for error in errors:
@@ -205,6 +276,7 @@ proc = subprocess.run(
         "test_hard_gates.py",
         "test_finish_payload_gate.py",
         "test_visual_state_gate.py",
+        "test_proof_freshness_gate.py",
     ],
     cwd=hooks_dir,
     text=True,
@@ -222,6 +294,10 @@ print("pre_invocation_epistemic_contract: enforced")
 print("exact_read_target_gate: enforced")
 print("project_command_grounding: enforced")
 print("event_ledger_pre_post_tool_use: enforced")
+print("current_request_evidence_binding: enforced")
+print("successful_runtime_evidence: nonzero_rejected")
+print("runtime_state_final_gate: enforced")
+print("fresh_external_visual_evidence: enforced")
 print("read_only_external_state_final_gate: enforced")
 print("external_state_user_context: enforced")
 print("finish_payload_final_gate: enforced")
