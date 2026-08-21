@@ -64,10 +64,10 @@ install_cli() {
   fi
 
   "$PYTHON_BIN" "$LOCK_TOOL" write "$SOURCE" --output "$source_lock"
-  trap 'rm -f "$source_lock"' RETURN
+  trap 'rm -f "$SOURCE/behavior-lock.json"' EXIT
   agy plugin install "$SOURCE"
   rm -f "$source_lock"
-  trap - RETURN
+  trap - EXIT
 
   echo "Installed Thalarch 1.0.0 for Antigravity CLI."
   echo "Hard anti-hallucination evidence gates: ENABLED"
