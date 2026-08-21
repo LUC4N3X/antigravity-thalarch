@@ -38,6 +38,9 @@ jobs:
       - name: Validate cross-model benchmark suite
         run: python scripts/validation/validate_benchmarks.py .
 
+      - name: Validate robustness benchmark infrastructure
+        run: python scripts/validation/validate_robustness_matrix.py .
+
       - name: Check shell installer syntax
         run: bash -n INSTALL.sh
 
