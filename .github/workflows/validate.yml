@@ -29,6 +29,12 @@ jobs:
       - name: Validate anti-hallucination hard gates
         run: python scripts/validation/validate_hard_gates.py .
 
+      - name: Validate runtime resilience
+        run: python scripts/validation/validate_runtime_resilience.py .
+
+      - name: Validate supply-chain provenance
+        run: python scripts/validation/validate_supply_chain.py .
+
       - name: Validate Codex and Claude adapters
         run: python scripts/validation/validate_adapters.py .
 
