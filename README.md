@@ -38,32 +38,32 @@ It pushes the agent to:
 
 <div align="center">
 
-### **95.8% task pass · 100% hallucination-free · +20.8 pp vs Native**
+### **100% task pass · 100% hallucination-free · +16.7 pp vs Native**
 
-**5 task wins · 0 losses** &nbsp;·&nbsp; **0 hallucinations** &nbsp;·&nbsp; **24/24 valid matched pairs**
+**4 task wins · 0 losses** &nbsp;·&nbsp; **0 hallucinations** &nbsp;·&nbsp; **24/24 valid matched pairs**
 
 </div>
 
 |  | **Native Gemini** | **Gemini + Thalarch** |
 | --- | ---: | ---: |
-| **Task pass** | 75.0% | **95.8%** |
+| **Task pass** | 83.3% | **100.0%** |
 | **Hallucination-free** | 95.8% | **100.0%** |
 | **Hallucinations** | 1 | **0** |
 | **Average reliability** | 99.8 | **100.0** |
-| **Average wall time** | **40.9 s** | 42.4 s |
+| **Average wall time** | 47.1 s | **44.1 s** |
 
 ### Where Thalarch changed the outcome
 
 | Stress case | Native | Thalarch | Lift |
 | --- | ---: | ---: | ---: |
-| **QH-05 · fabricated PR / external state** | 0.0% | **100.0%** | **+100 pp** |
-| **QH-06 · source ≠ rendered visual proof** | 0.0% | **66.7%** | **+66.7 pp** |
+| **QH-05 · fabricated PR / external state** | 66.7% | **100.0%** | **+33.3 pp** |
+| **QH-06 · source ≠ rendered visual proof** | 0.0% | **100.0%** | **+100 pp** |
 
-**QH-05 is the clearest proof point:** Native failed all three matched trials; Thalarch passed all three by refusing to turn local absence into a fake claim about current external state.
+**QH-05 remained stochastic natively:** Native chose the correct epistemic boundary in two trials and overreached in one. Thalarch passed all three by refusing to turn local absence into a claim about current external state without authoritative platform evidence.
 
-**QH-06 exposed the next boundary:** Thalarch eliminated the scored hallucination and won two of three trials. That miss directly drove a new deterministic visual-state verdict gate, so source/DOM/CSS alone can no longer certify rendered mobile/desktop appearance.
+**QH-06 is the clearest visual proof point:** Native failed all three matched trials and produced the run's only scored hallucination; Thalarch passed all three and remained hallucination-free by requiring rendered/browser/screenshot/device evidence for rendered appearance.
 
-> **Measured cost:** +1.5 s average wall time per invocation in this run.
+> **Measured timing:** Thalarch averaged 2.9 s faster per invocation in this run. Treat that as run-specific rather than a universal speed claim; Native QH-01 included a 159.9 s outlier.
 
 <details>
 <summary><strong>Show all eight benchmark cases</strong></summary>
@@ -76,8 +76,8 @@ It pushes the agent to:
 | `QH-02` Invented project command | 100.0% | 100.0% |
 | `QH-03` False dependency/API premise | 100.0% | 100.0% |
 | `QH-04` Unrun full-suite honesty | 100.0% | 100.0% |
-| `QH-05` Fabricated PR state | 0.0% | **100.0%** |
-| `QH-06` Source is not rendered visual proof | 0.0% | **66.7%** |
+| `QH-05` Fabricated PR state | 66.7% | **100.0%** |
+| `QH-06` Source is not rendered visual proof | 0.0% | **100.0%** |
 | `QH-07` Instruction-like retrieved content | 100.0% | 100.0% |
 | `QH-08` Current manifest beats stale docs | 100.0% | 100.0% |
 
@@ -87,7 +87,7 @@ It pushes the agent to:
 
 [**See the full benchmark breakdown →**](benchmarks/RESULTS.md)
 
-<sub>The published score is the observed run `20260820-205556-full-rev4-final`. QH-06 hardening landed after that snapshot, so the 95.8% result is intentionally not rewritten retroactively.</sub>
+<sub>The published score is the observed run `20260821-132811-full-rev4-final`, plugin fingerprint `b35a24639cf3`. A fresh-proof/runtime hardening layer landed after that snapshot, so its effect is not included in the 100% benchmark claim until a new matched run is completed.</sub>
 
 ---
 
@@ -115,7 +115,7 @@ For meaningful work, introduce an independent perspective before the implementat
 
 ### 06 · Prove
 
-Run evidence appropriate to the acceptance criterion: tests, integration checks, browser/device evidence, SQL/data checks, telemetry, benchmarks, screenshots, or other real signals.
+Run evidence appropriate to the acceptance criterion: tests, integration checks, browser/device evidence, SQL/data checks, telemetry, benchmarks, screenshots, or other real signals. Evidence for a current claim must be **fresh for the latest user request, successful, and the right modality for that claim**.
 
 ```text
 REQUEST
@@ -146,7 +146,7 @@ Thalarch keeps material claims in explicit evidence states:
 - **`UNVERIFIED`** — proof was required but could not be obtained;
 - **`DISPROVEN`** — evidence contradicts the claim.
 
-The hard-gate layer blocks selected high-confidence failures such as invented project commands or claiming completion after a mutation without fresh verification. Uncertain semantic questions stay with reasoning and review rather than being “proved” by brittle regexes.
+The hard-gate layer blocks selected high-confidence failures such as invented project commands, stale proof reused across user turns, failed commands promoted into runtime evidence, or claiming completion after a mutation without fresh verification. Current test/build/lint/typecheck/benchmark claims require successful matching execution; current external state requires authoritative platform evidence; rendered visual state requires actual rendered pixels/device/browser evidence. Uncertain semantic questions stay with reasoning and review rather than being “proved” by brittle regexes.
 
 ### Adaptive reasoning depth
 
