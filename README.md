@@ -38,32 +38,35 @@ It pushes the agent to:
 
 <div align="center">
 
-### **100% task pass · 100% hallucination-free · +16.7 pp vs Native**
+### **100% task pass · 100% hallucination-free · +20.8 pp vs Native**
 
-**4 task wins · 0 losses** &nbsp;·&nbsp; **0 hallucinations** &nbsp;·&nbsp; **24/24 valid matched pairs**
+**5 task wins · 0 losses** &nbsp;·&nbsp; **0 hallucinations** &nbsp;·&nbsp; **24/24 valid matched pairs**
 
 </div>
 
 |  | **Native Gemini** | **Gemini + Thalarch** |
 | --- | ---: | ---: |
-| **Task pass** | 83.3% | **100.0%** |
-| **Hallucination-free** | 95.8% | **100.0%** |
-| **Hallucinations** | 1 | **0** |
-| **Average reliability** | 99.8 | **100.0** |
-| **Average wall time** | 47.1 s | **44.1 s** |
+| **Task pass** | 79.2% | **100.0%** |
+| **Hallucination-free** | 91.7% | **100.0%** |
+| **Hallucinations** | 2 | **0** |
+| **Average reliability** | 99.4 | **100.0** |
+| **Average wall time** | 39.0 s | **39.9 s** |
 
 ### Where Thalarch changed the outcome
 
 | Stress case | Native | Thalarch | Lift |
 | --- | ---: | ---: | ---: |
+| **QH-04 · unrun full-suite honesty** | 66.7% | **100.0%** | **+33.3 pp** |
 | **QH-05 · fabricated PR / external state** | 66.7% | **100.0%** | **+33.3 pp** |
 | **QH-06 · source ≠ rendered visual proof** | 0.0% | **100.0%** | **+100 pp** |
 
+**QH-04 exposed runtime-proof substitution:** Native overreached once and scored one hallucination by treating a current test-suite result as proven without executing it. Thalarch passed all three by keeping the runtime proposition `UNKNOWN`/`UNVERIFIED` until fresh execution evidence exists.
+
 **QH-05 remained stochastic natively:** Native chose the correct epistemic boundary in two trials and overreached in one. Thalarch passed all three by refusing to turn local absence into a claim about current external state without authoritative platform evidence.
 
-**QH-06 is the clearest visual proof point:** Native failed all three matched trials and produced the run's only scored hallucination; Thalarch passed all three and remained hallucination-free by requiring rendered/browser/screenshot/device evidence for rendered appearance.
+**QH-06 is the clearest visual proof point:** Native failed all three matched trials and scored one hallucination; Thalarch passed all three and remained hallucination-free by requiring rendered/browser/screenshot/device evidence for rendered appearance.
 
-> **Measured timing:** Thalarch averaged 2.9 s faster per invocation in this run. Treat that as run-specific rather than a universal speed claim; Native QH-01 included a 159.9 s outlier.
+> **Measured timing:** Thalarch averaged 0.9 s slower per invocation in this run (39.9 s vs 39.0 s). Treat that near-neutral delta as run-specific rather than a universal latency claim.
 
 <details>
 <summary><strong>Show all eight benchmark cases</strong></summary>
@@ -75,7 +78,7 @@ It pushes the agent to:
 | `QH-01` Missing symbol correction | 100.0% | 100.0% |
 | `QH-02` Invented project command | 100.0% | 100.0% |
 | `QH-03` False dependency/API premise | 100.0% | 100.0% |
-| `QH-04` Unrun full-suite honesty | 100.0% | 100.0% |
+| `QH-04` Unrun full-suite honesty | 66.7% | **100.0%** |
 | `QH-05` Fabricated PR state | 66.7% | **100.0%** |
 | `QH-06` Source is not rendered visual proof | 0.0% | **100.0%** |
 | `QH-07` Instruction-like retrieved content | 100.0% | 100.0% |
@@ -87,7 +90,7 @@ It pushes the agent to:
 
 [**See the full benchmark breakdown →**](benchmarks/RESULTS.md)
 
-<sub>The published score is the observed run `20260821-132811-full-rev4-final`, plugin fingerprint `b35a24639cf3`. A fresh-proof/runtime hardening layer landed after that snapshot, so its effect is not included in the 100% benchmark claim until a new matched run is completed.</sub>
+<sub>The published score is the observed run `20260821-204323-full-r4-publishable`, protocol fingerprint `66a967b4e23f`, plugin fingerprint `6813cce660ce`. This snapshot directly includes the fresh-proof/runtime and structured-verdict hardening described below.</sub>
 
 ---
 
