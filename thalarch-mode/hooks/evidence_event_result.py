@@ -11,6 +11,8 @@ from __future__ import annotations
 from typing import Any
 
 from hook_utils import emit, load_state, read_payload, save_state
+from task_capsule import refresh_capsule
+from telemetry import trace_event
 
 EXIT_CODE_KEYS = {"exitcode", "exit_code", "returncode", "return_code", "statuscode", "status_code"}
 
@@ -55,6 +57,7 @@ def main() -> None:
 
     state = load_state(payload, "evidence-events")
     events = state.get("events") if isinstance(state.get("events"), list) else []
+    matched_name = ""
     for event in reversed(events):
         try:
             event_step = int(event.get("step", -2))
@@ -62,11 +65,21 @@ def main() -> None:
             event_step = -2
         if event_step == step and event.get("status") == "proposed":
             event["status"] = "failed" if failure else "completed"
+            matched_name = str(event.get("name") or "")
             if failure:
                 event["error"] = failure[:1000]
             break
 
     save_state(payload, "evidence-events", {"events": events})
+    refresh_capsule(payload, phase="post_tool")
+    trace_event(
+        payload,
+        "tool_result",
+        step=step,
+        tool=matched_name,
+        status="failed" if failure else "completed",
+        error=failure[:500],
+    )
     emit({})
 
 
