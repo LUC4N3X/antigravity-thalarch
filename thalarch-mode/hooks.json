@@ -4,6 +4,11 @@
     "PreInvocation": [
       {
         "type": "command",
+        "command": "python3 hooks/supply_chain_guard.py || python hooks/supply_chain_guard.py || py -3 hooks/supply_chain_guard.py",
+        "timeout": 10
+      },
+      {
+        "type": "command",
         "command": "python3 hooks/pre_invocation_epistemic_guard.py || python hooks/pre_invocation_epistemic_guard.py || py -3 hooks/pre_invocation_epistemic_guard.py",
         "timeout": 10
       }
