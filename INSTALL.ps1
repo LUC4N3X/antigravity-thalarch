@@ -11,42 +11,45 @@ if (-not (Test-Path $Source)) {
     throw "Plugin folder not found: $Source"
 }
 
-function Test-Python3 {
-    foreach ($candidate in @("python3", "python")) {
-        $cmd = Get-Command $candidate -ErrorAction SilentlyContinue
-        if ($cmd) {
-            try {
-                & $candidate -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)"
-                if ($LASTEXITCODE -eq 0) { return $true }
-            } catch {}
-        }
+function Test-PythonCandidate {
+    param(
+        [string]$Command,
+        [string[]]$Prefix = @()
+    )
+    if (-not (Get-Command $Command -ErrorAction SilentlyContinue)) {
+        return $false
     }
+    try {
+        & $Command @Prefix -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)"
+        return $LASTEXITCODE -eq 0
+    } catch {
+        return $false
+    }
+}
 
-    $py = Get-Command py -ErrorAction SilentlyContinue
-    if ($py) {
-        try {
-            & py -3 -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)"
-            if ($LASTEXITCODE -eq 0) { return $true }
-        } catch {}
-    }
+function Test-Python3 {
+    if (Test-PythonCandidate "python3") { return $true }
+    if (Test-PythonCandidate "python") { return $true }
+    if (Test-PythonCandidate "py" @("-3")) { return $true }
     return $false
 }
 
 function Invoke-ThalarchPython {
     param([string[]]$Arguments)
-    foreach ($candidate in @("python3", "python")) {
-        if (Get-Command $candidate -ErrorAction SilentlyContinue) {
-            & $candidate @Arguments
-            if ($LASTEXITCODE -ne 0) { throw "Python command failed with exit code $LASTEXITCODE" }
-            return
-        }
-    }
-    if (Get-Command py -ErrorAction SilentlyContinue) {
+
+    if (Test-PythonCandidate "python3") {
+        & python3 @Arguments
+    } elseif (Test-PythonCandidate "python") {
+        & python @Arguments
+    } elseif (Test-PythonCandidate "py" @("-3")) {
         & py -3 @Arguments
-        if ($LASTEXITCODE -ne 0) { throw "Python command failed with exit code $LASTEXITCODE" }
-        return
+    } else {
+        throw "Python 3.10+ was not found."
     }
-    throw "Python 3 was not found."
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Python command failed with exit code $LASTEXITCODE"
+    }
 }
 
 if (-not (Test-Python3)) {
