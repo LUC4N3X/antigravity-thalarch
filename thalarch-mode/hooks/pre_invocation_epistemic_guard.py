@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 """Inject a compact anti-hallucination contract before every model invocation."""
 from hook_utils import emit, read_payload
+from runtime_profile import profile_for_payload, profile_message
+from task_capsule import capsule_message, refresh_capsule
+from telemetry import trace_event
 
 
 def main() -> None:
     payload = read_payload()
     invocation = payload.get("invocationNum", payload.get("invocation_num", 0))
+    profile = profile_for_payload(payload)
+    refresh_capsule(payload, phase="pre_invocation")
+    continuity = capsule_message(payload)
     message = (
         "THALARCH EVIDENCE CONTRACT — non-negotiable. Exact repository paths/symbols, commands, "
         "versions/APIs, runtime results, publication state, benchmark numbers, and visual claims "
@@ -49,7 +55,18 @@ def main() -> None:
         "explicitly and, when the output format has an unverified/unknown field or ledger, populate it with "
         "that missing proof. Prefer UNKNOWN/UNVERIFIED to invention. Before final completion, independently "
         "fact-check material exact claims and cold-verify acceptance criteria when the task involved mutation "
-        "or consequential external state."
+        "or consequential external state. "
+        + profile_message(profile)
+    )
+    if continuity:
+        message += " " + continuity
+    trace_event(
+        payload,
+        "pre_invocation",
+        invocation=invocation,
+        depth=profile["depth"],
+        profile=profile["profile"],
+        request_key=profile["request_key"],
     )
     emit({"injectSteps": [{"ephemeralMessage": message}]})
 

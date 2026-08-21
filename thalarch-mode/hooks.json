@@ -60,7 +60,7 @@
     "Stop": [
       {
         "type": "command",
-        "command": "python3 hooks/structured_verdict_gate.py --delegate hooks/proof_freshness_gate.py || python hooks/structured_verdict_gate.py --delegate hooks/proof_freshness_gate.py || py -3 hooks/structured_verdict_gate.py --delegate hooks/proof_freshness_gate.py",
+        "command": "python3 hooks/convergent_stop_gate.py --delegate hooks/structured_verdict_gate.py --fresh hooks/proof_freshness_gate.py || python hooks/convergent_stop_gate.py --delegate hooks/structured_verdict_gate.py --fresh hooks/proof_freshness_gate.py || py -3 hooks/convergent_stop_gate.py --delegate hooks/structured_verdict_gate.py --fresh hooks/proof_freshness_gate.py",
         "timeout": 25
       }
     ]

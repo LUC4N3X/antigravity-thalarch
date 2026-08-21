@@ -29,6 +29,9 @@ jobs:
       - name: Validate anti-hallucination hard gates
         run: python scripts/validation/validate_hard_gates.py .
 
+      - name: Validate runtime resilience
+        run: python scripts/validation/validate_runtime_resilience.py .
+
       - name: Validate supply-chain provenance
         run: python scripts/validation/validate_supply_chain.py .
 
@@ -40,6 +43,9 @@ jobs:
 
       - name: Validate cross-model benchmark suite
         run: python scripts/validation/validate_benchmarks.py .
+
+      - name: Validate robustness benchmark infrastructure
+        run: python scripts/validation/validate_robustness_matrix.py .
 
       - name: Check shell installer syntax
         run: bash -n INSTALL.sh
