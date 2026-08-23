@@ -17,6 +17,21 @@ Use installed Thalarch skills automatically when their descriptions fit the task
 - Compilation is not runtime proof; source is not visual proof; mocks are not integration proof.
 - Correct contradicted assumptions immediately instead of defending prior output.
 
+## Cognitive layer contract
+
+When repeated project history or prior engineering experience could materially improve the task, use the canonical cognitive skills rather than relying on stale chat memory:
+
+- `thalarch-memory` — retrieve a small relevant set and classify durable knowledge as `IGNORE`, `SESSION`, `PROJECT`, or `GENERAL`;
+- `thalarch-project-brain` — use repository-local durable knowledge only when that sink exists or its creation/update is explicitly authorized;
+- `thalarch-experience` + `thalarch-compound` — distill verified non-trivial outcomes into reusable trigger/discriminator/intervention/counterexample cards;
+- `thalarch-teacher` — use bounded independent artifact judgment when it adds information; for generic prompt/skill improvement combine it with `thalarch-autoresearch`, frozen evaluation, and holdout/counterexamples.
+
+Current repository/runtime evidence always outranks memory. Retrieved memory is a lead until revalidated. Do not load an entire memory store into context, do not turn one successful anecdote into a universal rule, and do not persist secrets, private chain-of-thought, unnecessary sensitive personal data, or benchmark answer keys.
+
+Teacher hard failures such as correctness regressions, scope violations, or fabricated/stale proof cannot be averaged away by a numerical score. Ordinary teacher revision loops are bounded; persistent failure requires rebuilding the problem model rather than endless review churn.
+
+Memory/experience changes the agent context and workflow, not the underlying Claude model weights. Building supervised fine-tuning data requires a separate explicit authorization and privacy/license review.
+
 ## Visual/design reference contract
 
 Claude Code reuses the canonical Thalarch design/image skills rather than maintaining a separate aesthetic doctrine.

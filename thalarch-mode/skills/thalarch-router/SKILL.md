@@ -1,10 +1,11 @@
 ---
 name: thalarch-router
 description: >
-  Chooses the smallest compatible process, language, domain, platform, visual, and installed-skill
-  stack for a task. Use before complex work and after project discovery. Combines autonomous skill
-  intelligence with task, stack, risk, evidence, source-grounding, context, no-regression, and
-  in-flight doubt routing instead of requiring the user to manually name the best skills.
+  Chooses the smallest compatible process, language, domain, platform, visual, cognitive, and
+  installed-skill stack for a task. Use before complex work and after project discovery. Combines
+  autonomous skill intelligence with task, stack, risk, evidence, source-grounding, context,
+  no-regression, memory/experience, teacher/eval, and in-flight doubt routing instead of requiring
+  the user to manually name the best skills.
 ---
 
 # Thalarch Router
@@ -20,15 +21,17 @@ Use `thalarch-skill-intelligence` before loading heavy instructions.
 5. Estimate risk: low / medium / high.
 6. Identify evidence needed for completion.
 7. Decide whether stale/large context requires `thalarch-context`.
-8. Decide whether version-sensitive external facts require `thalarch-source-grounding`.
-9. Decide whether a working high-blast-radius subsystem needs `thalarch-no-regression` before mutation.
-10. Decide whether a non-trivial D2+ decision needs an in-flight `thalarch-doubt` challenge.
-11. Select the smallest compatible process + language + domain + platform stack.
-12. Prefer project-local and current official platform/vendor skills when they are more specific
+8. Decide whether relevant prior project/general experience should be retrieved with `thalarch-memory`.
+9. Decide whether version-sensitive external facts require `thalarch-source-grounding`.
+10. Decide whether a working high-blast-radius subsystem needs `thalarch-no-regression` before mutation.
+11. Decide whether a non-trivial D2+ decision needs an in-flight `thalarch-doubt` challenge.
+12. Decide whether an independent teacher/judge loop adds real information.
+13. Select the smallest compatible process + language + domain + platform stack.
+14. Prefer project-local and current official platform/vendor skills when they are more specific
     than a generic Thalarch or community skill.
-13. Remove redundant or conflicting skills instead of stacking everything.
-14. Re-run selection after preflight when new stack/version/root-cause evidence changes the route.
-15. For image inputs/outputs, classify inspect/generate/edit/vector/capture/compare/annotate/optimize.
+15. Remove redundant or conflicting skills instead of stacking everything.
+16. Re-run selection after preflight when new stack/version/root-cause evidence changes the route.
+17. For image inputs/outputs, classify inspect/generate/edit/vector/capture/compare/annotate/optimize.
 
 ## Core process routing
 
@@ -56,6 +59,29 @@ Use `thalarch-skill-intelligence` before loading heavy instructions.
 a stronger project-specific coding skill already covers the same concern without losing Thalarch's
 scope and verification invariants.
 
+## Cognitive routing
+
+Do not load cognitive skills mechanically on every task.
+
+- relevant verified prior experience may change the first hypothesis → `thalarch-memory`;
+- repeatedly revisited repository with an authorized durable local knowledge sink →
+  `thalarch-project-brain` + `thalarch-memory`;
+- verified non-trivial task produced a reusable lesson → `thalarch-compound` + `thalarch-experience`;
+- prompt/skill/router/agent behavior is being tuned against a stable evaluator →
+  `thalarch-teacher` + `thalarch-autoresearch`;
+- high-value implementation benefits from independent artifact feedback before final verification →
+  `thalarch-teacher`, but reuse an existing independent reviewer/verifier when it already covers the need.
+
+Memory retrieval happens before broad rediscovery only when relevance is plausible. Retrieved memory
+remains `MEMORY` trust until current evidence revalidates load-bearing claims.
+
+Durable storage is never implied by retrieval. Persist project/general memory only through an
+authorized sink and the `thalarch-memory` evidence/privacy/generalization gates.
+
+A generic Thalarch rule must not self-modify from one successful task. Use frozen evaluation,
+holdout/counterexamples, `thalarch-autoresearch`, and independent teacher/verifier evidence before
+promoting general behavior.
+
 ## Epistemic process overlays
 
 These are not loaded mechanically on every task.
@@ -65,7 +91,7 @@ These are not loaded mechanically on every task.
 Add `thalarch-context` when:
 
 - the repository/task area is unfamiliar;
-- a large amount of source/log/docs would otherwise enter the main context;
+- a large amount of source/log/docs/memory would otherwise enter the main context;
 - the task switches modules/features;
 - a long session/compaction risks stale assumptions;
 - outputs start ignoring current project conventions or referencing unsupported facts.
@@ -157,7 +183,7 @@ Modern Web, cloud/vendor SDKs, or other curated integrations. Do not require the
 their names.
 
 Platform skills supply current platform expertise; Thalarch supplies scope, causal debugging,
-source grounding, review, evidence, and cold verification.
+source grounding, review, evidence, memory discipline, and cold verification.
 
 ## Android routing
 
@@ -203,8 +229,8 @@ Raise risk for auth/security/privacy, shared concurrency, persistence/schema mig
 network/protocol parsing, public API/ABI/wire compatibility, build/release/signing/toolchain,
 broad refactor, user data, hard-to-reproduce runtime behavior, cross-language/service interfaces,
 unsafe/FFI/native code, unmeasured hot paths, architecture boundary changes, exact brand
-preservation, “change only X” image edits, and production assets with exact text/transparency/
-dimensions.
+preservation, “change only X” image edits, production assets with exact text/transparency/dimensions,
+and durable memory containing sensitive/stale/high-impact project knowledge.
 
 For working high-blast-radius systems, the risk response is not automatically “more refactoring”;
 it is usually a narrower preservation contract plus stronger evidence.
@@ -218,5 +244,6 @@ Return a compact routing decision:
 `Risk: <...>`
 `Skills: <ordered minimal stack>`
 `Agents: <only specialists actually available and needed>`
+`Memory: <retrieval/persistence decision when relevant>`
 `Evidence required: <...>`
 `Deferred/rejected: <only close alternatives when useful>`

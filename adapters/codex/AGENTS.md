@@ -19,6 +19,21 @@ Use installed Thalarch skills automatically when their descriptions match the ta
 - Compilation does not prove runtime behavior. Source code does not prove rendered UI. Mocks do not prove a real integration.
 - Evidence used for completion must be successful and newer than the final relevant mutation.
 
+## Cognitive layer contract
+
+When prior verified project/general experience could materially improve the next decision, use the canonical cognitive skills instead of treating old conversational context as truth:
+
+- `thalarch-memory` — narrow retrieval plus `IGNORE` / `SESSION` / `PROJECT` / `GENERAL` classification;
+- `thalarch-project-brain` — opt-in repository-local architecture/invariants/decisions/regressions/playbooks with provenance and freshness;
+- `thalarch-experience` + `thalarch-compound` — distill verified outcomes and failed alternatives into compact transferable cards;
+- `thalarch-teacher` — independent artifact judgment and bounded revision; combine with `thalarch-autoresearch`, frozen evals, and holdout/counterexamples for generic skill/prompt changes.
+
+Current repository/runtime evidence always outranks memory. Retrieved memory must be revalidated before it drives a load-bearing decision. Do not context-dump the memory store, overgeneralize one successful task, persist secrets/private chain-of-thought/unnecessary sensitive personal data, or encode benchmark answer keys as general knowledge.
+
+Teacher hard gates outrank optional scores. A candidate that breaks required behavior, crosses scope, weakens required checks, or fabricates proof does not pass because its average score is high. Keep revision loops bounded and move persistent failure back to causal/context reconstruction.
+
+Memory improves the agent system; it does not change Codex model weights. Creating fine-tuning datasets from repository/user work is a separate explicitly authorized activity with privacy/license review.
+
 ## Visual/design reference contract
 
 Codex reuses the canonical `thalarch-design-system`, `thalarch-imagegen`, `thalarch-image-to-code`, `thalarch-web-design`, and related skills when installed.

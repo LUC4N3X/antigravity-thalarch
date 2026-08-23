@@ -7,5 +7,7 @@ This directory contains maintainer-facing design and validation documentation th
 - [`TEST-PROMPTS.md`](TEST-PROMPTS.md) — manual evaluation scenarios for behavior and regression testing.
 - [`ANDROID-ENGINEERING-PACK.md`](ANDROID-ENGINEERING-PACK.md) — Media3, Compose product UI, Android performance/cache safety, Room pagination, localization, entity matching, and no-regression routing.
 - [`ANDROID-TEST-PROMPTS.md`](ANDROID-TEST-PROMPTS.md) — focused Android regression/evaluation prompts for the engineering pack.
+- [`COGNITIVE-LAYER.md`](COGNITIVE-LAYER.md) — evidence-gated long-term memory, reusable experience, opt-in Project Brain, teacher/judge loops, and eval-driven self-improvement.
+- [`COGNITIVE-TEST-PROMPTS.md`](COGNITIVE-TEST-PROMPTS.md) — memory freshness, privacy, generalization, teacher convergence, and anti-grader-hacking evaluation scenarios.
 
 Public project, installation, licensing, and legal entry points remain in the repository root.

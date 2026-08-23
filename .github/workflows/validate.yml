@@ -26,6 +26,9 @@ jobs:
       - name: Validate Android engineering pack
         run: python scripts/validation/validate_android_pack.py .
 
+      - name: Validate cognitive layer
+        run: python scripts/validation/validate_cognitive_layer.py .
+
       - name: Validate autoresearch engine
         run: python scripts/validation/validate_autoresearch.py .
 
