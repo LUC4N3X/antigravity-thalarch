@@ -3,8 +3,8 @@ name: thalarch-router
 description: >
   Chooses the smallest compatible process, language, domain, platform, visual, and installed-skill
   stack for a task. Use before complex work and after project discovery. Combines autonomous skill
-  intelligence with task, stack, risk, evidence, source-grounding, context, and in-flight doubt
-  routing instead of requiring the user to manually name the best skills.
+  intelligence with task, stack, risk, evidence, source-grounding, context, no-regression, and
+  in-flight doubt routing instead of requiring the user to manually name the best skills.
 ---
 
 # Thalarch Router
@@ -21,18 +21,21 @@ Use `thalarch-skill-intelligence` before loading heavy instructions.
 6. Identify evidence needed for completion.
 7. Decide whether stale/large context requires `thalarch-context`.
 8. Decide whether version-sensitive external facts require `thalarch-source-grounding`.
-9. Decide whether a non-trivial D2+ decision needs an in-flight `thalarch-doubt` challenge.
-10. Select the smallest compatible process + language + domain + platform stack.
-11. Prefer project-local and current official platform/vendor skills when they are more specific
+9. Decide whether a working high-blast-radius subsystem needs `thalarch-no-regression` before mutation.
+10. Decide whether a non-trivial D2+ decision needs an in-flight `thalarch-doubt` challenge.
+11. Select the smallest compatible process + language + domain + platform stack.
+12. Prefer project-local and current official platform/vendor skills when they are more specific
     than a generic Thalarch or community skill.
-12. Remove redundant or conflicting skills instead of stacking everything.
-13. Re-run selection after preflight when new stack/version/root-cause evidence changes the route.
-14. For image inputs/outputs, classify inspect/generate/edit/vector/capture/compare/annotate/optimize.
+13. Remove redundant or conflicting skills instead of stacking everything.
+14. Re-run selection after preflight when new stack/version/root-cause evidence changes the route.
+15. For image inputs/outputs, classify inspect/generate/edit/vector/capture/compare/annotate/optimize.
 
 ## Core process routing
 
 - small safe edit → `thalarch-code-craft` + lightweight review;
 - isolated bug/regression → `thalarch-debug` + language overlay + `thalarch-test` + review;
+- working subsystem + risky targeted improvement → `thalarch-no-regression` + relevant domain/language
+  skills + targeted test/review;
 - broken feature/module with several dependent surfaces → bounded scope/trace/diagnose workflow
   using codebase intelligence + debug + relevant language/domain skills;
 - feature → `thalarch-spec` + language overlay + `thalarch-test` + review;
@@ -78,6 +81,16 @@ Add `thalarch-source-grounding` when a load-bearing decision depends on:
 - current official vendor recommendations.
 
 Pure local logic does not need documentation ceremony merely because a dependency exists nearby.
+
+### No-regression contract
+
+Add `thalarch-no-regression` when the target subsystem currently works and the task risks breaking
+adjacent behavior, especially cache, playback, persistence, sync, migration, concurrency, retries,
+networking, or stateful UI.
+
+Use it to separate the suspected problem from must-preserve behavior and to force `AUDIT ONLY` when
+the suspected defect is still `UNKNOWN`/weak inference. A similar fix from another repository is a
+research lead, not proof of a local bug.
 
 ### In-flight doubt
 
@@ -148,9 +161,26 @@ source grounding, review, evidence, and cold verification.
 
 ## Android routing
 
-Kotlin/Java Android work normally combines the language layer with the strongest installed Android
-skills that match the task. Compose/UI work additionally uses UI/design and runtime/device evidence
-as required.
+Kotlin/Java Android work normally combines the language layer with `thalarch-android` and the
+smallest specialist stack that matches the proven surface:
+
+- Media3/ExoPlayer/session/service/Android Auto/queue/cache/preload/recovery/audio processors →
+  `thalarch-media3`;
+- Compose product UI/redesign/settings/media surfaces → `thalarch-compose-ui`, with
+  `thalarch-design-system` when substantial visual-system extraction is useful;
+- fuzzy automatic provider/catalog/media identity matching → `thalarch-entity-matching`;
+- locale resources/translated UI/RTL/placeholders → `thalarch-localization`;
+- memory/cache/hot-path work → `thalarch-performance`, and `thalarch-no-regression` when the current
+  subsystem is working;
+- Room pagination/query shape → `thalarch-data-sql` plus the Android paging playbook;
+- deprecated AndroidX/Compose/Media3 APIs → `thalarch-source-grounding` plus the Android deprecation
+  playbook.
+
+For Android runtime/device behavior require runtime/device evidence appropriate to the claim.
+For visually consequential Compose work require actual rendered pixels/interaction evidence rather
+than source-only confidence.
+
+Do not activate every Android specialist for every Android task.
 
 ## Web / visual routing
 
@@ -175,6 +205,9 @@ broad refactor, user data, hard-to-reproduce runtime behavior, cross-language/se
 unsafe/FFI/native code, unmeasured hot paths, architecture boundary changes, exact brand
 preservation, “change only X” image edits, and production assets with exact text/transparency/
 dimensions.
+
+For working high-blast-radius systems, the risk response is not automatically “more refactoring”;
+it is usually a narrower preservation contract plus stronger evidence.
 
 ## Output
 
