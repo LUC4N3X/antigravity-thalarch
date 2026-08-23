@@ -13,6 +13,8 @@ description: >
 
 Memory is a **retrieval aid**, not an authority layer. Current user/repository/runtime evidence wins.
 
+Core invariant: **current repository/runtime evidence wins over retrieved memory**.
+
 ## 1. Four memory classes
 
 Classify every candidate before persistence:
